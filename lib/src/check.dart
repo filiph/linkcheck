@@ -13,7 +13,7 @@ import 'destination.dart';
 import 'link.dart';
 import 'origin.dart';
 
-Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
+Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
     bool shouldCheckExternal, bool verbose) async {
   bool isExternal(Uri uri) => !hosts.contains(uri.host);
 
@@ -45,8 +45,7 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
     cursor.write("Crawling sources: $count");
   }
 
-  // TODO: crawl all destinations regardless if they're "parseable" or not
-  // - just one huge `open` queue and one big list of 'broken links' (even just 301s and other warnings)
+  // TODO:
   // - a checkDestination takes destination and returns it updated with optional links on top
   // - paralellism: List<StreamChannel> isolates
   //   - listen to replies: either IDLE or results of a checkDestination
@@ -69,11 +68,10 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
       continue;
     }
 
-    var uri = current.uriWithoutFragment;
     if (verbose) {
-      print(uri);
-      var sources =
-          links.where((link) => link.destination.uriWithoutFragment == uri);
+      print(current.uriWithoutFragment);
+      var sources = links.where((link) =>
+          link.destination.uriWithoutFragment == current.uriWithoutFragment);
       print("- visiting because it was liked from $sources");
     } else {
       cursor.moveLeft(count.toString().length);
@@ -81,124 +79,7 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
       cursor.write(count.toString());
     }
 
-    // Fetch the HTTP response
-    HttpClientResponse response;
-    try {
-      if (!current.isSource && !headIncompatible.contains(current.uri.host)) {
-        response = await _fetchHead(client, uri);
-        if (response == null) headIncompatible.add(current.uri.host);
-      }
-
-      if (response == null) {
-        response = await _fetch(client, uri, current);
-      }
-    } on HttpException {
-      // Leave response == null.
-    } on SocketException {
-      // Leave response == null.
-    } on HandshakeException {
-      // Leave response == null.
-    }
-
-    if (response == null) {
-      // Request failed completely.
-      // TODO: abort when we encounter X of these in a row
-      //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
-      //          "started the localhost server?");
-      exitCode = 2;
-      current.didNotConnect = true;
-      assert(!closed.contains(current));
-      _updateEquivalents(current, open, closed);
-      closed.add(current);
-      continue;
-    }
-
-    current.updateFromResponse(response);
-    if (verbose) {
-      print("- HTTP ${current.statusCode}, ${current.contentType}");
-    }
-
-    // Process all destinations that cannot or shouldn't be parsed.
-    if (current.statusCode != 200 ||
-        !hosts.contains(current.finalUri.host) ||
-        !current.isHtmlMimeType /* TODO: add CSS, SVG/XML */) {
-      // Does not await for performance reasons.
-      response.drain();
-
-      assert(!closed.contains(current));
-      _updateEquivalents(current, open, closed);
-      closed.add(current);
-      continue;
-    }
-
-    String html;
-    try {
-      Converter<List<int>, String> decoder;
-      if (current.contentType.charset == LATIN1.name) {
-        // Some sites still use LATIN-1 for performance reasons.
-        decoder = LATIN1.decoder;
-      } else {
-        decoder = UTF8.decoder;
-      }
-      html = await response.transform(decoder).join();
-    } on FormatException {
-      // TODO: make warning instead, record in current, continue
-      throw new UnsupportedError("We don't support any encoding other than "
-          "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
-          "'${current.contentType}' and couldn't be parsed by UTF8.");
-    }
-
-    // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
-    // other ugly index files).
-
-    // Parse it
-    var doc = parse(html, generateSpans: true, sourceUrl: uri.toString());
-
-    // Find parseable destinations
-    // TODO: add the following: media, meta refreshes, forms, metadata
-    //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
-    // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
-    // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
-
-    var linkElements = doc.querySelectorAll("a[href], area[href], iframe[src]");
-
-    /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
-    List<Link> sourceLinks = linkElements
-        .map((element) => extractLink(
-            uri, element, const ["href", "src"], open, closed, true))
-        .toList(growable: false);
-
-    if (verbose)
-      print("- found ${sourceLinks.length} links leading to "
-          "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
-          .toSet().length} "
-          "different URLs: "
-          "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
-          .toSet()}");
-
-    // TODO: Remove URIs that are not http/https
-
-    links.addAll(sourceLinks);
-
-    // Find resources
-    var resourceElements =
-        doc.querySelectorAll("link[href], [src], object[data]");
-    List<Link> currentResourceLinks = resourceElements
-        .map((element) => extractLink(
-            uri, element, const ["src", "href", "data"], open, closed, false))
-        .toList(growable: false);
-
-    // TODO: add srcset extractor (will create multiple links per element)
-
-    if (verbose) print("- found ${currentResourceLinks.length} resources");
-
-    links.addAll(currentResourceLinks);
-
-    // TODO: take note of anchors on page, add it to current
-
-    assert(!closed.contains(current));
-    _updateEquivalents(current, open, closed);
-    closed.add(current);
+    await _check(current, headIncompatible, client, closed, open, verbose, hosts, links);
   }
 
   // TODO: (optionally) check anchors
@@ -211,6 +92,129 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
       (destination.isExternal && !shouldCheckExternal)));
 
   return links.toList(growable: false);
+}
+
+Future<Null> _check(Destination current, Set<String> headIncompatible, HttpClient client, Set<Destination> closed, Queue<Destination> open, bool verbose, Set<String> hosts, Set<Link> links) async {
+  var uri = current.uriWithoutFragment;
+
+  // Fetch the HTTP response
+  HttpClientResponse response;
+  try {
+    if (!current.isSource && !headIncompatible.contains(current.uri.host)) {
+      response = await _fetchHead(client, uri);
+      if (response == null) headIncompatible.add(current.uri.host);
+    }
+
+    if (response == null) {
+      response = await _fetch(client, uri, current);
+    }
+  } on HttpException {
+    // Leave response == null.
+  } on SocketException {
+    // Leave response == null.
+  } on HandshakeException {
+    // Leave response == null.
+  }
+
+  if (response == null) {
+    // Request failed completely.
+    // TODO: abort when we encounter X of these in a row
+    //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
+    //          "started the localhost server?");
+    exitCode = 2;
+    current.didNotConnect = true;
+    assert(!closed.contains(current));
+    _updateEquivalents(current, open, closed);
+    closed.add(current);
+    return;
+  }
+
+  current.updateFromResponse(response);
+  if (verbose) {
+    print("- HTTP ${current.statusCode}, ${current.contentType}");
+  }
+
+  // Process all destinations that cannot or shouldn't be parsed.
+  if (current.statusCode != 200 ||
+      !hosts.contains(current.finalUri.host) ||
+      !current.isHtmlMimeType /* TODO: add CSS, SVG/XML */) {
+    // Does not await for performance reasons.
+    response.drain();
+
+    assert(!closed.contains(current));
+    _updateEquivalents(current, open, closed);
+    closed.add(current);
+    return;
+  }
+
+  String html;
+  try {
+    Converter<List<int>, String> decoder;
+    if (current.contentType.charset == LATIN1.name) {
+      // Some sites still use LATIN-1 for performance reasons.
+      decoder = LATIN1.decoder;
+    } else {
+      decoder = UTF8.decoder;
+    }
+    html = await response.transform(decoder).join();
+  } on FormatException {
+    // TODO: make warning instead, record in current, continue
+    throw new UnsupportedError("We don't support any encoding other than "
+        "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
+        "'${current.contentType}' and couldn't be parsed by UTF8.");
+  }
+
+  // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
+  // other ugly index files).
+
+  // Parse it
+  var doc = parse(html, generateSpans: true, sourceUrl: uri.toString());
+
+  // Find parseable destinations
+  // TODO: add the following: media, meta refreshes, forms, metadata
+  //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
+  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
+  // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
+
+  var linkElements = doc.querySelectorAll("a[href], area[href], iframe[src]");
+
+  /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
+  List<Link> sourceLinks = linkElements
+      .map((element) => extractLink(
+          uri, element, const ["href", "src"], open, closed, true))
+      .toList(growable: false);
+
+  if (verbose)
+    print("- found ${sourceLinks.length} links leading to "
+        "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
+        .toSet().length} "
+        "different URLs: "
+        "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
+        .toSet()}");
+
+  // TODO: Remove URIs that are not http/https
+
+  links.addAll(sourceLinks);
+
+  // Find resources
+  var resourceElements =
+      doc.querySelectorAll("link[href], [src], object[data]");
+  List<Link> currentResourceLinks = resourceElements
+      .map((element) => extractLink(
+          uri, element, const ["src", "href", "data"], open, closed, false))
+      .toList(growable: false);
+
+  // TODO: add srcset extractor (will create multiple links per element)
+
+  if (verbose) print("- found ${currentResourceLinks.length} resources");
+
+  links.addAll(currentResourceLinks);
+
+  // TODO: take note of anchors on page, add it to current
+
+  assert(!closed.contains(current));
+  _updateEquivalents(current, open, closed);
+  closed.add(current);
 }
 
 void _updateEquivalents(

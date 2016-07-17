@@ -64,7 +64,7 @@ Future<Null> main(List<String> arguments) async {
   Set<String> hosts = uris.map((uri) => uri.host).toSet();
   hosts.addAll(argResults[hostsFlag] as Iterable<String>);
 
-  List<Link> links = await check(uris, hosts, shouldCheckExternal, verbose);
+  List<Link> links = await crawl(uris, hosts, shouldCheckExternal, verbose);
 
   var broken = links
       .where((link) => link.destination.wasTried && link.destination.isBroken)
