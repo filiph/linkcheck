@@ -11,26 +11,30 @@ import 'package:html/parser.dart';
 
 import 'destination.dart';
 import 'link.dart';
-import 'source.dart';
+import 'origin.dart';
 
-Future<List<Link>> check(List<Uri> uris, Set<String> hosts,
+Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
     bool shouldCheckExternal, bool verbose) async {
-  bool isInternal(Uri uri) => hosts.contains(uri.host);
+  bool isExternal(Uri uri) => !hosts.contains(uri.host);
 
   Console.init();
   var cursor = new Cursor();
 
-  if (verbose) print("Crawl will start on the following URLs: $uris");
+  if (verbose) print("Crawl will start on the following URLs: $seeds");
   if (verbose) print("Crawl will check pages only on following hosts: $hosts");
 
-  Set<Destination> destinations =
-      uris.map((uri) => new ParseableDestination(uri)).toSet();
+  // The queue of destinations that haven't been tried yet. Destinations in
+  // the front of the queue take precedence.
+  Queue<Destination> open = new Queue<Destination>.from(
+      seeds.map((uri) => new Destination(uri)..isSource = true));
 
-  /// Determines whether this destination is still pending to be processed.
-  bool _isUnprocessed(Destination destination) =>
-      destination is ParseableDestination &&
-      !destination.wasProcessed &&
-      isInternal(destination.uri);
+  // The set of destinations that have been tried.
+  Set<Destination> closed = new Set<Destination>();
+
+  // List of hosts that do not support HTTP HEAD requests.
+  Set<String> headIncompatible = new Set<String>();
+
+  // TODO: add hashmap with robots. Special case for localhost
 
   Set<Link> links = new Set<Link>();
 
@@ -38,7 +42,7 @@ Future<List<Link>> check(List<Uri> uris, Set<String> hosts,
 
   int count = 0;
   if (!verbose) {
-    cursor.write("Crawling pages: $count");
+    cursor.write("Crawling sources: $count");
   }
 
   // TODO: crawl all destinations regardless if they're "parseable" or not
@@ -53,9 +57,18 @@ Future<List<Link>> check(List<Uri> uris, Set<String> hosts,
   //     - results? add new links to open
   //   - send out first destinations
   //   - await allDone.future;
-  do {
+
+  // TODO: have openExternal and open - precedence to openExternal (take more time) but only if we also parse internal sources in parallel
+  while (open.isNotEmpty) {
     // Get an unprocessed parseable file.
-    ParseableDestination current = destinations.where(_isUnprocessed).first;
+    Destination current = open.removeFirst();
+    current.isExternal = isExternal(current.uri);
+
+    if (current.isExternal && !shouldCheckExternal) {
+      _updateEquivalents(current, open, closed);
+      continue;
+    }
+
     var uri = current.uriWithoutFragment;
     if (verbose) {
       print(uri);
@@ -68,30 +81,54 @@ Future<List<Link>> check(List<Uri> uris, Set<String> hosts,
       cursor.write(count.toString());
     }
 
-    // Fetch the document
-    HttpClientResponse response = await _fetchParseable(client, uri, current);
+    // Fetch the HTTP response
+    HttpClientResponse response;
+    try {
+      if (!current.isSource &&
+          !headIncompatible.contains(current.uri.host)) {
+        response = await _fetchHead(client, uri);
+        if (response == null) headIncompatible.add(current.uri.host);
+      }
+
+      if (response == null) {
+        response = await _fetch(client, uri, current);
+      }
+    } on HttpException {
+      // Leave response == null.
+    } on SocketException {
+      // Leave response == null.
+    } on HandshakeException {
+      // Leave response == null.
+    }
+
     if (response == null) {
       // Request failed completely.
       // TODO: abort when we encounter X of these in a row
       //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
       //          "started the localhost server?");
-      //      print("Try, for example:\n  \$ jekyll build && firebase serve");
-      exitCode = 1;
+      exitCode = 2;
       current.didNotConnect = true;
-      current.wasProcessed = true;
+      assert(!closed.contains(current));
+      _updateEquivalents(current, open, closed);
+      closed.add(current);
       continue;
     }
+
     current.updateFromResponse(response);
     if (verbose) {
-      print("- ${current.statusCode}, ${current.contentType}");
+      print("- HTTP ${current.statusCode}, ${current.contentType}");
     }
+
+    // Process all destinations that cannot or shouldn't be parsed.
     if (current.statusCode != 200 ||
         !hosts.contains(current.finalUri.host) ||
-        !current.isHtmlMimeType) {
-      await response.drain();
-      current.wasProcessed = true;
-      updateOthers(destinations, current);
-      // TODO: update all others with same destination URL
+        !current.isHtmlMimeType /* TODO: add CSS, SVG/XML */) {
+      // Does not await for performance reasons.
+      response.drain();
+
+      assert(!closed.contains(current));
+      _updateEquivalents(current, open, closed);
+      closed.add(current);
       continue;
     }
 
@@ -99,15 +136,16 @@ Future<List<Link>> check(List<Uri> uris, Set<String> hosts,
     try {
       Converter<List<int>, String> decoder;
       if (current.contentType.charset == LATIN1.name) {
+        // Some sites still use LATIN-1 for performance reasons.
         decoder = LATIN1.decoder;
       } else {
         decoder = UTF8.decoder;
       }
       html = await response.transform(decoder).join();
     } on FormatException {
-        throw new UnsupportedError("We don't support any encoding other than "
-            "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
-            "'${current.contentType}' and couldn't be parsed by UTF8.");
+      throw new UnsupportedError("We don't support any encoding other than "
+          "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
+          "'${current.contentType}' and couldn't be parsed by UTF8.");
     }
 
     // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
@@ -117,128 +155,113 @@ Future<List<Link>> check(List<Uri> uris, Set<String> hosts,
     var doc = parse(html, generateSpans: true, sourceUrl: uri.toString());
 
     // Find parseable destinations
-    // TODO: add following: media, meta refreshes, forms, metadata
+    // TODO: add the following: media, meta refreshes, forms, metadata
     //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
     // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
     // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
 
-    var linkElements =
-        doc.querySelectorAll("a[href], area[href], iframe[src]");
-    List<Link> currentLinks = linkElements
-        .map((element) =>
-            extractLink(uri, element, ["href", "src"], destinations, true))
+    var linkElements = doc.querySelectorAll("a[href], area[href], iframe[src]");
+
+    /// TODO: inline, and add destinations to queue
+    List<Link> sourceLinks = linkElements
+        .map((element) => extractLink(
+            uri, element, const ["href", "src"], open, closed, true))
         .toList(growable: false);
 
     if (verbose)
-      print("- found ${currentLinks.length} links leading to "
-          "${currentLinks.map((link) => link.destination.uriWithoutFragment)
+      print("- found ${sourceLinks.length} links leading to "
+          "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
           .toSet().length} "
           "different URLs: "
-          "${currentLinks.map((link) => link.destination.uriWithoutFragment)
+          "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
           .toSet()}");
 
-    destinations.addAll(currentLinks.map((link) => link.destination));
-    links.addAll(currentLinks);
+    // TODO: Remove URIs that are not http/https
+
+    links.addAll(sourceLinks);
 
     // Find resources
     var resourceElements =
         doc.querySelectorAll("link[href], [src], object[data]");
     List<Link> currentResourceLinks = resourceElements
         .map((element) => extractLink(
-            uri, element, ["src", "href", "data"], destinations, false))
+            uri, element, const ["src", "href", "data"], open, closed, false))
         .toList(growable: false);
 
     // TODO: add srcset extractor (will create multiple links per element)
 
     if (verbose) print("- found ${currentResourceLinks.length} resources");
 
-    destinations.addAll(currentResourceLinks.map((link) => link.destination));
     links.addAll(currentResourceLinks);
 
     // TODO: take note of anchors on page, add it to current
 
-    current.wasProcessed = true;
-    updateOthers(destinations, current);
-  } while (destinations.where(_isUnprocessed).isNotEmpty);
+    assert(!closed.contains(current));
+    _updateEquivalents(current, open, closed);
+    closed.add(current);
+  }
 
   // TODO: (optionally) check anchors
-
-  // Get unparseable.
-  Set<Destination> resources = destinations
-      .where((destination) =>
-          !destination.wasTried &&
-          (isInternal(destination.uri) || shouldCheckExternal))
-      .toSet();
-  await checkDestinations(resources, client, verbose, cursor);
 
   client.close();
 
   return links.toList(growable: false);
 }
 
-/// Update all destinations that share the same uriWithoutFragment.
-void updateOthers(Set<Destination> destinations, Destination current) {
-  Iterable<Destination> equivalent = destinations.where((destination) =>
-      destination.uriWithoutFragment == current.uriWithoutFragment);
-  equivalent.forEach((Destination destination) {
-    destination.updateFrom(current);
-  });
-}
-
-Future<Null> checkDestinations(Iterable<Destination> destinations,
-    HttpClient client, bool verbose, Cursor cursor) async {
-  int resourcesCount = 0;
-  cursor.write("\nFetching ${destinations.length} resources: $resourcesCount");
-
-  // List of hosts that do not support HTTP HEAD requests.
-  Set<String> headIncompatible = new Set<String>();
-
-  // TODO: add hashmap with robots (don't redownload). Special case for localhost
-
-  var queue = new Queue<Destination>.from(destinations);
-  while (queue.isNotEmpty) {
-    // TODO: throttle?
-    var resource = queue.removeFirst();
-    Uri uri = resource.uriWithoutFragment;
-    if (verbose) {
-      print(uri);
-    } else {
-      cursor.moveLeft(resourcesCount.toString().length);
-      resourcesCount += 1;
-      cursor.write(resourcesCount.toString());
-    }
-    try {
-      HttpClientResponse response;
-      if (headIncompatible.contains(uri.host)) {
-        response = await _getUri(client, uri, response);
-      } else {
-        var request = await client.headUrl(uri);
-        response = await request.close();
-
-        if (response.statusCode == 405) {
-          headIncompatible.add(uri.host);
-          response = await _getUri(client, uri, response);
-        }
-      }
-      // Copy status code
-      destinations
-          .where((destination) => destination.uriWithoutFragment == uri)
-          .forEach((destination) => destination.updateFromResponse(response));
-      if (verbose) print(response.statusCode);
-      await response.drain();
-    } on HttpException {
-      resource.didNotConnect = true;
-    } on SocketException {
-      resource.didNotConnect = true;
-    } on HandshakeException {
-      resource.didNotConnect = true;
-    }
+void _updateEquivalents(
+    Destination current, Queue<Destination> open, Set<Destination> closed) {
+  List<Destination> equivalents = _getEquivalents(current, open).toList();
+  for (var other in equivalents) {
+    other.updateFrom(current);
+    open.remove(other);
+    assert(!closed.contains(other));
+    closed.add(other);
   }
 }
 
-Link extractLink(Uri uri, Element element, final List<String> attributes,
-    final Set<Destination> existingDestinations, bool parseable) {
-  var source = new Source(uri, element.sourceSpan, element.localName,
+/// Tries to fetch only by HTTP HEAD (instead of GET).
+///
+/// Some servers don't support this request, in which case they return HTTP
+/// status code 405. If that's the case, this function returns `null`.
+Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
+  var request = await client.headUrl(uri);
+  var response = await request.close();
+
+  if (response.statusCode == 405) {
+    // Does not await for performance reasons.
+    response.drain();
+    return null;
+  }
+  return response;
+}
+
+/// Returns all destinations that share the same
+/// [Destination.uriWithoutFragment] with [current].
+Iterable<Destination> _getEquivalents(
+        Destination current, Iterable<Destination> destinations) =>
+    destinations.where((destination) =>
+        destination.uriWithoutFragment == current.uriWithoutFragment);
+
+/// Takes a DOM element and extracts a link from it.
+///
+/// The provided [attributes] will be checked in sequence.
+///
+/// Setting [parseable] to true will create a link to a destination with
+/// [Destination.isSource] set to `true`. For example, links in <a href> are
+/// often parseable, links in <img src> often aren't.
+///
+/// Re-uses Destination from [open] and [closed] if it already exists.
+///
+/// Also adds new destination to [open] if it doesn't already exist.
+/// TODO: ^^^ fix this unexpected side effect
+Link extractLink(
+    Uri uri,
+    Element element,
+    final List<String> attributes,
+    final Queue<Destination> open,
+    final Iterable<Destination> closed,
+    bool parseable) {
+  var origin = new Origin(uri, element.sourceSpan, element.localName,
       element.text, element.outerHtml);
   String reference;
   for (var attributeName in attributes) {
@@ -249,43 +272,38 @@ Link extractLink(Uri uri, Element element, final List<String> attributes,
     throw new StateError("Element $element does not have any of the attributes "
         "$attributes");
   }
+
   // Valid URLs can be surrounded by spaces.
   reference = reference.trim();
+
   var destinationUri = uri.resolve(reference);
-  for (var existing in existingDestinations) {
+
+  for (var existing in open) {
     if (destinationUri == existing.uri) {
-      return new Link(source, existing);
+      return new Link(origin, existing);
     }
   }
-  Destination destination;
+
+  for (var existing in closed) {
+    if (destinationUri == existing.uri) {
+      return new Link(origin, existing);
+    }
+  }
+
+  Destination destination = new Destination(destinationUri);
   if (parseable) {
-    destination = new ParseableDestination(destinationUri);
+    destination.isSource = true;
+    open.addFirst(destination);
   } else {
-    destination = new Destination(destinationUri);
+    open.addLast(destination);
   }
-  existingDestinations.add(destination);
-  return new Link(source, destination);
+  return new Link(origin, destination);
 }
 
-Future<HttpClientResponse> _fetchParseable(
-    HttpClient client, Uri uri, ParseableDestination current) async {
-  HttpClientRequest request;
-  try {
-    request = await client.getUrl(uri);
-  } on HttpException {
-    return null;
-  } on SocketException {
-    return null;
-  } on HandshakeException {
-    return null;
-  }
+/// Fetches the given [uri] by HTTP GET and returns a [HttpClientResponse].
+Future<HttpClientResponse> _fetch(
+    HttpClient client, Uri uri, Destination current) async {
+  HttpClientRequest request = await client.getUrl(uri);
   var response = await request.close();
-  return response;
-}
-
-Future<HttpClientResponse> _getUri(
-    HttpClient client, Uri uri, HttpClientResponse response) async {
-  var request = await client.getUrl(uri);
-  response = await request.close();
   return response;
 }

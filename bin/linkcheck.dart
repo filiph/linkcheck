@@ -5,7 +5,7 @@ import 'package:args/args.dart';
 import 'package:linkcheck/linkcheck.dart';
 
 Future<Null> main(List<String> arguments) async {
-  final parser = new ArgParser()
+  final parser = new ArgParser(allowTrailingOptions: true)
     ..addFlag(helpFlag, abbr: 'h', negatable: false, help: "Prints usage.")
     ..addFlag(verboseFlag, abbr: 'v', negatable: false, help: "Verbose mode.")
     ..addOption(inputFlag,
@@ -49,6 +49,8 @@ Future<Null> main(List<String> arguments) async {
       return;
     }
   }
+
+  // TODO: sanitize and canonicalize URLs (localhost add http, :4000 add localhost)
 
   if (urls.isEmpty) {
     print("No URL given, checking $defaultUrl");

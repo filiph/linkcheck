@@ -1,10 +1,10 @@
 library linkcheck.link;
 
 import 'package:linkcheck/src/destination.dart';
-import 'package:linkcheck/src/source.dart';
+import 'package:linkcheck/src/origin.dart';
 
 class Link {
-  Source source;
+  Origin source;
   Destination destination;
 
   Link(this.source, this.destination);

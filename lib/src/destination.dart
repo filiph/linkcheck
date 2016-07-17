@@ -18,6 +18,16 @@ class Destination {
   /// Uri after all redirects.
   Uri finalUri;
 
+  bool isExternal = false;
+
+  /// True if this [Destination] is parseable and could contain links to
+  /// other destinations. For example, HTML and CSS files are sources. JPEGs
+  /// and
+  bool isSource = false;
+
+  /// Only for [isSource] == `true`.
+  Set<String> hashAnchors = new Set<String>();
+
   bool isInvalid = false;
   bool didNotConnect = false;
 
@@ -60,11 +70,11 @@ class Destination {
   void updateFrom(Destination other) {
     statusCode = other.statusCode;
     redirects = other.redirects;
-    finalUri = other.finalUri.removeFragment().replace(fragment: uri.fragment);
+    isExternal = other.isExternal;
+    finalUri =
+        other.finalUri?.removeFragment()?.replace(fragment: uri.fragment) ??
+            uri;
     contentType = other.contentType;
-    if (this is ParseableDestination && other is ParseableDestination) {
-      (this as ParseableDestination).wasProcessed = other.wasProcessed;
-    }
   }
 
   void updateFromResponse(HttpClientResponse response) {
@@ -73,12 +83,4 @@ class Destination {
     finalUri = redirects.isNotEmpty ? redirects.last.location : uri;
     contentType = response.headers.contentType;
   }
-}
-
-/// Destination that should be parsed.
-class ParseableDestination extends Destination {
-  Set<String> hashAnchors = new Set<String>();
-  bool wasProcessed = false;
-
-  ParseableDestination(Uri uri) : super(uri);
 }
