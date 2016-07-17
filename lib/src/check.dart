@@ -60,7 +60,7 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
 
   // TODO: have openExternal and open - precedence to openExternal (take more time) but only if we also parse internal sources in parallel
   while (open.isNotEmpty) {
-    // Get an unprocessed parseable file.
+    // Get an unprocessed file.
     Destination current = open.removeFirst();
     current.isExternal = isExternal(current.uri);
 
@@ -84,8 +84,7 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
     // Fetch the HTTP response
     HttpClientResponse response;
     try {
-      if (!current.isSource &&
-          !headIncompatible.contains(current.uri.host)) {
+      if (!current.isSource && !headIncompatible.contains(current.uri.host)) {
         response = await _fetchHead(client, uri);
         if (response == null) headIncompatible.add(current.uri.host);
       }
@@ -204,6 +203,10 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
   // TODO: (optionally) check anchors
 
   client.close();
+
+  assert(open.isEmpty);
+  assert(closed
+      .every((destination) => destination.wasTried || destination.isExternal));
 
   return links.toList(growable: false);
 }
