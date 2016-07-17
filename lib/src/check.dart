@@ -142,6 +142,7 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
       }
       html = await response.transform(decoder).join();
     } on FormatException {
+      // TODO: make warning instead, record in current, continue
       throw new UnsupportedError("We don't support any encoding other than "
           "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
           "'${current.contentType}' and couldn't be parsed by UTF8.");
@@ -161,7 +162,7 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
 
     var linkElements = doc.querySelectorAll("a[href], area[href], iframe[src]");
 
-    /// TODO: inline, and add destinations to queue
+    /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
     List<Link> sourceLinks = linkElements
         .map((element) => extractLink(
             uri, element, const ["href", "src"], open, closed, true))
@@ -205,8 +206,9 @@ Future<List<Link>> check(List<Uri> seeds, Set<String> hosts,
   client.close();
 
   assert(open.isEmpty);
-  assert(closed
-      .every((destination) => destination.wasTried || destination.isExternal));
+  assert(closed.every((destination) =>
+      destination.wasTried ||
+      (destination.isExternal && !shouldCheckExternal)));
 
   return links.toList(growable: false);
 }
