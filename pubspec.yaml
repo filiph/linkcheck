@@ -3,5 +3,6 @@ dependencies:
   args: ^0.13.4+2
   console: ^2.2.3
   html: ^0.13.0
+  stream_channel: ^1.5.0
 executables:
   linkcheck: linkcheck

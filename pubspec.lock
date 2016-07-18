@@ -7,6 +7,18 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.13.4+2"
+  async:
+    description:
+      name: async
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.11.0"
+  collection:
+    description:
+      name: collection
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.9.0"
   console:
     description:
       name: console
@@ -55,6 +67,18 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.3"
+  stack_trace:
+    description:
+      name: stack_trace
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.6.6"
+  stream_channel:
+    description:
+      name: stream_channel
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.5.0"
   utf:
     description:
       name: utf
@@ -67,4 +91,4 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.4.7"
-sdk: ">=1.9.0-dev <2.0.0"
+sdk: ">=1.14.0 <2.0.0"

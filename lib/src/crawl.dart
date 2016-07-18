@@ -12,6 +12,7 @@ import 'package:html/parser.dart';
 import 'destination.dart';
 import 'link.dart';
 import 'origin.dart';
+import 'worker/worker.dart';
 
 const threads = 4;
 
@@ -40,7 +41,7 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
 
   Set<Link> links = new Set<Link>();
 
-
+  Pool pool = new Pool(threads)..spawn();
 
   var client = new HttpClient();
 
@@ -97,6 +98,7 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
 
   // TODO: (optionally) check anchors
 
+  pool.close();
   client.close();
 
   assert(open.isEmpty);
