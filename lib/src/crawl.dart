@@ -13,6 +13,8 @@ import 'destination.dart';
 import 'link.dart';
 import 'origin.dart';
 
+const threads = 4;
+
 Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
     bool shouldCheckExternal, bool verbose) async {
   bool isExternal(Uri uri) => !hosts.contains(uri.host);
@@ -38,6 +40,8 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
 
   Set<Link> links = new Set<Link>();
 
+
+
   var client = new HttpClient();
 
   int count = 0;
@@ -46,7 +50,9 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
   }
 
   // TODO:
-  // - a checkDestination takes destination and returns it updated with optional links on top
+  // - --cache for creating a .linkcheck.cache file
+  // - hashmap with info on domains - allows HEAD, breaks connections, etc.
+  // - open+close has a hashmap (uriWithoutFragment => Destination) for faster checking
   // - paralellism: List<StreamChannel> isolates
   //   - listen to replies: either IDLE or results of a checkDestination
   //     - if IDLE and should quit => don't do anything
@@ -61,8 +67,14 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
   while (open.isNotEmpty) {
     // Get an unprocessed file.
     Destination current = open.removeFirst();
-    current.isExternal = isExternal(current.uri);
 
+    if (!Destination.supportedSchemes.contains(current.uri.scheme)) {
+      current.isUnsupportedScheme = true;
+      _updateEquivalents(current, open, closed);
+      continue;
+    }
+
+    current.isExternal = isExternal(current.uri);
     if (current.isExternal && !shouldCheckExternal) {
       _updateEquivalents(current, open, closed);
       continue;
@@ -79,7 +91,8 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
       cursor.write(count.toString());
     }
 
-    await _check(current, headIncompatible, client, closed, open, verbose, hosts, links);
+    await _check(
+        current, headIncompatible, client, closed, open, verbose, hosts, links);
   }
 
   // TODO: (optionally) check anchors
@@ -94,7 +107,15 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hosts,
   return links.toList(growable: false);
 }
 
-Future<Null> _check(Destination current, Set<String> headIncompatible, HttpClient client, Set<Destination> closed, Queue<Destination> open, bool verbose, Set<String> hosts, Set<Link> links) async {
+Future<Null> _check(
+    Destination current,
+    Set<String> headIncompatible,
+    HttpClient client,
+    Set<Destination> closed,
+    Queue<Destination> open,
+    bool verbose,
+    Set<String> hosts,
+    Set<Link> links) async {
   var uri = current.uriWithoutFragment;
 
   // Fetch the HTTP response
@@ -180,8 +201,8 @@ Future<Null> _check(Destination current, Set<String> headIncompatible, HttpClien
 
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
   List<Link> sourceLinks = linkElements
-      .map((element) => extractLink(
-          uri, element, const ["href", "src"], open, closed, true))
+      .map((element) =>
+          extractLink(uri, element, const ["href", "src"], open, closed, true))
       .toList(growable: false);
 
   if (verbose)
@@ -191,8 +212,6 @@ Future<Null> _check(Destination current, Set<String> headIncompatible, HttpClien
         "different URLs: "
         "${sourceLinks.map((link) => link.destination.uriWithoutFragment)
         .toSet()}");
-
-  // TODO: Remove URIs that are not http/https
 
   links.addAll(sourceLinks);
 

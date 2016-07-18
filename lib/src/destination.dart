@@ -31,6 +31,11 @@ class Destination {
   bool isInvalid = false;
   bool didNotConnect = false;
 
+  /// True if the destination URI isn't one of the [supportedSchemes].
+  bool isUnsupportedScheme = false;
+
+  static const List<String> supportedSchemes = const ["http", "https", "file"];
+
   Destination(Uri uri)
       : uri = uri,
         uriWithoutFragment = uri.removeFragment();
@@ -39,6 +44,8 @@ class Destination {
 
   /// Link that wasn't valid, didn't connect, or the [statusCode] was not
   /// HTTP 200 OK.
+  ///
+  /// Ignores URIs with unsupported scheme (like `mailto:`).
   bool get isBroken => statusCode != 200;
 
   bool get isHtmlMimeType => contentType.mimeType == ContentType.HTML.mimeType;
@@ -53,6 +60,7 @@ class Destination {
   String get statusDescription {
     if (isInvalid) return "invalid URL";
     if (didNotConnect) return "connection failed";
+    if (isUnsupportedScheme) return "scheme unsupported";
     if (!wasTried) return "wasn't tried";
     if (statusCode == 200) return "HTTP 200";
     if (isRedirected) {
@@ -62,13 +70,14 @@ class Destination {
     return "HTTP $statusCode";
   }
 
-  bool get wasTried => isInvalid || didNotConnect || statusCode != null;
+  bool get wasTried => didNotConnect || statusCode != null;
 
   bool operator ==(other) => other is Destination && other.uri == uri;
   String toString() => uri.toString();
 
   void updateFrom(Destination other) {
     statusCode = other.statusCode;
+    isUnsupportedScheme = other.isUnsupportedScheme;
     redirects = other.redirects;
     isExternal = other.isExternal;
     finalUri =
