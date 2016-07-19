@@ -73,7 +73,9 @@ class Destination {
     destination
       ..statusCode = map["statusCode"]
       ..contentType = contentType
-      ..redirects = [] // TODO
+      ..redirects = (map["redirects"] as List<Map<String, Object>>)
+          ?.map((obj) => new BasicRedirectInfo.fromMap(obj))
+          ?.toList()
       ..finalUrl = map["finalUrl"]
       ..isExternal = map["isExternal"]
       ..isSource = map["isSource"]
@@ -84,8 +86,8 @@ class Destination {
   }
 
   Destination.fromString(String url)
-      : url = url.contains("#") ? url.split("#").first : url,
-        _hashCode = url.hashCode {
+      : url = url.contains("#") ? url.split("#").first : url {
+    _hashCode = this.url.hashCode;
     if (url.contains("#")) {
       // Take everything after the first #
       String fragment = url.split("#").skip(1).join("#");
@@ -130,9 +132,15 @@ class Destination {
     return "HTTP $statusCode";
   }
 
+  void updateFragmentsFrom(Destination other) {
+    if (other.fragments.isEmpty) return;
+    fragments.addAll(other.fragments);
+  }
+
   Uri get uri => _uri ??= Uri.parse(url);
 
   bool get wasTried => didNotConnect || statusCode != null;
+
   bool operator ==(other) => other is Destination && other.hashCode == hashCode;
 
   Map<String, Object> toMap() => {
@@ -140,7 +148,7 @@ class Destination {
         "statusCode": statusCode,
         "primaryType": contentType?.primaryType,
         "subType": contentType?.subType,
-        "redirects": [], // TODO
+        "redirects": redirects?.map((info) => info.toMap())?.toList(),
         "finalUrl": finalUrl,
         "isExternal": isExternal,
         "isSource": isSource,
@@ -149,22 +157,9 @@ class Destination {
         "didNotConnect": didNotConnect
       };
 
-  String toString() => url;
-
-//  void updateFrom(Destination other) {
-//    isSource = other.isSource;
-//    statusCode = other.statusCode;
-//    didNotConnect = other.didNotConnect;
-//    isUnsupportedScheme = other.isUnsupportedScheme;
-//    redirects = other.redirects;
-//    isExternal = other.isExternal;
-//    isInvalid = other.isInvalid;
-//    hashAnchors = other.hashAnchors;
-//    finalUri =
-//        other.finalUri?.removeFragment()?.replace(fragment: uri.fragment) ??
-//            uri;
-//    contentType = other.contentType;
-//  }
+  String toString() => "$url${fragments.isEmpty
+      ? ''
+      : '#(' + fragments.join('|') + ')'}";
 
   void updateFromResult(DestinationResult result) {
     assert(url == result.url);

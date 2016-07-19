@@ -78,7 +78,6 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   // TODO:
   // - --cache for creating a .linkcheck.cache file
   // - hashmap with info on domains - allows HEAD, breaks connections, etc.
-  // - open+close has a hashmap (uriWithoutFragment => Destination) for faster checking
 
   var allDone = new Completer<Null>();
 
@@ -107,38 +106,31 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
 
     var newDestinations = new Set<Destination>();
 
-    // Dedupe destinations in links. Add their destinations to [newDestinations]
-    // if they haven't been seen before.
+    // Add links' destinations to [newDestinations] if they haven't been
+    // seen before.
     for (var link in result.links) {
-      var location = bin[link.destination.url];
-      if (location == null) {
+      if (bin[link.destination.url] == null) {
         // Completely new destination.
         assert(open.where((d) => d.url == link.destination.url).isEmpty);
         assert(
             openExternal.where((d) => d.url == link.destination.url).isEmpty);
         assert(inProgress.where((d) => d.url == link.destination.url).isEmpty);
         assert(closed.where((d) => d.url == link.destination.url).isEmpty);
-        newDestinations.add(link.destination);
-        continue;
-      }
 
-      Iterable<Destination> iterable;
-      switch (location) {
-        case Bin.open:
-          iterable = open;
-          break;
-        case Bin.openExternal:
-          iterable = openExternal;
-          break;
-        case Bin.inProgress:
-          iterable = inProgress;
-          break;
-        case Bin.closed:
-          iterable = closed;
-          break;
+        var alreadyOnCurrent = newDestinations.lookup(link.destination);
+        if (alreadyOnCurrent != null) {
+          if (verbose) {
+            print("- destination: ${link.destination} already "
+                "seen on this page");
+          }
+          alreadyOnCurrent.updateFragmentsFrom(link.destination);
+        } else {
+          if (verbose) {
+            print("- completely new destination: ${link.destination}");
+          }
+          newDestinations.add(link.destination);
+        }
       }
-      link.destination =
-          iterable.singleWhere((d) => d.url == link.destination.url);
     }
 
     links.addAll(result.links);
@@ -151,6 +143,9 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
         // Don't check unsupported schemes (like mailto:).
         closed.add(destination);
         bin[destination.url] = Bin.closed;
+        if (verbose) {
+          print("Will not be checking: $destination - unsupported scheme");
+        }
         continue;
       }
 
@@ -163,6 +158,9 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
           // Don't check external destinations.
           closed.add(destination);
           bin[destination.url] = Bin.closed;
+          if (verbose) {
+            print("Will not be checking: $destination - external");
+          }
           continue;
         }
       }
@@ -217,6 +215,15 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
 
   await allDone.future;
 
+  // Fix links (dedupe destinations).
+  for (var link in links) {
+    assert(bin[link.destination.url] == Bin.closed);
+
+    var canonical = closed.singleWhere((d) => d.url == link.destination.url);
+    canonical.updateFragmentsFrom(link.destination);
+    link.destination = canonical;
+  }
+
   // TODO: (optionally) check anchors
 
   pool.close();
@@ -232,6 +239,7 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
 //  }
 
   if (verbose) {
+    print("Broken links");
     links.where((link) => link.destination.isBroken).forEach(print);
     print("All was tried");
     print(links.every((link) => link.destination.wasTried));
