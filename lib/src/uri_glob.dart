@@ -22,6 +22,7 @@ class UriGlob {
   bool matches(Uri uri) {
     if (uri.authority != authority) return false;
     var path = uri.path;
+    // Fix http://example.com into http://example.com/.
     if (path.isEmpty) path = "/";
     return glob.matches(path);
   }

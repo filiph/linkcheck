@@ -51,7 +51,6 @@ Future<Null> main(List<String> arguments) async {
     }
   }
 
-  // TODO: sanitize and canonicalize URLs (localhost add http, :4000 add localhost)
   urls = urls.map(_sanitizeSeedUrl).toList();
 
   if (urls.isEmpty) {

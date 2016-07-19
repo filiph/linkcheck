@@ -11,7 +11,7 @@ import 'uri_glob.dart';
 import 'worker/worker.dart';
 
 const threads =
-    1; // TODO: add threads when there are non-localhost sites: 8 non-local is best, 4 local is best
+    8; // TODO: add threads when there are non-localhost sites: 8 non-local is best, 4 local is best
 
 /// Specifies where a URI (without fragment) can be found. Used by a hashmap
 /// in [crawl].

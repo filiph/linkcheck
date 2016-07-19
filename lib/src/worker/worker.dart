@@ -147,15 +147,15 @@ Future<FetchResults> fetch(
 
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
   List<Link> links = linkElements
-      .map((element) => extractLink(
-          uri, element, const ["href", "src"], currentDestinations, true))
+      .map((element) => extractLink(current.finalUri, element,
+          const ["href", "src"], currentDestinations, true))
       .toList();
 
   // Find resources
   var resourceElements =
       doc.querySelectorAll("link[href], [src], object[data]");
   Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
-      extractLink(uri, element, const ["src", "href", "data"],
+      extractLink(current.finalUri, element, const ["src", "href", "data"],
           currentDestinations, false));
 
   links.addAll(currentResourceLinks);

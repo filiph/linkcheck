@@ -168,7 +168,7 @@ class Destination {
 
   void updateFromResult(DestinationResult result) {
     assert(url == result.url);
-    finalUrl = result.url;
+    finalUrl = result.finalUrl;
     statusCode = result.statusCode;
     contentType = result.primaryType == null
         ? null
@@ -230,7 +230,14 @@ class DestinationResult {
     redirects = response.redirects
         .map((info) => new BasicRedirectInfo.from(info))
         .toList();
-    finalUrl = redirects.isNotEmpty ? redirects.last.url : url;
+    if (redirects.isEmpty) {
+      finalUrl = url;
+    } else {
+      finalUrl = redirects.fold(
+          Uri.parse(url),
+          (Uri current, BasicRedirectInfo redirect) =>
+              current.resolve(redirect.url)).toString();
+    }
     primaryType = response.headers.contentType.primaryType;
     subType = response.headers.contentType.subType;
   }
