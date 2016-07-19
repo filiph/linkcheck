@@ -38,7 +38,7 @@ Future<Null> main(List<String> arguments) async {
   bool shouldCheckExternal = argResults[externalFlag];
   String inputFile = argResults[inputFlag];
 
-  final List<String> urls = argResults.rest.toList();
+  List<String> urls = argResults.rest.toList();
 
   if (inputFile != null) {
     var file = new File(inputFile);
@@ -52,6 +52,7 @@ Future<Null> main(List<String> arguments) async {
   }
 
   // TODO: sanitize and canonicalize URLs (localhost add http, :4000 add localhost)
+  urls = urls.map(_sanitizeSeedUrl).toList();
 
   if (urls.isEmpty) {
     print("No URL given, checking $defaultUrl");
@@ -97,3 +98,20 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const verboseFlag = "verbose";
+
+final _portOnlyRegExp = new RegExp(r"^:\d+$");
+
+/// Takes input and makes it into a URL.
+String _sanitizeSeedUrl(String url) {
+  url = url.trim();
+  if (_portOnlyRegExp.hasMatch(url)) {
+    // From :4000 to http://localhost:4000/.
+    url = "http://localhost$url/";
+  }
+
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = "http://$url";
+  }
+
+  return url;
+}

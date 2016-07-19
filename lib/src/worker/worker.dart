@@ -65,7 +65,8 @@ Link extractLink(Uri uri, Element element, final List<String> attributes,
 
 Future<FetchResults> fetch(
     Destination current, HttpClient client, FetchOptions options) async {
-  var uri = current.uriWithoutFragment;
+  DestinationResult checked = new DestinationResult.fromDestination(current);
+  var uri = current.uri;
 
   options.info(uri.toString());
 
@@ -77,6 +78,7 @@ Future<FetchResults> fetch(
       response = await _fetchHead(client, uri);
       if (response == null) {
         options.headIncompatible.add(current.uri.host);
+        // TODO: let main isolate know (options.addHeadIncompatible)
       }
     }
 
@@ -96,17 +98,18 @@ Future<FetchResults> fetch(
     // TODO: abort when we encounter X of these in a row
     //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
     //          "started the localhost server?");
-    current.didNotConnect = true;
-    return new FetchResults(current, null);
+    checked.didNotConnect = true;
+    return new FetchResults(checked, null);
   }
 
-  current.updateFromResponse(response);
+  checked.updateFromResponse(response);
+  current.updateFromResult(checked);
 
   // Process all destinations that cannot or shouldn't be parsed.
   if (current.statusCode != 200 ||
       !options.matchesAsInternal(current.finalUri) ||
       !current.isHtmlMimeType /* TODO: add CSS, SVG/XML */) {
-    return new FetchResults(current, null);
+    return new FetchResults(checked, null);
   }
 
   String html;
@@ -161,7 +164,7 @@ Future<FetchResults> fetch(
 
   // TODO: take note of anchors on page, add it to current
 
-  return new FetchResults(current, links);
+  return new FetchResults(checked, links);
 }
 
 /// The entrypoint for the worker isolate.
@@ -254,13 +257,14 @@ class FetchOptions {
 }
 
 class FetchResults {
-  final Destination checked;
+  final DestinationResult checked;
   final List<Link> links;
   FetchResults(this.checked, this.links);
 
   FetchResults.fromMap(Map<String, Object> map)
       : this(
-            new Destination.fromMap(map["checked"] as Map<String, Object>),
+            new DestinationResult.fromMap(
+                map["checked"] as Map<String, Object>),
             new List<Link>.from((map["links"] as List<Map>).map(
                 (serialization) =>
                     new Link.fromMap(serialization as Map<String, Object>))));
@@ -278,8 +282,6 @@ class Pool {
   List<Worker> _workers;
 
   final Set<String> _hostGlobs;
-
-  final Set<Destination> inProgress = new Set<Destination>();
 
   StreamController<FetchResults> _fetchResultsSink =
       new StreamController<FetchResults>();
@@ -300,8 +302,7 @@ class Pool {
   void check(Destination destination) {
     var worker = pickWorker();
     worker.sink.add({verbKey: checkVerb, dataKey: destination.toMap()});
-    worker.destinationsToCheck.add(destination);
-    inProgress.add(destination);
+    worker.urlsToCheck.add(destination.url);
   }
 
   /// Sends host globs (e.g. http://example.com/**) to all the workers.
@@ -328,8 +329,7 @@ class Pool {
               var result = new FetchResults.fromMap(
                   message[dataKey] as Map<String, Object>);
               _fetchResultsSink.add(result);
-              worker.destinationsToCheck.remove(result.checked);
-              inProgress.remove(result.checked);
+              worker.urlsToCheck.remove(result.checked.url);
               return;
             case infoFromWorkerVerb:
               _messagesSink.add(message[dataKey]);
@@ -360,8 +360,8 @@ class Worker {
   String name;
 
   /// TODO: use to find out which destinations to re-check when a worker crashes
-  final Set<Destination> destinationsToCheck = new Set<Destination>();
-  bool get idle => destinationsToCheck.isEmpty;
+  final Set<String> urlsToCheck = new Set<String>();
+  bool get idle => urlsToCheck.isEmpty;
 
   StreamSink<Map> get sink => _sink;
 

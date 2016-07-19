@@ -2,13 +2,32 @@ library linkcheck.destination;
 
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
+class BasicRedirectInfo {
+  String url;
+  int statusCode;
+
+  BasicRedirectInfo.from(RedirectInfo info) {
+    url = info.location.toString();
+    statusCode = info.statusCode;
+  }
+
+  BasicRedirectInfo.fromMap(Map<String, Object> map)
+      : url = map["url"],
+        statusCode = map["statusCode"];
+
+  Map<String, Object> toMap() => {"url": url, "statusCode": statusCode};
+}
+
 class Destination {
   static const List<String> supportedSchemes = const ["http", "https", "file"];
 
-  /// The uri as specified by source file.
-  final Uri uri;
+  final String url;
 
-  final Uri uriWithoutFragment;
+  /// The uri as specified by source file, without the fragment.
+  Uri _uri;
+
+  /// The fragments referenced by origins.
+  final Set<String> fragments = new Set<String>();
 
   /// The HTTP status code returned.
   int statusCode;
@@ -16,20 +35,23 @@ class Destination {
   /// MimeType of the response.
   ContentType contentType;
 
-  List<RedirectInfo> redirects;
+  List<BasicRedirectInfo> redirects;
 
-  /// Uri after all redirects.
-  Uri finalUri;
+  /// Url after all redirects.
+  String finalUrl;
 
-  bool isExternal = false;
+  bool isExternal;
 
   /// True if this [Destination] is parseable and could contain links to
   /// other destinations. For example, HTML and CSS files are sources. JPEGs
   /// and
   bool isSource = false;
 
+  /// Set of anchors on the page.
+  ///
   /// Only for [isSource] == `true`.
-  Set<String> hashAnchors = new Set<String>();
+  List<String> anchors;
+
   bool isInvalid = false;
 
   bool didNotConnect = false;
@@ -37,14 +59,17 @@ class Destination {
   /// True if the destination URI isn't one of the [supportedSchemes].
   bool isUnsupportedScheme = false;
 
+  int _hashCode;
+
   Destination(Uri uri)
-      : uri = uri,
-        uriWithoutFragment = uri.removeFragment(),
-        _hashCode = uri.hashCode;
+      : url = uri.removeFragment().toString(),
+        _uri = uri.removeFragment() {
+    _hashCode = url.hashCode;
+    if (uri.fragment.isNotEmpty) fragments.add(uri.fragment);
+  }
 
   factory Destination.fromMap(Map<String, Object> map) {
-    var uri = Uri.parse(map["uri"]);
-    var destination = new Destination(uri);
+    var destination = new Destination.fromString(map["url"]);
     var contentType = map["primaryType"] == null
         ? null
         : new ContentType(map["primaryType"], map["subType"]);
@@ -52,17 +77,29 @@ class Destination {
       ..statusCode = map["statusCode"]
       ..contentType = contentType
       ..redirects = [] // TODO
-      ..finalUri = Uri.parse(map["finalUri"])
+      ..finalUrl = map["finalUrl"]
       ..isExternal = map["isExternal"]
       ..isSource = map["isSource"]
-      ..hashAnchors = new Set.from(map["hashAnchors"])
+      ..anchors = map["anchors"] as List<String>
       ..isInvalid = map["isInvalid"]
       ..didNotConnect = map["didNotConnect"]
       ..isUnsupportedScheme = map["isUnsupportedScheme"];
     return destination;
   }
 
-  final int _hashCode;
+  Destination.fromString(String url)
+      : url = url.contains("#") ? url.split("#").first : url,
+        _hashCode = url.hashCode {
+    if (url.contains("#")) {
+      // Take everything after the first #
+      String fragment = url.split("#").skip(1).join("#");
+      fragments.add(fragment);
+    }
+  }
+
+  /// Parsed [finalUrl].
+  Uri get finalUri => Uri.parse(finalUrl);
+
   int get hashCode => _hashCode;
 
   /// Link that wasn't valid, didn't connect, or the [statusCode] was not
@@ -70,7 +107,6 @@ class Destination {
   ///
   /// Ignores URIs with unsupported scheme (like `mailto:`).
   bool get isBroken => statusCode != 200;
-
   bool get isHtmlMimeType => contentType.mimeType == ContentType.HTML.mimeType;
 
   bool get isPermanentlyRedirected =>
@@ -93,44 +129,109 @@ class Destination {
     return "HTTP $statusCode";
   }
 
+  Uri get uri => _uri ??= Uri.parse(url);
+
   bool get wasTried => didNotConnect || statusCode != null;
   bool operator ==(other) => other is Destination && other.hashCode == hashCode;
 
   Map<String, Object> toMap() => {
-        "uri": uri.toString(),
+        "url": url,
         "statusCode": statusCode,
         "primaryType": contentType?.primaryType,
         "subType": contentType?.subType,
         "redirects": [], // TODO
-        "finalUri": finalUri.toString(),
+        "finalUrl": finalUrl,
         "isExternal": isExternal,
         "isSource": isSource,
-        "hashAnchors": hashAnchors.toList(growable: false),
+        "anchors": anchors,
         "isInvalid": isInvalid,
         "didNotConnect": didNotConnect,
         "isUnsupportedScheme": isUnsupportedScheme
       };
 
-  String toString() => uri.toString();
+  String toString() => url;
 
-  void updateFrom(Destination other) {
-    isSource = other.isSource;
-    statusCode = other.statusCode;
-    didNotConnect = other.didNotConnect;
-    isUnsupportedScheme = other.isUnsupportedScheme;
-    redirects = other.redirects;
-    isExternal = other.isExternal;
-    isInvalid = other.isInvalid;
-    finalUri =
-        other.finalUri?.removeFragment()?.replace(fragment: uri.fragment) ??
-            uri;
-    contentType = other.contentType;
+//  void updateFrom(Destination other) {
+//    isSource = other.isSource;
+//    statusCode = other.statusCode;
+//    didNotConnect = other.didNotConnect;
+//    isUnsupportedScheme = other.isUnsupportedScheme;
+//    redirects = other.redirects;
+//    isExternal = other.isExternal;
+//    isInvalid = other.isInvalid;
+//    hashAnchors = other.hashAnchors;
+//    finalUri =
+//        other.finalUri?.removeFragment()?.replace(fragment: uri.fragment) ??
+//            uri;
+//    contentType = other.contentType;
+//  }
+
+  void updateFromResult(DestinationResult result) {
+    assert(url == result.url);
+    finalUrl = result.url;
+    statusCode = result.statusCode;
+    contentType = result.primaryType == null
+        ? null
+        : new ContentType(result.primaryType, result.subType);
+    redirects = result.redirects;
+    isSource = result.isSource;
+    anchors = result.anchors;
+    didNotConnect = result.didNotConnect;
+    isUnsupportedScheme = result.isUnsupportedScheme;
   }
+}
+
+/// Data about destination coming from a fetch.
+class DestinationResult {
+  String url;
+  String finalUrl;
+  int statusCode;
+  String primaryType;
+  String subType;
+  List<BasicRedirectInfo> redirects;
+  bool isSource = false;
+  List<String> anchors;
+  bool didNotConnect = false;
+  bool isUnsupportedScheme = false;
+
+  DestinationResult.fromDestination(Destination destination)
+      : url = destination.url,
+        isSource = destination.isSource;
+
+  DestinationResult.fromMap(Map<String, Object> map)
+      : url = map["url"],
+        finalUrl = map["finalUrl"],
+        statusCode = map["statusCode"],
+        primaryType = map["primaryType"],
+        subType = map["subType"],
+        redirects = (map["redirects"] as List<Map<String, Object>>)
+            .map((obj) => new BasicRedirectInfo.fromMap(obj))
+            .toList(),
+        isSource = map["isSource"],
+        anchors = map["anchors"] as List<String>,
+        didNotConnect = map["didNotConnect"],
+        isUnsupportedScheme = map["isUnsupportedScheme"];
+
+  Map<String, Object> toMap() => {
+        "url": url,
+        "finalUrl": finalUrl,
+        "statusCode": statusCode,
+        "primaryType": primaryType,
+        "subType": subType,
+        "redirects": redirects.map((info) => info.toMap()).toList(),
+        "isSource": isSource,
+        "anchors": anchors,
+        "didNotConnect": didNotConnect,
+        "isUnsupportedScheme": isUnsupportedScheme
+      };
 
   void updateFromResponse(HttpClientResponse response) {
     statusCode = response.statusCode;
-    redirects = response.redirects;
-    finalUri = redirects.isNotEmpty ? redirects.last.location : uri;
-    contentType = response.headers.contentType;
+    redirects = response.redirects
+        .map((info) => new BasicRedirectInfo.from(info))
+        .toList();
+    finalUrl = redirects.isNotEmpty ? redirects.last.url : url;
+    primaryType = response.headers.contentType.primaryType;
+    subType = response.headers.contentType.subType;
   }
 }

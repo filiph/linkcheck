@@ -24,10 +24,10 @@ void reportForWriters(List<Link> broken) {
           "(${link.destination.statusDescription})");
       if (link.destination.isRedirected) {
         print("  - redirect path:");
-        Uri current = link.destination.uri;
+        String current = link.destination.url;
         for (var redirect in link.destination.redirects) {
           print("    - $current (${redirect.statusCode})");
-          current = redirect.location;
+          current = redirect.url;
         }
         print("    - $current (${link.destination.statusCode})");
       }

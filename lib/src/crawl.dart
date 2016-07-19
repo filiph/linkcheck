@@ -2,7 +2,6 @@ library linkcheck.check;
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:io' hide Link;
 
 import 'package:console/console.dart';
 
@@ -11,7 +10,12 @@ import 'link.dart';
 import 'uri_glob.dart';
 import 'worker/worker.dart';
 
-const threads = 4;
+const threads =
+    1; // TODO: add threads when there are non-localhost sites: 8 non-local is best, 4 local is best
+
+/// Specifies where a URI (without fragment) can be found. Used by a hashmap
+/// in [crawl].
+enum Bin { open, openExternal, inProgress, closed }
 
 Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
     bool shouldCheckExternal, bool verbose) async {
@@ -25,17 +29,25 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
 
   List<UriGlob> uriGlobs = hostGlobs.map((glob) => new UriGlob(glob)).toList();
 
+  // Maps from URLs (without fragment) to where their corresponding destination
+  // lives.
+  Map<String, Bin> bin = new Map<String, Bin>();
+
   // The queue of destinations that haven't been tried yet. Destinations in
   // the front of the queue take precedence.
-  Queue<Destination> open = new Queue<Destination>.from(
-      seeds.map((uri) => new Destination(uri)..isSource = true));
+  Queue<Destination> open =
+      new Queue<Destination>.from(seeds.map((uri) => new Destination(uri)
+        ..isSource = true
+        ..isExternal = false));
+  open.forEach((destination) => bin[destination.url] = Bin.open);
+
+  // Queue for the external destinations.
+  Queue<Destination> openExternal = new Queue<Destination>();
+
+  Set<Destination> inProgress = new Set<Destination>();
 
   // The set of destinations that have been tried.
   Set<Destination> closed = new Set<Destination>();
-
-  // Set of destinations with the same uriWithoutFragment as any destination in
-  // [open] or [closed]. No need to fetch them, too.
-  Set<Destination> duplicates = new Set<Destination>();
 
   // List of hosts that do not support HTTP HEAD requests.
   Set<String> headIncompatible = new Set<String>();
@@ -60,82 +72,109 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   var allDone = new Completer<Null>();
 
   pool.fetchResults.listen((FetchResults result) {
+    assert(bin[result.checked.url] == Bin.inProgress);
+    var checked =
+        inProgress.singleWhere((dest) => dest.url == result.checked.url);
+    inProgress.remove(checked);
+    checked.updateFromResult(result.checked);
+
     if (verbose) {
-      print("Done checking: ${result.checked}");
+      count += 1;
+      print("Done checking: $checked (${checked.statusDescription}) "
+          "=> ${result.links.length} links");
+      if (checked.isBroken) {
+        print("- BROKEN");
+      }
     } else {
       cursor.moveLeft(count.toString().length);
       count += 1;
       cursor.write(count.toString());
     }
-    closed.add(result.checked);
-    _updateEquivalents(result.checked, open, closed);
 
+    closed.add(checked);
+    bin[checked.url] = Bin.closed;
+
+    var newDestinations = new Set<Destination>();
+
+    // Dedupe destinations in links. Add their destinations to [newDestinations]
+    // if they haven't been seen before.
     for (var link in result.links) {
-      // Dedupe destinations.
-      for (var destination in closed) {
-        if (link.destination == destination) {
-          link.destination = destination;
-          break;
-        }
+      var location = bin[link.destination.url];
+      if (location == null) {
+        // Completely new destination.
+        assert(open.where((d) => d.url == link.destination.url).isEmpty);
+        assert(
+            openExternal.where((d) => d.url == link.destination.url).isEmpty);
+        assert(inProgress.where((d) => d.url == link.destination.url).isEmpty);
+        assert(closed.where((d) => d.url == link.destination.url).isEmpty);
+        newDestinations.add(link.destination);
+        continue;
       }
-      // TODO: don't run if already deduped in closed (destination can only be in closed OR in open, never both)
-      for (var destination in open) {
-        if (link.destination == destination) {
-          link.destination = destination;
+
+      Iterable<Destination> iterable;
+      switch (location) {
+        case Bin.open:
+          iterable = open;
           break;
-        }
-      }
-      for (var destination in pool.inProgress) {
-        if (link.destination == destination) {
-          link.destination = destination;
+        case Bin.openExternal:
+          iterable = openExternal;
           break;
-        }
-      }
-      for (var destination in duplicates) {
-        if (link.destination == destination) {
-          link.destination = destination;
+        case Bin.inProgress:
+          iterable = inProgress;
           break;
-        }
+        case Bin.closed:
+          iterable = closed;
+          break;
       }
+      link.destination =
+          iterable.singleWhere((d) => d.url == link.destination.url);
     }
+
     links.addAll(result.links);
-    var destinations = result.links.map((link) => link.destination).toSet();
-    for (var destination in destinations) {
+
+    for (var destination in newDestinations) {
       destination.isExternal =
           !uriGlobs.any((glob) => glob.matches(destination.uri));
 
-      if (!closed.contains(destination) &&
-          !pool.inProgress.contains(destination) &&
-          !open.contains(destination)) {
-        if (!shouldCheckExternal && destination.isExternal) {
+      if (destination.isExternal) {
+        if (!shouldCheckExternal) {
           // Don't check external destinations.
           closed.add(destination);
+          bin[destination.url] = Bin.closed;
           continue;
-        }
-
-        if (closed.any((other) =>
-                other.uriWithoutFragment == destination.uriWithoutFragment) ||
-            pool.inProgress.any((other) =>
-                other.uriWithoutFragment == destination.uriWithoutFragment) ||
-            open.any((other) =>
-                other.uriWithoutFragment == destination.uriWithoutFragment)) {
-          duplicates.add(destination);
-          continue;
-        }
-
-        if (destination.isSource) {
-          open.addFirst(destination);
         } else {
-          open.addLast(destination);
+          openExternal.add(destination);
+          bin[destination.url] = Bin.openExternal;
+          continue;
         }
+      }
+
+      if (destination.isSource) {
+        open.addFirst(destination);
+        bin[destination.url] = Bin.open;
+      } else {
+        open.addLast(destination);
+        bin[destination.url] = Bin.open;
       }
     }
 
-    while (open.isNotEmpty && !pool.allWorking) {
+    while ((open.isNotEmpty || openExternal.isNotEmpty) && !pool.allWorking) {
       if (verbose) {
         print("About to add: ${open.first} to ${pool.pickWorker()}");
       }
-      pool.check(open.removeFirst());
+      Destination destination;
+      if (openExternal.isEmpty) {
+        destination = open.removeFirst();
+      } else if (open.isEmpty) {
+        destination = openExternal.removeFirst();
+      } else {
+        // Alternate between internal and external.
+        destination =
+            count % 2 == 0 ? open.removeFirst() : openExternal.removeFirst();
+      }
+      pool.check(destination);
+      inProgress.add(destination);
+      bin[destination.url] = Bin.inProgress;
     }
 
     if (open.isEmpty && pool.allIdle) {
@@ -154,6 +193,8 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   while (open.isNotEmpty && !pool.allWorking) {
     var seedDestination = open.removeFirst();
     pool.check(seedDestination);
+    inProgress.add(seedDestination);
+    bin[seedDestination.url] = Bin.inProgress;
   }
 
   await allDone.future;
@@ -167,29 +208,33 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
       destination.wasTried ||
       (destination.isExternal && !shouldCheckExternal)));
 
-  // Re-add duplicates.
-  duplicates.forEach((duplicate) => duplicate.updateFrom(closed.singleWhere(
-      (other) => other.uriWithoutFragment == duplicate.uriWithoutFragment)));
-  closed.addAll(duplicates);
+//  for (var d in closed.where((d) => d.isSource && !d.isExternal).map((dest)=> dest.uriWithoutFragment).toSet()) {
+//    print(d);
+//  }
 
-  // TODO: return also closed?
+  if (verbose) {
+    links.where((link) => link.destination.isBroken).forEach(print);
+    print("All was tried");
+    print(links.every((link) => link.destination.wasTried));
+  }
+
   return links.toList(growable: false);
 }
 
-void _updateEquivalents(
-    Destination current, Queue<Destination> open, Set<Destination> closed) {
-  List<Destination> equivalents = _getEquivalents(current, open).toList();
-  for (var other in equivalents) {
-    other.updateFrom(current);
-    open.remove(other);
-    closed.add(other);
-  }
-}
-
-/// Returns all destinations that share the same
-/// [Destination.uriWithoutFragment] with [current].
-Iterable<Destination> _getEquivalents(
-        Destination current, Iterable<Destination> destinations) =>
-    destinations.where((destination) =>
-        destination.uriWithoutFragment == current.uriWithoutFragment &&
-        destination != current);
+//void _updateEquivalents(
+//    Destination current, Queue<Destination> open, Set<Destination> closed) {
+//  List<Destination> equivalents = _getEquivalents(current, open).toList();
+//  for (var other in equivalents) {
+//    other.updateFrom(current);
+//    open.remove(other);
+//    closed.add(other);
+//  }
+//}
+//
+///// Returns all destinations that share the same
+///// [Destination.uriWithoutFragment] with [current].
+//Iterable<Destination> _getEquivalents(
+//        Destination current, Iterable<Destination> destinations) =>
+//    destinations.where((destination) =>
+//        destination.uriWithoutFragment == current.uriWithoutFragment &&
+//        destination != current);
