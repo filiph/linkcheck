@@ -39,7 +39,8 @@ class Destination {
 
   Destination(Uri uri)
       : uri = uri,
-        uriWithoutFragment = uri.removeFragment();
+        uriWithoutFragment = uri.removeFragment(),
+        _hashCode = uri.hashCode;
 
   factory Destination.fromMap(Map<String, Object> map) {
     var uri = Uri.parse(map["uri"]);
@@ -61,7 +62,8 @@ class Destination {
     return destination;
   }
 
-  int get hashCode => uri.hashCode;
+  final int _hashCode;
+  int get hashCode => _hashCode;
 
   /// Link that wasn't valid, didn't connect, or the [statusCode] was not
   /// HTTP 200 OK.
@@ -92,7 +94,7 @@ class Destination {
   }
 
   bool get wasTried => didNotConnect || statusCode != null;
-  bool operator ==(other) => other is Destination && other.uri == uri;
+  bool operator ==(other) => other is Destination && other.hashCode == hashCode;
 
   Map<String, Object> toMap() => {
         "uri": uri.toString(),
