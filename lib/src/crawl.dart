@@ -10,8 +10,11 @@ import 'link.dart';
 import 'uri_glob.dart';
 import 'worker/worker.dart';
 
-const threads =
-    8; // TODO: add threads when there are non-localhost sites: 8 non-local is best, 4 local is best
+/// Number of isolates to create by default.
+const defaultThreads = 8;
+
+/// Number of isolates to create when all we check are localhost sources.
+const localhostOnlyThreads = 4;
 
 /// Specifies where a URI (without fragment) can be found. Used by a hashmap
 /// in [crawl].
@@ -55,6 +58,14 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   // TODO: add hashmap with robots. Special case for localhost
 
   Set<Link> links = new Set<Link>();
+
+  int threads;
+  if (shouldCheckExternal || seeds.any((seed) => seed.host != 'localhost')) {
+    threads = defaultThreads;
+  } else {
+    threads = localhostOnlyThreads;
+  }
+  if (verbose) print("Using $threads threads.");
 
   Pool pool = new Pool(threads, hostGlobs);
   await pool.spawn();
@@ -136,15 +147,22 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
       destination.isExternal =
           !uriGlobs.any((glob) => glob.matches(destination.uri));
 
+      if (destination.isUnsupportedScheme) {
+        // Don't check unsupported schemes (like mailto:).
+        closed.add(destination);
+        bin[destination.url] = Bin.closed;
+        continue;
+      }
+
       if (destination.isExternal) {
-        if (!shouldCheckExternal) {
+        if (shouldCheckExternal) {
+          openExternal.add(destination);
+          bin[destination.url] = Bin.openExternal;
+          continue;
+        } else {
           // Don't check external destinations.
           closed.add(destination);
           bin[destination.url] = Bin.closed;
-          continue;
-        } else {
-          openExternal.add(destination);
-          bin[destination.url] = Bin.openExternal;
           continue;
         }
       }
@@ -159,9 +177,6 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
     }
 
     while ((open.isNotEmpty || openExternal.isNotEmpty) && !pool.allWorking) {
-      if (verbose) {
-        print("About to add: ${open.first} to ${pool.pickWorker()}");
-      }
       Destination destination;
       if (openExternal.isEmpty) {
         destination = open.removeFirst();
@@ -171,6 +186,9 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
         // Alternate between internal and external.
         destination =
             count % 2 == 0 ? open.removeFirst() : openExternal.removeFirst();
+      }
+      if (verbose) {
+        print("About to add: $destination to ${pool.pickWorker()}");
       }
       pool.check(destination);
       inProgress.add(destination);
@@ -206,7 +224,8 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   assert(open.isEmpty);
   assert(closed.every((destination) =>
       destination.wasTried ||
-      (destination.isExternal && !shouldCheckExternal)));
+      (destination.isExternal && !shouldCheckExternal) ||
+      destination.isUnsupportedScheme));
 
 //  for (var d in closed.where((d) => d.isSource && !d.isExternal).map((dest)=> dest.uriWithoutFragment).toSet()) {
 //    print(d);

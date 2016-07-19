@@ -56,9 +56,6 @@ class Destination {
 
   bool didNotConnect = false;
 
-  /// True if the destination URI isn't one of the [supportedSchemes].
-  bool isUnsupportedScheme = false;
-
   int _hashCode;
 
   Destination(Uri uri)
@@ -82,8 +79,7 @@ class Destination {
       ..isSource = map["isSource"]
       ..anchors = map["anchors"] as List<String>
       ..isInvalid = map["isInvalid"]
-      ..didNotConnect = map["didNotConnect"]
-      ..isUnsupportedScheme = map["isUnsupportedScheme"];
+      ..didNotConnect = map["didNotConnect"];
     return destination;
   }
 
@@ -97,8 +93,10 @@ class Destination {
     }
   }
 
+  Uri _finalUri;
+
   /// Parsed [finalUrl].
-  Uri get finalUri => Uri.parse(finalUrl);
+  Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
 
   int get hashCode => _hashCode;
 
@@ -107,14 +105,17 @@ class Destination {
   ///
   /// Ignores URIs with unsupported scheme (like `mailto:`).
   bool get isBroken => statusCode != 200;
-  bool get isHtmlMimeType => contentType.mimeType == ContentType.HTML.mimeType;
 
+  bool get isHtmlMimeType => contentType.mimeType == ContentType.HTML.mimeType;
   bool get isPermanentlyRedirected =>
       redirects != null &&
       redirects.isNotEmpty &&
       redirects.first.statusCode == 301;
 
   bool get isRedirected => redirects != null && redirects.isNotEmpty;
+
+  /// True if the destination URI isn't one of the [supportedSchemes].
+  bool get isUnsupportedScheme => !supportedSchemes.contains(finalUri.scheme);
 
   String get statusDescription {
     if (isInvalid) return "invalid URL";
@@ -145,8 +146,7 @@ class Destination {
         "isSource": isSource,
         "anchors": anchors,
         "isInvalid": isInvalid,
-        "didNotConnect": didNotConnect,
-        "isUnsupportedScheme": isUnsupportedScheme
+        "didNotConnect": didNotConnect
       };
 
   String toString() => url;
@@ -177,7 +177,6 @@ class Destination {
     isSource = result.isSource;
     anchors = result.anchors;
     didNotConnect = result.didNotConnect;
-    isUnsupportedScheme = result.isUnsupportedScheme;
   }
 }
 
@@ -192,7 +191,6 @@ class DestinationResult {
   bool isSource = false;
   List<String> anchors;
   bool didNotConnect = false;
-  bool isUnsupportedScheme = false;
 
   DestinationResult.fromDestination(Destination destination)
       : url = destination.url,
@@ -209,8 +207,7 @@ class DestinationResult {
             .toList(),
         isSource = map["isSource"],
         anchors = map["anchors"] as List<String>,
-        didNotConnect = map["didNotConnect"],
-        isUnsupportedScheme = map["isUnsupportedScheme"];
+        didNotConnect = map["didNotConnect"];
 
   Map<String, Object> toMap() => {
         "url": url,
@@ -221,8 +218,7 @@ class DestinationResult {
         "redirects": redirects.map((info) => info.toMap()).toList(),
         "isSource": isSource,
         "anchors": anchors,
-        "didNotConnect": didNotConnect,
-        "isUnsupportedScheme": isUnsupportedScheme
+        "didNotConnect": didNotConnect
       };
 
   void updateFromResponse(HttpClientResponse response) {
@@ -233,10 +229,12 @@ class DestinationResult {
     if (redirects.isEmpty) {
       finalUrl = url;
     } else {
-      finalUrl = redirects.fold(
-          Uri.parse(url),
-          (Uri current, BasicRedirectInfo redirect) =>
-              current.resolve(redirect.url)).toString();
+      finalUrl = redirects
+          .fold(
+              Uri.parse(url),
+              (Uri current, BasicRedirectInfo redirect) =>
+                  current.resolve(redirect.url))
+          .toString();
     }
     primaryType = response.headers.contentType.primaryType;
     subType = response.headers.contentType.subType;
