@@ -106,8 +106,6 @@ Future<FetchResults> fetch(
   if (current.statusCode != 200 ||
       !options.matchesAsInternal(current.finalUri) ||
       !current.isHtmlMimeType /* TODO: add CSS, SVG/XML */) {
-    // Does not await for performance reasons.
-    response.drain();
     return new FetchResults(current, null);
   }
 
@@ -215,8 +213,6 @@ Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
   var response = await request.close();
 
   if (response.statusCode == 405) {
-    // Does not await for performance reasons.
-    response.drain();
     return null;
   }
   return response;

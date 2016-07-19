@@ -16,4 +16,5 @@ Very fast link-checking.
     and you want to have it sorted in a sane way
 * Useful status code
 * PENDING: Finds everything (CSS url(), SVG links, etc.)
+  * The tool already finds more than `linklint`
 
