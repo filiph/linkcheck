@@ -15,10 +15,11 @@ Future<Null> main(List<String> arguments) async {
     ..addOption(hostsFlag,
         allowMultiple: true,
         splitCommas: true,
-        help: "Additional hosts (domains) to check. By default, the crawler "
-            "doesn't parse HTML on sites with different host than the starting"
-            "ones. If your site spans multiple domains and you want to check "
-            "HTML everywhere, use this.")
+        help: "Paths to check. By default, the crawler "
+            "doesn't parse HTML on sites with different path than the seed"
+            "URIs. If your site spans multiple domains and you want to check "
+            "HTML everywhere, use this. Provide as a glob, e.g. "
+            "http://example.com/subdirectory/**.")
     ..addFlag(externalFlag,
         abbr: 'e',
         negatable: false,
@@ -61,8 +62,17 @@ Future<Null> main(List<String> arguments) async {
   }
 
   List<Uri> uris = urls.map((url) => Uri.parse(url)).toList();
-  Set<String> hosts = uris.map((uri) => uri.host).toSet();
-  hosts.addAll(argResults[hostsFlag] as Iterable<String>);
+  Set<String> hosts;
+  if ((argResults[hostsFlag] as Iterable<String>).isNotEmpty) {
+    hosts = new Set<String>.from(argResults[hostsFlag] as Iterable<String>);
+  } else {
+    // No host globs provided. Using the default (http://example.com/**).
+    hosts = uris.map((uri) {
+      var url = uri.toString();
+      if (url.endsWith('/')) return "$url**";
+      return "$url/**";
+    }).toSet();
+  }
 
   List<Link> links = await crawl(uris, hosts, shouldCheckExternal, verbose);
 
@@ -76,6 +86,8 @@ Future<Null> main(List<String> arguments) async {
   print("");
 
   reportForWriters(broken);
+
+  if (broken.isNotEmpty) exitCode = 2;
 }
 
 const defaultUrl = "http://localhost:4000/";

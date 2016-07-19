@@ -3,8 +3,11 @@ library linkcheck.destination;
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
 class Destination {
+  static const List<String> supportedSchemes = const ["http", "https", "file"];
+
   /// The uri as specified by source file.
   final Uri uri;
+
   final Uri uriWithoutFragment;
 
   /// The HTTP status code returned.
@@ -27,18 +30,36 @@ class Destination {
 
   /// Only for [isSource] == `true`.
   Set<String> hashAnchors = new Set<String>();
-
   bool isInvalid = false;
+
   bool didNotConnect = false;
 
   /// True if the destination URI isn't one of the [supportedSchemes].
   bool isUnsupportedScheme = false;
 
-  static const List<String> supportedSchemes = const ["http", "https", "file"];
-
   Destination(Uri uri)
       : uri = uri,
         uriWithoutFragment = uri.removeFragment();
+
+  factory Destination.fromMap(Map<String, Object> map) {
+    var uri = Uri.parse(map["uri"]);
+    var destination = new Destination(uri);
+    var contentType = map["primaryType"] == null
+        ? null
+        : new ContentType(map["primaryType"], map["subType"]);
+    destination
+      ..statusCode = map["statusCode"]
+      ..contentType = contentType
+      ..redirects = [] // TODO
+      ..finalUri = Uri.parse(map["finalUri"])
+      ..isExternal = map["isExternal"]
+      ..isSource = map["isSource"]
+      ..hashAnchors = new Set.from(map["hashAnchors"])
+      ..isInvalid = map["isInvalid"]
+      ..didNotConnect = map["didNotConnect"]
+      ..isUnsupportedScheme = map["isUnsupportedScheme"];
+    return destination;
+  }
 
   int get hashCode => uri.hashCode;
 
@@ -71,15 +92,33 @@ class Destination {
   }
 
   bool get wasTried => didNotConnect || statusCode != null;
-
   bool operator ==(other) => other is Destination && other.uri == uri;
+
+  Map<String, Object> toMap() => {
+        "uri": uri.toString(),
+        "statusCode": statusCode,
+        "primaryType": contentType?.primaryType,
+        "subType": contentType?.subType,
+        "redirects": [], // TODO
+        "finalUri": finalUri.toString(),
+        "isExternal": isExternal,
+        "isSource": isSource,
+        "hashAnchors": hashAnchors.toList(growable: false),
+        "isInvalid": isInvalid,
+        "didNotConnect": didNotConnect,
+        "isUnsupportedScheme": isUnsupportedScheme
+      };
+
   String toString() => uri.toString();
 
   void updateFrom(Destination other) {
+    isSource = other.isSource;
     statusCode = other.statusCode;
+    didNotConnect = other.didNotConnect;
     isUnsupportedScheme = other.isUnsupportedScheme;
     redirects = other.redirects;
     isExternal = other.isExternal;
+    isInvalid = other.isInvalid;
     finalUri =
         other.finalUri?.removeFragment()?.replace(fragment: uri.fragment) ??
             uri;
