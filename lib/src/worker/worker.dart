@@ -5,24 +5,24 @@ import 'dart:convert';
 import 'dart:io' hide Link;
 import 'dart:isolate';
 
+import 'package:csslib/parser.dart' as css;
+import 'package:csslib/visitor.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
-import 'package:csslib/parser.dart' as css;
+import 'package:source_span/source_span.dart';
 import 'package:stream_channel/stream_channel.dart';
 
 import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
 import '../uri_glob.dart';
-import 'package:csslib/visitor.dart';
-import 'package:source_span/source_span.dart';
 
+const addHostGlobVerb = "ADD_HOST";
 const checkDoneVerb = "CHECK_DONE";
 const checkVerb = "CHECK";
 const dataKey = "data";
 const dieMessage = const {verbKey: dieVerb};
 const dieVerb = "DIE";
-const addHostGlobVerb = "ADD_HOST";
 const infoFromWorkerVerb = "INFO_FROM_WORKER";
 const unrecognizedMessage = const {verbKey: unrecognizedVerb};
 const unrecognizedVerb = "UNRECOGNIZED";
@@ -133,94 +133,13 @@ Future<FetchResults> fetch(
   }
 
   if (current.statusCode == 200 && current.isCssMimeType) {
-    var style = css.parse(content);
-    var urlHarvester = new CssUrlHarvester();
-    style.visit(urlHarvester);
-
-    var links = new List<Link>();
-    var currentDestinations = new List<Destination>();
-    for (var reference in urlHarvester.references) {
-      var origin = new Origin(current.finalUri, reference.span, "url",
-          reference.url, "url(\"${reference.url}\")");
-
-      // Valid URLs can be surrounded by spaces.
-      var url = reference.url.trim();
-
-      var destinationUri = current.finalUri.resolve(url);
-
-      Link link;
-
-      for (var existing in currentDestinations) {
-        if (destinationUri == existing.uri) {
-          link = new Link(origin, existing);
-          break;
-        }
-      }
-
-      if (link == null) {
-        Destination destination = new Destination(destinationUri);
-        currentDestinations.add(destination);
-        link = new Link(origin, destination);
-      }
-      assert(link != null);
-      links.add(link);
-    }
-
-    return new FetchResults(checked, links);
+    return _parseCss(content, current, checked);
   }
 
   // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
   // other ugly index files).
 
-  // Parse it
-  var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
-
-  // Find parseable destinations
-  // TODO: add the following: media, meta refreshes, forms, metadata
-  //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
-  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
-  // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
-
-  var linkElements = doc.querySelectorAll(
-      "a[href], area[href], iframe[src], link[rel='stylesheet']");
-
-  List<Destination> currentDestinations = <Destination>[];
-
-  /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
-  List<Link> links = linkElements
-      .map((element) => extractLink(current.finalUri, element,
-          const ["href", "src"], currentDestinations, true))
-      .toList();
-
-  // Find resources
-  var resourceElements =
-      doc.querySelectorAll("link[href], [src], object[data]");
-  Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
-      extractLink(current.finalUri, element, const ["src", "href", "data"],
-          currentDestinations, false));
-
-  links.addAll(currentResourceLinks);
-
-  // TODO: add srcset extractor (will create multiple links per element)
-
-  // TODO: take note of anchors on page, add it to current
-
-  return new FetchResults(checked, links);
-}
-
-class CssUrlHarvester extends Visitor {
-  List<CssReference> references = new List<CssReference>();
-
-  @override
-  void visitUriTerm(UriTerm node) {
-    references.add(new CssReference(node.span, node.text));
-  }
-}
-
-class CssReference {
-  SourceSpan span;
-  String url;
-  CssReference(this.span, this.url);
+  return _parseHtml(content, uri, current, checked);
 }
 
 /// The entrypoint for the worker isolate.
@@ -277,12 +196,102 @@ Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
   return response;
 }
 
+FetchResults _parseCss(
+    String content, Destination current, DestinationResult checked) {
+  var style = css.parse(content);
+  var urlHarvester = new CssUrlHarvester();
+  style.visit(urlHarvester);
+
+  var links = new List<Link>();
+  var currentDestinations = new List<Destination>();
+  for (var reference in urlHarvester.references) {
+    var origin = new Origin(current.finalUri, reference.span, "url",
+        reference.url, "url(\"${reference.url}\")");
+
+    // Valid URLs can be surrounded by spaces.
+    var url = reference.url.trim();
+
+    var destinationUri = current.finalUri.resolve(url);
+
+    Link link;
+
+    for (var existing in currentDestinations) {
+      if (destinationUri == existing.uri) {
+        link = new Link(origin, existing);
+        break;
+      }
+    }
+
+    if (link == null) {
+      Destination destination = new Destination(destinationUri);
+      currentDestinations.add(destination);
+      link = new Link(origin, destination);
+    }
+    assert(link != null);
+    links.add(link);
+  }
+
+  return new FetchResults(checked, links);
+}
+
+FetchResults _parseHtml(
+    String content, Uri uri, Destination current, DestinationResult checked) {
+  var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
+
+  // Find parseable destinations
+  // TODO: add the following: media, meta refreshes, forms, metadata
+  //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
+  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
+  // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
+
+  var linkElements = doc.querySelectorAll(
+      "a[href], area[href], iframe[src], link[rel='stylesheet']");
+
+  List<Destination> currentDestinations = <Destination>[];
+
+  /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
+  List<Link> links = linkElements
+      .map((element) => extractLink(current.finalUri, element,
+          const ["href", "src"], currentDestinations, true))
+      .toList();
+
+  // Find resources
+  var resourceElements =
+      doc.querySelectorAll("link[href], [src], object[data]");
+  Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
+      extractLink(current.finalUri, element, const ["src", "href", "data"],
+          currentDestinations, false));
+
+  links.addAll(currentResourceLinks);
+
+  // TODO: add srcset extractor (will create multiple links per element)
+
+  // TODO: take note of anchors on page, add it to current
+
+  return new FetchResults(checked, links);
+}
+
 /// Spawns a worker isolate and returns a [StreamChannel] for communicating with
 /// it.
 Future<StreamChannel<Map>> _spawnWorker() async {
   var port = new ReceivePort();
   await Isolate.spawn(worker, port.sendPort);
   return new IsolateChannel<Map>.connectReceive(port);
+}
+
+class CssReference {
+  SourceSpan span;
+  String url;
+  CssReference(this.span, this.url);
+}
+
+class CssUrlHarvester extends Visitor {
+  List<CssReference> references = new List<CssReference>();
+
+  @override
+  void visitUriTerm(UriTerm node) {
+    references.add(new CssReference(node.span, node.text));
+  }
 }
 
 /// The set of known facts and options for the Worker to use when fetching.
@@ -301,14 +310,14 @@ class FetchOptions {
     }
   }
 
+  void info(String message) {
+    _sink.add({verbKey: infoFromWorkerVerb, dataKey: message});
+  }
+
   /// Returns true if the provided [uri] should be considered internal. This
   /// works through globbing the [_compiledHostGlobs] set.
   bool matchesAsInternal(Uri uri) {
     return _compiledHostGlobs.any((glob) => glob.matches(uri));
-  }
-
-  void info(String message) {
-    _sink.add({verbKey: infoFromWorkerVerb, dataKey: message});
   }
 }
 
@@ -361,18 +370,20 @@ class Pool {
     worker.urlsToCheck.add(destination.url);
   }
 
-  /// Sends host globs (e.g. http://example.com/**) to all the workers.
-  void _addHostGlobs() {
-    for (var worker in _workers) {
-      worker.sink.add({verbKey: addHostGlobVerb, dataKey: _hostGlobs.toList()});
-    }
-  }
-
   Future<Null> close() async {
     await Future.wait(_workers.map((worker) async {
       worker.sink.add(dieMessage);
       await worker.sink.close();
     }));
+  }
+
+  /// Finds the worker with the least amount of jobs.
+  Worker pickWorker() {
+    for (var worker in _workers) {
+      if (worker.idle) return worker;
+    }
+    throw new StateError("Attempt to use Pool when all workers are busy. "
+        "Please make sure to wait until Pool.allWorking is false.");
   }
 
   Future<Null> spawn() async {
@@ -398,13 +409,11 @@ class Pool {
     _addHostGlobs();
   }
 
-  /// Finds the worker with the least amount of jobs.
-  Worker pickWorker() {
+  /// Sends host globs (e.g. http://example.com/**) to all the workers.
+  void _addHostGlobs() {
     for (var worker in _workers) {
-      if (worker.idle) return worker;
+      worker.sink.add({verbKey: addHostGlobVerb, dataKey: _hostGlobs.toList()});
     }
-    throw new StateError("Attempt to use Pool when all workers are busy. "
-        "Please make sure to wait until Pool.allWorking is false.");
   }
 }
 
