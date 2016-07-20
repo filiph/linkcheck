@@ -7,12 +7,15 @@ import 'dart:isolate';
 
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
+import 'package:csslib/parser.dart' as css;
 import 'package:stream_channel/stream_channel.dart';
 
 import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
 import '../uri_glob.dart';
+import 'package:csslib/visitor.dart';
+import 'package:source_span/source_span.dart';
 
 const checkDoneVerb = "CHECK_DONE";
 const checkVerb = "CHECK";
@@ -105,14 +108,14 @@ Future<FetchResults> fetch(
   checked.updateFromResponse(response);
   current.updateFromResult(checked);
 
-  // Process all destinations that cannot or shouldn't be parsed.
+  // Process all destinations that cannot or shouldn't be HTML-parsed.
   if (current.statusCode != 200 ||
       !options.matchesAsInternal(current.finalUri) ||
-      !current.isHtmlMimeType /* TODO: add CSS, SVG/XML */) {
+      !current.isParseableMimeType /* TODO: add SVG/XML */) {
     return new FetchResults(checked, null);
   }
 
-  String html;
+  String content;
   try {
     Converter<List<int>, String> decoder;
     if (current.contentType.charset == LATIN1.name) {
@@ -121,7 +124,7 @@ Future<FetchResults> fetch(
     } else {
       decoder = UTF8.decoder;
     }
-    html = await response.transform(decoder).join();
+    content = await response.transform(decoder).join();
   } on FormatException {
     // TODO: make warning instead, record in current, continue
     throw new UnsupportedError("We don't support any encoding other than "
@@ -129,11 +132,48 @@ Future<FetchResults> fetch(
         "'${current.contentType}' and couldn't be parsed by UTF8.");
   }
 
+  if (current.statusCode == 200 && current.isCssMimeType) {
+    var style = css.parse(content);
+    var urlHarvester = new CssUrlHarvester();
+    style.visit(urlHarvester);
+
+    var links = new List<Link>();
+    var currentDestinations = new List<Destination>();
+    for (var reference in urlHarvester.references) {
+      var origin = new Origin(current.finalUri, reference.span, "url",
+          reference.url, "url(\"${reference.url}\")");
+
+      // Valid URLs can be surrounded by spaces.
+      var url = reference.url.trim();
+
+      var destinationUri = current.finalUri.resolve(url);
+
+      Link link;
+
+      for (var existing in currentDestinations) {
+        if (destinationUri == existing.uri) {
+          link = new Link(origin, existing);
+          break;
+        }
+      }
+
+      if (link == null) {
+        Destination destination = new Destination(destinationUri);
+        currentDestinations.add(destination);
+        link = new Link(origin, destination);
+      }
+      assert(link != null);
+      links.add(link);
+    }
+
+    return new FetchResults(checked, links);
+  }
+
   // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
   // other ugly index files).
 
   // Parse it
-  var doc = parse(html, generateSpans: true, sourceUrl: uri.toString());
+  var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
 
   // Find parseable destinations
   // TODO: add the following: media, meta refreshes, forms, metadata
@@ -141,7 +181,8 @@ Future<FetchResults> fetch(
   // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
   // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
 
-  var linkElements = doc.querySelectorAll("a[href], area[href], iframe[src]");
+  var linkElements = doc.querySelectorAll(
+      "a[href], area[href], iframe[src], link[rel='stylesheet']");
 
   List<Destination> currentDestinations = <Destination>[];
 
@@ -165,6 +206,21 @@ Future<FetchResults> fetch(
   // TODO: take note of anchors on page, add it to current
 
   return new FetchResults(checked, links);
+}
+
+class CssUrlHarvester extends Visitor {
+  List<CssReference> references = new List<CssReference>();
+
+  @override
+  void visitUriTerm(UriTerm node) {
+    references.add(new CssReference(node.span, node.text));
+  }
+}
+
+class CssReference {
+  SourceSpan span;
+  String url;
+  CssReference(this.span, this.url);
 }
 
 /// The entrypoint for the worker isolate.

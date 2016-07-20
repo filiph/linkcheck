@@ -58,6 +58,8 @@ class Destination {
 
   int _hashCode;
 
+  Uri _finalUri;
+
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),
         _uri = uri.removeFragment() {
@@ -95,8 +97,6 @@ class Destination {
     }
   }
 
-  Uri _finalUri;
-
   /// Parsed [finalUrl].
   Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
 
@@ -108,7 +108,13 @@ class Destination {
   /// Ignores URIs with unsupported scheme (like `mailto:`).
   bool get isBroken => statusCode != 200;
 
+  bool get isCssMimeType =>
+      contentType.primaryType == "text" && contentType.subType == "css";
+
   bool get isHtmlMimeType => contentType.mimeType == ContentType.HTML.mimeType;
+
+  bool get isParseableMimeType => isHtmlMimeType || isCssMimeType;
+
   bool get isPermanentlyRedirected =>
       redirects != null &&
       redirects.isNotEmpty &&
@@ -118,7 +124,6 @@ class Destination {
 
   /// True if the destination URI isn't one of the [supportedSchemes].
   bool get isUnsupportedScheme => !supportedSchemes.contains(finalUri.scheme);
-
   String get statusDescription {
     if (isInvalid) return "invalid URL";
     if (didNotConnect) return "connection failed";
@@ -130,11 +135,6 @@ class Destination {
       return "HTTP $path => $statusCode";
     }
     return "HTTP $statusCode";
-  }
-
-  void updateFragmentsFrom(Destination other) {
-    if (other.fragments.isEmpty) return;
-    fragments.addAll(other.fragments);
   }
 
   Uri get uri => _uri ??= Uri.parse(url);
@@ -160,6 +160,11 @@ class Destination {
   String toString() => "$url${fragments.isEmpty
       ? ''
       : '#(' + fragments.join('|') + ')'}";
+
+  void updateFragmentsFrom(Destination other) {
+    if (other.fragments.isEmpty) return;
+    fragments.addAll(other.fragments);
+  }
 
   void updateFromResult(DestinationResult result) {
     assert(url == result.url);
