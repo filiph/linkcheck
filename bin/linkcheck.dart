@@ -85,7 +85,7 @@ Future<Null> main(List<String> arguments) async {
   print("${broken.length.toString().padLeft(8)} possibly broken links found");
   print("");
 
-  reportForWriters(broken);
+  reportForWriters(links);
 
   if (broken.isNotEmpty) exitCode = 2;
 }

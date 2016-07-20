@@ -6,7 +6,13 @@ import 'link.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
-void reportForWriters(List<Link> broken) {
+void reportForWriters(List<Link> links) {
+  List<Link> broken = links
+      .where((link) =>
+          link.destination.wasTried &&
+          (link.destination.isBroken || !link.satisfiesFragment))
+      .toList(growable: false);
+
   List<Uri> sourceUris =
       broken.map((link) => link.origin.uri).toSet().toList(growable: false);
   sourceUris.sort((a, b) => a.toString().compareTo(b.toString()));
@@ -20,8 +26,12 @@ void reportForWriters(List<Link> broken) {
       print("- (${link.origin.span.start.line}"
           ":${link.origin.span.start.column}) "
           "$tag"
-          "=> ${link.destination.uri} "
-          "(${link.destination.statusDescription})");
+          "=> ${link.destination.uri}"
+          "${link.fragment == null
+              ? ''
+              : '#' + link.fragment} "
+          "(${link.destination.statusDescription}"
+          "${link.satisfiesFragment ? '' : ' but missing anchor'})");
       if (link.destination.isRedirected) {
         print("  - redirect path:");
         String current = link.destination.url;
@@ -46,9 +56,12 @@ String _buildTagSummary(Link link) {
       if (length <= maxLength) {
         tag = "'$text' ";
       } else {
-        tag = "'${text.substring(0, min(length, maxLength -2 ))}..' ";
+        tag = "'${text.substring(0, min(length, maxLength - 2))}..' ";
       }
     }
+  } else if (link.origin.uri.path.endsWith(".css") &&
+      link.origin.tagName == "url") {
+    tag = "url(...) ";
   } else {
     tag = "<${link.origin.tagName}> ";
   }

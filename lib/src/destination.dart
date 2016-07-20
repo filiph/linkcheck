@@ -21,13 +21,11 @@ class BasicRedirectInfo {
 class Destination {
   static const List<String> supportedSchemes = const ["http", "https", "file"];
 
+  /// This is the naked URL (no fragment).
   final String url;
 
   /// The uri as specified by source file, without the fragment.
   Uri _uri;
-
-  /// The fragments referenced by origins.
-  final Set<String> fragments = new Set<String>();
 
   /// The HTTP status code returned.
   int statusCode;
@@ -64,7 +62,6 @@ class Destination {
       : url = uri.removeFragment().toString(),
         _uri = uri.removeFragment() {
     _hashCode = url.hashCode;
-    if (uri.fragment.isNotEmpty) fragments.add(uri.fragment);
   }
 
   factory Destination.fromMap(Map<String, Object> map) {
@@ -90,11 +87,6 @@ class Destination {
   Destination.fromString(String url)
       : url = url.contains("#") ? url.split("#").first : url {
     _hashCode = this.url.hashCode;
-    if (url.contains("#")) {
-      // Take everything after the first #
-      String fragment = url.split("#").skip(1).join("#");
-      fragments.add(fragment);
-    }
   }
 
   /// Parsed [finalUrl].
@@ -124,6 +116,7 @@ class Destination {
 
   /// True if the destination URI isn't one of the [supportedSchemes].
   bool get isUnsupportedScheme => !supportedSchemes.contains(finalUri.scheme);
+
   String get statusDescription {
     if (isInvalid) return "invalid URL";
     if (didNotConnect) return "connection failed";
@@ -136,12 +129,20 @@ class Destination {
     }
     return "HTTP $statusCode";
   }
-
   Uri get uri => _uri ??= Uri.parse(url);
 
   bool get wasTried => didNotConnect || statusCode != null;
 
   bool operator ==(other) => other is Destination && other.hashCode == hashCode;
+
+  /// Returns `true` if the [fragment] (such as #something) will find it's mark
+  /// on this [Destination]. If the fragment is `null` or empty, it will
+  /// automatically succeed.
+  bool satisfiesFragment(String fragment) {
+    if (fragment == null || fragment == '') return true;
+    if (anchors == null) return false;
+    return anchors.contains(fragment);
+  }
 
   Map<String, Object> toMap() => {
         "url": url,
@@ -157,14 +158,7 @@ class Destination {
         "didNotConnect": didNotConnect
       };
 
-  String toString() => "$url${fragments.isEmpty
-      ? ''
-      : '#(' + fragments.join('|') + ')'}";
-
-  void updateFragmentsFrom(Destination other) {
-    if (other.fragments.isEmpty) return;
-    fragments.addAll(other.fragments);
-  }
+  String toString() => url;
 
   void updateFromResult(DestinationResult result) {
     assert(url == result.url);

@@ -123,7 +123,6 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
             print("- destination: ${link.destination} already "
                 "seen on this page");
           }
-          alreadyOnCurrent.updateFragmentsFrom(link.destination);
         } else {
           if (verbose) {
             print("- completely new destination: ${link.destination}");
@@ -220,7 +219,6 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
     assert(bin[link.destination.url] == Bin.closed);
 
     var canonical = closed.singleWhere((d) => d.url == link.destination.url);
-    canonical.updateFragmentsFrom(link.destination);
     link.destination = canonical;
   }
 
@@ -241,8 +239,6 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   if (verbose) {
     print("Broken links");
     links.where((link) => link.destination.isBroken).forEach(print);
-    print("All was tried");
-    print(links.every((link) => link.destination.wasTried));
   }
 
   return links.toList(growable: false);

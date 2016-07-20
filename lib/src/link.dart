@@ -6,16 +6,26 @@ import 'package:linkcheck/src/origin.dart';
 class Link {
   Origin origin;
   Destination destination;
+  String fragment;
 
-  Link(this.origin, this.destination);
+  Link(this.origin, this.destination, String fragment)
+      : fragment = fragment == null || fragment.isEmpty ? null : fragment;
 
   Link.fromMap(Map<String, Object> map)
-      : this(new Origin.fromMap(map["origin"] as Map<String, Object>),
-            new Destination.fromMap(map["destination"] as Map<String, Object>));
+      : this(
+            new Origin.fromMap(map["origin"] as Map<String, Object>),
+            new Destination.fromMap(map["destination"] as Map<String, Object>),
+            map["destinationAnchor"]);
 
-  Map<String, Object> toMap() =>
-      {"origin": origin.toMap(), "destination": destination.toMap()};
+  bool get satisfiesFragment => destination.satisfiesFragment(fragment);
 
-  String toString() => "$origin => $destination "
+  Map<String, Object> toMap() => {
+        "origin": origin.toMap(),
+        "destination": destination.toMap(),
+        "destinationAnchor": fragment
+      };
+
+  String toString() => "$origin => $destination"
+      "${fragment == null ? '' : '#' + fragment} "
       "(${destination.statusDescription})";
 }

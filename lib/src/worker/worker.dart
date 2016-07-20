@@ -51,19 +51,19 @@ Link extractLink(Uri uri, Element element, final List<String> attributes,
 
   // Valid URLs can be surrounded by spaces.
   reference = reference.trim();
-
   var destinationUri = uri.resolve(reference);
+  var destinationUrlNaked = destinationUri.removeFragment().toString();
 
   for (var existing in destinations) {
-    if (destinationUri == existing.uri) {
-      return new Link(origin, existing);
+    if (destinationUrlNaked == existing.url) {
+      return new Link(origin, existing, destinationUri.fragment);
     }
   }
 
   Destination destination = new Destination(destinationUri);
   destination.isSource = parseable;
   destinations.add(destination);
-  return new Link(origin, destination);
+  return new Link(origin, destination, destinationUri.fragment);
 }
 
 Future<FetchResults> fetch(
@@ -217,7 +217,7 @@ FetchResults _parseCss(
 
     for (var existing in currentDestinations) {
       if (destinationUri == existing.uri) {
-        link = new Link(origin, existing);
+        link = new Link(origin, existing, null);
         break;
       }
     }
@@ -225,7 +225,7 @@ FetchResults _parseCss(
     if (link == null) {
       Destination destination = new Destination(destinationUri);
       currentDestinations.add(destination);
-      link = new Link(origin, destination);
+      link = new Link(origin, destination, null);
     }
     assert(link != null);
     links.add(link);
@@ -266,7 +266,11 @@ FetchResults _parseHtml(
 
   // TODO: add srcset extractor (will create multiple links per element)
 
-  // TODO: take note of anchors on page, add it to current
+  var anchors = doc
+      .querySelectorAll("[id]")
+      .map((element) => element.attributes["id"])
+      .toList();
+  checked.anchors = anchors;
 
   return new FetchResults(checked, links);
 }
@@ -407,6 +411,7 @@ class Pool {
           }
         }));
     _addHostGlobs();
+    // TODO: periodically check workers and kill them after long inactivity. Mark their current urls as inaccesible.
   }
 
   /// Sends host globs (e.g. http://example.com/**) to all the workers.
