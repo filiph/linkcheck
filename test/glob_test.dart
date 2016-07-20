@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
 
-import 'package:linkcheck/src/worker/worker.dart';
 import 'dart:async';
+import 'package:linkcheck/src/worker/fetch_options.dart';
 
 void main() {
   group("Glob", () {

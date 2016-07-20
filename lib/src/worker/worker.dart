@@ -1,4 +1,4 @@
-library linkcheck.check.worker;
+library linkcheck.worker;
 
 import 'dart:async';
 import 'dart:convert';
@@ -15,7 +15,11 @@ import 'package:stream_channel/stream_channel.dart';
 import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
+import '../parsers/css.dart';
+import '../parsers/html.dart';
 import '../uri_glob.dart';
+import 'fetch_options.dart';
+import 'fetch_results.dart';
 
 const addHostGlobVerb = "ADD_HOST";
 const checkDoneVerb = "CHECK_DONE";
@@ -28,43 +32,6 @@ const unrecognizedMessage = const {verbKey: unrecognizedVerb};
 const unrecognizedVerb = "UNRECOGNIZED";
 const verbKey = "message";
 
-/// Takes a DOM element and extracts a link from it.
-///
-/// The provided [attributes] will be checked in sequence.
-///
-/// Setting [parseable] to true will create a link to a destination with
-/// [Destination.isSource] set to `true`. For example, links in <a href> are
-/// often parseable (they are HTML), links in <img src> often aren't.
-Link extractLink(Uri uri, Element element, final List<String> attributes,
-    final List<Destination> destinations, bool parseable) {
-  var origin = new Origin(uri, element.sourceSpan, element.localName,
-      element.text, element.outerHtml);
-  String reference;
-  for (var attributeName in attributes) {
-    reference = element.attributes[attributeName];
-    if (reference != null) break;
-  }
-  if (reference == null) {
-    throw new StateError("Element $element does not have any of the attributes "
-        "$attributes");
-  }
-
-  // Valid URLs can be surrounded by spaces.
-  reference = reference.trim();
-  var destinationUri = uri.resolve(reference);
-  var destinationUrlNaked = destinationUri.removeFragment().toString();
-
-  for (var existing in destinations) {
-    if (destinationUrlNaked == existing.url) {
-      return new Link(origin, existing, destinationUri.fragment);
-    }
-  }
-
-  Destination destination = new Destination(destinationUri);
-  destination.isSource = parseable;
-  destinations.add(destination);
-  return new Link(origin, destination, destinationUri.fragment);
-}
 
 Future<FetchResults> fetch(
     Destination current, HttpClient client, FetchOptions options) async {
@@ -133,13 +100,13 @@ Future<FetchResults> fetch(
   }
 
   if (current.statusCode == 200 && current.isCssMimeType) {
-    return _parseCss(content, current, checked);
+    return parseCss(content, current, checked);
   }
 
   // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
   // other ugly index files).
 
-  return _parseHtml(content, uri, current, checked);
+  return parseHtml(content, uri, current, checked);
 }
 
 /// The entrypoint for the worker isolate.
@@ -196,230 +163,12 @@ Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
   return response;
 }
 
-FetchResults _parseCss(
-    String content, Destination current, DestinationResult checked) {
-  var style = css.parse(content);
-  var urlHarvester = new CssUrlHarvester();
-  style.visit(urlHarvester);
-
-  var links = new List<Link>();
-  var currentDestinations = new List<Destination>();
-  for (var reference in urlHarvester.references) {
-    var origin = new Origin(current.finalUri, reference.span, "url",
-        reference.url, "url(\"${reference.url}\")");
-
-    // Valid URLs can be surrounded by spaces.
-    var url = reference.url.trim();
-
-    var destinationUri = current.finalUri.resolve(url);
-
-    Link link;
-
-    for (var existing in currentDestinations) {
-      if (destinationUri == existing.uri) {
-        link = new Link(origin, existing, null);
-        break;
-      }
-    }
-
-    if (link == null) {
-      Destination destination = new Destination(destinationUri);
-      currentDestinations.add(destination);
-      link = new Link(origin, destination, null);
-    }
-    assert(link != null);
-    links.add(link);
-  }
-
-  return new FetchResults(checked, links);
-}
-
-FetchResults _parseHtml(
-    String content, Uri uri, Destination current, DestinationResult checked) {
-  var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
-
-  // Find parseable destinations
-  // TODO: add the following: media, meta refreshes, forms, metadata
-  //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
-  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
-  // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
-
-  var linkElements = doc.querySelectorAll(
-      "a[href], area[href], iframe[src], link[rel='stylesheet']");
-
-  List<Destination> currentDestinations = <Destination>[];
-
-  /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
-  List<Link> links = linkElements
-      .map((element) => extractLink(current.finalUri, element,
-          const ["href", "src"], currentDestinations, true))
-      .toList();
-
-  // Find resources
-  var resourceElements =
-      doc.querySelectorAll("link[href], [src], object[data]");
-  Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
-      extractLink(current.finalUri, element, const ["src", "href", "data"],
-          currentDestinations, false));
-
-  links.addAll(currentResourceLinks);
-
-  // TODO: add srcset extractor (will create multiple links per element)
-
-  var anchors = doc
-      .querySelectorAll("[id]")
-      .map((element) => element.attributes["id"])
-      .toList();
-  checked.anchors = anchors;
-
-  return new FetchResults(checked, links);
-}
-
 /// Spawns a worker isolate and returns a [StreamChannel] for communicating with
 /// it.
 Future<StreamChannel<Map>> _spawnWorker() async {
   var port = new ReceivePort();
   await Isolate.spawn(worker, port.sendPort);
   return new IsolateChannel<Map>.connectReceive(port);
-}
-
-class CssReference {
-  SourceSpan span;
-  String url;
-  CssReference(this.span, this.url);
-}
-
-class CssUrlHarvester extends Visitor {
-  List<CssReference> references = new List<CssReference>();
-
-  @override
-  void visitUriTerm(UriTerm node) {
-    references.add(new CssReference(node.span, node.text));
-  }
-}
-
-/// The set of known facts and options for the Worker to use when fetching.
-class FetchOptions {
-  final _compiledHostGlobs = new List<UriGlob>();
-  final headIncompatible = new Set<String>(); // TODO: send to main
-  // TODO: hashmap of known problematic servers etc.
-
-  final StreamSink<Map> _sink;
-
-  FetchOptions(this._sink);
-
-  void addHostGlobs(List<String> values) {
-    for (String value in values) {
-      _compiledHostGlobs.add(new UriGlob(value));
-    }
-  }
-
-  void info(String message) {
-    _sink.add({verbKey: infoFromWorkerVerb, dataKey: message});
-  }
-
-  /// Returns true if the provided [uri] should be considered internal. This
-  /// works through globbing the [_compiledHostGlobs] set.
-  bool matchesAsInternal(Uri uri) {
-    return _compiledHostGlobs.any((glob) => glob.matches(uri));
-  }
-}
-
-class FetchResults {
-  final DestinationResult checked;
-  final List<Link> links;
-  FetchResults(this.checked, this.links);
-
-  FetchResults.fromMap(Map<String, Object> map)
-      : this(
-            new DestinationResult.fromMap(
-                map["checked"] as Map<String, Object>),
-            new List<Link>.from((map["links"] as List<Map>).map(
-                (serialization) =>
-                    new Link.fromMap(serialization as Map<String, Object>))));
-
-  Map<String, Object> toMap() => {
-        "checked": checked.toMap(),
-        "links": links?.map((link) => link.toMap())?.toList() ?? []
-      };
-}
-
-class Pool {
-  /// The number of threads.
-  final int count;
-
-  List<Worker> _workers;
-
-  final Set<String> _hostGlobs;
-
-  StreamController<FetchResults> _fetchResultsSink =
-      new StreamController<FetchResults>();
-  Stream<FetchResults> fetchResults;
-
-  StreamController<String> _messagesSink = new StreamController<String>();
-  Stream<String> messages;
-
-  Pool(this.count, this._hostGlobs) {
-    fetchResults = _fetchResultsSink.stream;
-    messages = _messagesSink.stream;
-  }
-
-  bool get allIdle => _workers.every((worker) => worker.idle);
-
-  bool get allWorking => _workers.every((worker) => !worker.idle);
-
-  void check(Destination destination) {
-    var worker = pickWorker();
-    worker.sink.add({verbKey: checkVerb, dataKey: destination.toMap()});
-    worker.urlsToCheck.add(destination.url);
-  }
-
-  Future<Null> close() async {
-    await Future.wait(_workers.map((worker) async {
-      worker.sink.add(dieMessage);
-      await worker.sink.close();
-    }));
-  }
-
-  /// Finds the worker with the least amount of jobs.
-  Worker pickWorker() {
-    for (var worker in _workers) {
-      if (worker.idle) return worker;
-    }
-    throw new StateError("Attempt to use Pool when all workers are busy. "
-        "Please make sure to wait until Pool.allWorking is false.");
-  }
-
-  Future<Null> spawn() async {
-    _workers =
-        new List<Worker>.generate(count, (i) => new Worker()..name = '$i');
-    await Future.wait(_workers.map((worker) => worker.spawn()));
-    _workers.forEach((worker) => worker.stream.listen((Map message) {
-          switch (message[verbKey]) {
-            case checkDoneVerb:
-              var result = new FetchResults.fromMap(
-                  message[dataKey] as Map<String, Object>);
-              _fetchResultsSink.add(result);
-              worker.urlsToCheck.remove(result.checked.url);
-              return;
-            case infoFromWorkerVerb:
-              _messagesSink.add(message[dataKey]);
-              return;
-            default:
-              throw new StateError("Unrecognized verb from Worker: "
-                  "${message[verbKey]}");
-          }
-        }));
-    _addHostGlobs();
-    // TODO: periodically check workers and kill them after long inactivity. Mark their current urls as inaccesible.
-  }
-
-  /// Sends host globs (e.g. http://example.com/**) to all the workers.
-  void _addHostGlobs() {
-    for (var worker in _workers) {
-      worker.sink.add({verbKey: addHostGlobVerb, dataKey: _hostGlobs.toList()});
-    }
-  }
 }
 
 class Worker {

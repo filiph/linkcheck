@@ -8,7 +8,8 @@ import 'package:console/console.dart';
 import 'destination.dart';
 import 'link.dart';
 import 'uri_glob.dart';
-import 'worker/worker.dart';
+import 'worker/pool.dart';
+import 'worker/fetch_results.dart';
 
 /// Number of isolates to create by default.
 const defaultThreads = 8;
