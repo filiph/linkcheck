@@ -92,7 +92,7 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
     if (verbose) {
       count += 1;
       print("Done checking: $checked (${checked.statusDescription}) "
-          "=> ${result.links.length} links");
+          "=> ${result?.links?.length ?? 0} links");
       if (checked.isBroken) {
         print("- BROKEN");
       }

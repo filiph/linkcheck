@@ -178,9 +178,11 @@ class Worker {
 
   String name;
 
-  /// TODO: use to find out which destinations to re-check when a worker crashes
-  final Set<String> urlsToCheck = new Set<String>();
-  bool get idle => urlsToCheck.isEmpty;
+  Destination destinationToCheck;
+  bool get idle => destinationToCheck == null;
+
+  bool _spawned = false;
+  bool get spawned => _spawned;
 
   StreamSink<Map> get sink => _sink;
 
@@ -191,6 +193,7 @@ class Worker {
     _channel = await _spawnWorker();
     _sink = _channel.sink;
     _stream = _channel.stream;
+    _spawned = true;
   }
 
   String toString() => "Worker<$name>";
