@@ -86,8 +86,8 @@ FetchResults parseHtml(
   // TODO: add srcset extractor (will create multiple links per element)
 
   var anchors = doc
-      .querySelectorAll("[id]") // TODO: add [name], extract below (with ??)
-      .map((element) => element.attributes["id"])
+      .querySelectorAll("[id], [name]")
+      .map((element) => element.attributes["id"] ?? element.attributes["name"])
       .toList();
   checked.anchors = anchors;
 
