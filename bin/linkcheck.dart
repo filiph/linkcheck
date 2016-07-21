@@ -95,6 +95,12 @@ Future<Null> main(List<String> arguments) async {
   if (broken == 0 && withWarning == 0) {
     printStats(result, broken, withWarning, ansiTerm);
   } else {
+    if (ansiTerm) {
+      Console.write("\r");
+      Console.eraseLine(3);
+      print("Done crawling.                   ");
+    }
+
     reportForWriters(result, ansiTerm);
 
     printStats(result, broken, withWarning, ansiTerm);

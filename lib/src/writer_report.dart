@@ -34,25 +34,29 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
       .toList(growable: false);
   brokenSeeds.sort((a, b) => a.toString().compareTo(b.toString()));
 
-  for (var destination in brokenSeeds) {
-    if (ansiTerm) {
-      pen
-          .yellow()
-          .text(destination.url)
-          .lightGray()
-          .text(" (")
-          .red()
-          .text(destination.statusDescription)
-          .lightGray()
-          .text(')')
-          .normal()
-          .print();
-    } else {
-      print("${destination.url} (${destination.statusDescription}");
+  if (brokenSeeds.isNotEmpty) {
+    print("Seed URLs failing:");
+    for (var destination in brokenSeeds) {
+      if (ansiTerm) {
+        pen
+            .yellow()
+            .text(destination.url)
+            .lightGray()
+            .text(" (")
+            .red()
+            .text(destination.statusDescription)
+            .lightGray()
+            .text(')')
+            .normal()
+            .print();
+      } else {
+        print("${destination.url} (${destination.statusDescription}");
+      }
     }
+
+    print("");
   }
 
-  print("");
 
   for (var uri in sourceUris) {
     if (ansiTerm) {
@@ -151,7 +155,7 @@ String _buildTagSummary(Link link) {
   String tag = "";
   if (link.origin.tagName == 'a') {
     const maxLength = 10;
-    var text = link.origin.text;
+    var text = link.origin.text.replaceAll("\n", " ").trim();
     int length = text.length;
     if (length > 0) {
       if (length <= maxLength) {
