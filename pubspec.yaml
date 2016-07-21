@@ -1,5 +1,5 @@
 name: linkcheck
-version: 0.1.0
+version: 0.1.1
 description: A very fast link-checker.
 homepage: https://github.com/filiph/linkcheck
 author: "Filip Hracek <filip.hracek@gmail.com>"
