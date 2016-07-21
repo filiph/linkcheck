@@ -6,6 +6,7 @@ import 'package:linkcheck/linkcheck.dart';
 import 'package:console/console.dart';
 
 Future<Null> main(List<String> arguments) async {
+  // TODO: capture all exceptions, use http://news.dartlang.org/2016/01/unboxing-packages-stacktrace.html, and present the error in a 'prod' way (showing: unrecoverable error, and only files in this library, and how to report it)
   final parser = new ArgParser(allowTrailingOptions: true)
     ..addFlag(helpFlag, abbr: 'h', negatable: false, help: "Prints usage.")
     ..addFlag(ansiFlag,
@@ -38,7 +39,8 @@ Future<Null> main(List<String> arguments) async {
     return;
   }
 
-  bool ansiTerm = argResults[ansiFlag];
+
+  bool ansiTerm = argResults[ansiFlag] && stdout.hasTerminal;
   bool verbose = argResults[verboseFlag];
   bool shouldCheckExternal = argResults[externalFlag];
   String inputFile = argResults[inputFlag];
