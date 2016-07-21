@@ -7,7 +7,11 @@ import 'fetch_results.dart';
 import 'worker.dart';
 
 class Pool {
-  static const workerTimeout = const Duration(seconds: 10);
+  /// How much time before we kill a [Worker].
+  ///
+  /// This should give it enough time for the HttpClient timeout (15 seconds)
+  /// plus buffer.
+  static const workerTimeout = const Duration(seconds: 18);
   static const healthCheckFrequency = const Duration(seconds: 1);
 
   /// The number of threads.
@@ -32,23 +36,30 @@ class Pool {
     messages = _messagesSink.stream;
   }
 
-  bool get allIdle => _workers.every((worker) => worker.idle);
+  bool get allIdle =>
+      _workers.every((worker) => worker.idle || !worker.spawned);
 
-  bool get allWorking => _workers.every((worker) => !worker.idle);
+  bool get allWorking =>
+      _workers.every((worker) => !worker.idle || !worker.spawned);
 
-  void check(Destination destination) {
+  Worker check(Destination destination) {
     var worker = pickWorker();
     worker.sink.add({verbKey: checkVerb, dataKey: destination.toMap()});
     worker.destinationToCheck = destination;
     _lastJobPosted[worker] = new DateTime.now();
+    return worker;
   }
+
+  bool _finished = false;
+  bool get finished => _finished;
 
   Future<Null> close() async {
     _healthCheckTimer.cancel();
     await Future.wait(_workers.map((worker) async {
-      worker.sink.add(dieMessage);
-      await worker.sink.close();
+      if (worker.isKilled) return;
+      worker.kill();
     }));
+    _finished = true;
   }
 
   /// Finds the worker with the least amount of jobs.
@@ -87,12 +98,13 @@ class Pool {
       for (int i = 0; i < _workers.length; i++) {
         var worker = _workers[i];
         if (!worker.idle &&
+            _lastJobPosted[worker] != null &&
             now.difference(_lastJobPosted[worker]) > workerTimeout) {
           _messagesSink.add("Killing unresponsive $worker");
           var destination = worker.destinationToCheck;
           var checked = new DestinationResult.fromDestination(destination);
           checked.didNotConnect = true;
-          var result = new FetchResults(checked, null);
+          var result = new FetchResults(checked, const []);
           _fetchResultsSink.add(result);
           _killUnresponsive(worker);
           var newWorker = new Worker()..name = '$i';
@@ -104,8 +116,7 @@ class Pool {
   }
 
   void _killUnresponsive(Worker worker) {
-    worker.sink.add(dieMessage);
-    worker.sink.close();
+    worker.kill();
     _lastJobPosted.remove(worker);
   }
 

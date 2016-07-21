@@ -3,10 +3,14 @@ import 'dart:io' hide Link;
 
 import 'package:args/args.dart';
 import 'package:linkcheck/linkcheck.dart';
+import 'package:console/console.dart';
 
 Future<Null> main(List<String> arguments) async {
   final parser = new ArgParser(allowTrailingOptions: true)
     ..addFlag(helpFlag, abbr: 'h', negatable: false, help: "Prints usage.")
+    ..addFlag(ansiFlag,
+        help: "Use ANSI terminal capabilities for nicer input.",
+        defaultsTo: true)
     ..addFlag(verboseFlag, abbr: 'v', negatable: false, help: "Verbose mode.")
     ..addOption(inputFlag,
         abbr: 'i',
@@ -34,6 +38,7 @@ Future<Null> main(List<String> arguments) async {
     return;
   }
 
+  bool ansiTerm = argResults[ansiFlag];
   bool verbose = argResults[verboseFlag];
   bool shouldCheckExternal = argResults[externalFlag];
   String inputFile = argResults[inputFlag];
@@ -74,24 +79,72 @@ Future<Null> main(List<String> arguments) async {
     }).toSet();
   }
 
-  List<Link> links = await crawl(uris, hosts, shouldCheckExternal, verbose);
+  List<Link> links = await crawl(uris, hosts, shouldCheckExternal, verbose,
+      ansiTerm, ProcessSignal.SIGINT.watch());
 
   var broken = links
       .where((link) => link.destination.wasTried && link.destination.isBroken)
-      .toList(growable: false);
+      .length;
 
-  print("\n\nStats:");
-  print("${links.length.toString().padLeft(8)} links checked");
-  print("${broken.length.toString().padLeft(8)} possibly broken links found");
-  print("");
+  var withWarning = links
+      .where((link) => link.destination.wasTried && link.hasWarning)
+      .length;
 
-  reportForWriters(links);
+  if (ansiTerm) {
+    Console.write("\r");
+    Console.eraseLine(3);
+    TextPen pen = new TextPen();
+    if (links.isEmpty) {
+      pen
+          .red()
+          .text("Error. ")
+          .normal()
+          .text("Couldn't connect or find any links.")
+          .print();
+    } else if (broken == 0 && withWarning == 0) {
+      pen
+          .green()
+          .text("Perfect. ")
+          .normal()
+          .text("${links.length} links checked.")
+          .print();
+    } else if (broken == 0) {
+      pen
+          .yellow()
+          .text("Warnings. ")
+          .normal()
+          .text("${links.length} links checked, ")
+          .text(withWarning == 1
+              ? "1 has a warning"
+              : "$withWarning have warnings.")
+          .print();
+    } else {
+      pen
+          .red()
+          .text("Errors. ")
+          .normal()
+          .text("${links.length} links checked, "
+              "$broken have errors, "
+              "$withWarning have warnings.")
+          .print();
+    }
+  } else {
+    print("\n\nStats:");
+    print("${links.length.toString().padLeft(8)} links checked");
+    print("${withWarning.toString().padLeft(8)} have warnings");
+    print("${broken.toString().padLeft(8)} are broken");
+    print("");
+  }
 
-  if (broken.isNotEmpty) exitCode = 2;
+  reportForWriters(links, ansiTerm);
+
+  if (withWarning > 0) exitCode = 1;
+  if (broken > 0) exitCode = 2;
 }
 
 const defaultUrl = "http://localhost:4000/";
 
+const ansiFlag = "nice";
 const externalFlag = "external";
 const helpFlag = "help";
 const hostsFlag = "hosts";

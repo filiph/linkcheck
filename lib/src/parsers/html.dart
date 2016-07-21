@@ -32,7 +32,13 @@ Link extractLink(Uri uri, Element element, final List<String> attributes,
 
   // Valid URLs can be surrounded by spaces.
   reference = reference.trim();
-  var destinationUri = uri.resolve(reference);
+  Uri destinationUri;
+  try {
+    destinationUri = uri.resolve(reference);
+  } on FormatException {
+    Destination destination = new Destination.invalid(reference);
+    return new Link(origin, destination, null);
+  }
   var destinationUrlNaked = destinationUri.removeFragment().toString();
 
   for (var existing in destinations) {

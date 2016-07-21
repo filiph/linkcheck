@@ -1,4 +1,4 @@
-library linkcheck.check;
+library linkcheck.crawl;
 
 import 'dart:async';
 import 'dart:collection';
@@ -21,10 +21,20 @@ const localhostOnlyThreads = 4;
 /// in [crawl].
 enum Bin { open, openExternal, inProgress, closed }
 
-Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
-    bool shouldCheckExternal, bool verbose) async {
-  Console.init();
-  var cursor = new Cursor();
+Future<List<Link>> crawl(
+    List<Uri> seeds,
+    Set<String> hostGlobs,
+    bool shouldCheckExternal,
+    bool verbose,
+    bool ansiTerm,
+    Stream<dynamic> stopSignal) async {
+  Cursor cursor;
+  TextPen pen;
+  if (ansiTerm) {
+    Console.init();
+    cursor = new Cursor();
+    pen = new TextPen();
+  }
 
   if (verbose) {
     print("Crawl will start on the following URLs: $seeds");
@@ -73,7 +83,11 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
 
   int count = 0;
   if (!verbose) {
-    cursor.write("Crawling sources: $count");
+    if (ansiTerm) {
+      cursor.write("Crawling: $count");
+    } else {
+      print("Crawling...");
+    }
   }
 
   // TODO:
@@ -81,6 +95,25 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
   // - hashmap with info on domains - allows HEAD, breaks connections, etc.
 
   var allDone = new Completer<Null>();
+
+  // Respond to Ctrl-C
+  StreamSubscription stopSignalSubscription;
+  stopSignalSubscription = stopSignal.listen((_) {
+    if (ansiTerm) {
+      pen
+          .text("\n")
+          .red()
+          .text("Ctrl-C")
+          .normal()
+          .text(" Terminating crawl.")
+          .print();
+    } else {
+      print("\nSIGINT: Terminating crawl");
+    }
+    pool.close();
+    allDone.complete();
+    stopSignalSubscription.cancel();
+  });
 
   pool.fetchResults.listen((FetchResults result) {
     assert(bin[result.checked.url] == Bin.inProgress);
@@ -97,9 +130,13 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
         print("- BROKEN");
       }
     } else {
-      cursor.moveLeft(count.toString().length);
-      count += 1;
-      cursor.write(count.toString());
+      if (ansiTerm) {
+        cursor.moveLeft(count.toString().length);
+        count += 1;
+        cursor.write(count.toString());
+      } else {
+        count += 1;
+      }
     }
 
     closed.add(checked);
@@ -136,6 +173,13 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
     links.addAll(result.links);
 
     for (var destination in newDestinations) {
+      if (destination.isInvalid) {
+        if (verbose) {
+          print("Will not be checking: $destination - invalid url");
+        }
+        continue;
+      }
+
       destination.isExternal =
           !uriGlobs.any((glob) => glob.matches(destination.uri));
 
@@ -185,10 +229,10 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
         destination =
             count % 2 == 0 ? open.removeFirst() : openExternal.removeFirst();
       }
+      var worker = pool.check(destination);
       if (verbose) {
-        print("About to add: $destination to ${pool.pickWorker()}");
+        print("Added: $destination to $worker");
       }
-      pool.check(destination);
       inProgress.add(destination);
       bin[destination.url] = Bin.inProgress;
     }
@@ -215,17 +259,20 @@ Future<List<Link>> crawl(List<Uri> seeds, Set<String> hostGlobs,
 
   await allDone.future;
 
+  stopSignalSubscription.cancel();
+
   // Fix links (dedupe destinations).
   for (var link in links) {
     assert(bin[link.destination.url] == Bin.closed);
 
-    var canonical = closed.singleWhere((d) => d.url == link.destination.url);
-    link.destination = canonical;
+    // If it wasn't for the posibility to SIGINT the process, we could
+    var canonical = closed.where((d) => d.url == link.destination.url).toList();
+    if (canonical.length == 1) {
+      link.destination = canonical.single;
+    }
   }
 
-  // TODO: (optionally) check anchors
-
-  pool.close();
+  if (!pool.finished) pool.close();
 
   assert(open.isEmpty);
   assert(closed.every((destination) =>

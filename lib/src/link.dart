@@ -17,6 +17,10 @@ class Link {
             new Destination.fromMap(map["destination"] as Map<String, Object>),
             map["destinationAnchor"]);
 
+  bool get hasError => destination.isBroken;
+
+  bool get hasWarning => !satisfiesFragment;
+
   bool get satisfiesFragment => destination.satisfiesFragment(fragment);
 
   Map<String, Object> toMap() => {

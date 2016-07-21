@@ -5,19 +5,11 @@ import 'dart:convert';
 import 'dart:io' hide Link;
 import 'dart:isolate';
 
-import 'package:csslib/parser.dart' as css;
-import 'package:csslib/visitor.dart';
-import 'package:html/dom.dart';
-import 'package:html/parser.dart';
-import 'package:source_span/source_span.dart';
 import 'package:stream_channel/stream_channel.dart';
 
 import '../destination.dart';
-import '../link.dart';
-import '../origin.dart';
 import '../parsers/css.dart';
 import '../parsers/html.dart';
-import '../uri_glob.dart';
 import 'fetch_options.dart';
 import 'fetch_results.dart';
 
@@ -32,13 +24,10 @@ const unrecognizedMessage = const {verbKey: unrecognizedVerb};
 const unrecognizedVerb = "UNRECOGNIZED";
 const verbKey = "message";
 
-
 Future<FetchResults> fetch(
     Destination current, HttpClient client, FetchOptions options) async {
   DestinationResult checked = new DestinationResult.fromDestination(current);
   var uri = current.uri;
-
-  options.info(uri.toString());
 
   // Fetch the HTTP response
   HttpClientResponse response;
@@ -69,7 +58,7 @@ Future<FetchResults> fetch(
     //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
     //          "started the localhost server?");
     checked.didNotConnect = true;
-    return new FetchResults(checked, null);
+    return new FetchResults(checked, const []);
   }
 
   checked.updateFromResponse(response);
@@ -79,7 +68,7 @@ Future<FetchResults> fetch(
   if (current.statusCode != 200 ||
       !options.matchesAsInternal(current.finalUri) ||
       !current.isParseableMimeType /* TODO: add SVG/XML */) {
-    return new FetchResults(checked, null);
+    return new FetchResults(checked, const []);
   }
 
   String content;
@@ -118,21 +107,25 @@ void worker(SendPort port) {
   var client = new HttpClient();
   var options = new FetchOptions(sink);
 
+  bool alive = true;
+
   stream.listen((Map message) async {
     switch (message[verbKey]) {
       case dieVerb:
         client.close(force: true);
         sink.close();
+        alive = false;
         return null;
       case checkVerb:
         Destination destination =
             new Destination.fromMap(message[dataKey] as Map<String, Object>);
         var results = await fetch(destination, client, options);
-        sink.add({verbKey: checkDoneVerb, dataKey: results.toMap()});
+        if (alive) {
+          sink.add({verbKey: checkDoneVerb, dataKey: results.toMap()});
+        }
         return null;
       case addHostGlobVerb:
         options.addHostGlobs(message[dataKey] as List<String>);
-        options.info("Globs received. Thanks!");
         return null;
       // TODO: add or update hosts map etc.
       default:
@@ -186,6 +179,9 @@ class Worker {
 
   StreamSink<Map> get sink => _sink;
 
+  bool _isKilled = false;
+  bool get isKilled => _isKilled;
+
   Stream<Map> get stream => _stream;
 
   Future<Null> spawn() async {
@@ -194,6 +190,12 @@ class Worker {
     _sink = _channel.sink;
     _stream = _channel.stream;
     _spawned = true;
+  }
+
+  Future<Null> kill() async {
+    _isKilled = true;
+    sink.add(dieMessage);
+    await sink.close();
   }
 
   String toString() => "Worker<$name>";

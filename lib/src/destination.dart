@@ -58,6 +58,8 @@ class Destination {
 
   Uri _finalUri;
 
+  // TODO: add #! rewrite
+
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),
         _uri = uri.removeFragment() {
@@ -88,6 +90,10 @@ class Destination {
       : url = url.contains("#") ? url.split("#").first : url {
     _hashCode = this.url.hashCode;
   }
+
+  Destination.invalid(String url)
+      : url = url,
+        isInvalid = true;
 
   /// Parsed [finalUrl].
   Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
@@ -129,6 +135,7 @@ class Destination {
     }
     return "HTTP $statusCode";
   }
+
   Uri get uri => _uri ??= Uri.parse(url);
 
   bool get wasTried => didNotConnect || statusCode != null;
@@ -188,7 +195,8 @@ class DestinationResult {
 
   DestinationResult.fromDestination(Destination destination)
       : url = destination.url,
-        isSource = destination.isSource;
+        isSource = destination.isSource,
+        redirects = [];
 
   DestinationResult.fromMap(Map<String, Object> map)
       : url = map["url"],

@@ -9,7 +9,6 @@ import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
 
-
 FetchResults parseCss(
     String content, Destination current, DestinationResult checked) {
   var style = css.parse(content);
@@ -24,10 +23,17 @@ FetchResults parseCss(
 
     // Valid URLs can be surrounded by spaces.
     var url = reference.url.trim();
-
-    var destinationUri = current.finalUri.resolve(url);
-
     Link link;
+
+    Uri destinationUri;
+    try {
+      destinationUri = current.finalUri.resolve(url);
+    } on FormatException {
+      Destination destination = new Destination.invalid(url);
+      link = new Link(origin, destination, null);
+      links.add(link);
+      continue;
+    }
 
     for (var existing in currentDestinations) {
       if (destinationUri == existing.uri) {
@@ -36,12 +42,14 @@ FetchResults parseCss(
       }
     }
 
-    if (link == null) {
-      Destination destination = new Destination(destinationUri);
-      currentDestinations.add(destination);
-      link = new Link(origin, destination, null);
+    if (link != null) {
+      links.add(link);
+      continue;
     }
-    assert(link != null);
+
+    Destination destination = new Destination(destinationUri);
+    currentDestinations.add(destination);
+    link = new Link(origin, destination, null);
     links.add(link);
   }
 

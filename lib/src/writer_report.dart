@@ -3,47 +3,123 @@ library linkcheck.writer_report;
 import 'dart:math' show min;
 
 import 'link.dart';
+import 'package:console/console.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
-void reportForWriters(List<Link> links) {
+void reportForWriters(List<Link> links, bool ansiTerm) {
   List<Link> broken = links
       .where((link) =>
           link.destination.wasTried &&
-          (link.destination.isBroken || !link.satisfiesFragment))
+          (link.destination.isBroken || link.hasWarning))
       .toList(growable: false);
 
   List<Uri> sourceUris =
       broken.map((link) => link.origin.uri).toSet().toList(growable: false);
   sourceUris.sort((a, b) => a.toString().compareTo(b.toString()));
 
-  for (var uri in sourceUris) {
-    print(uri);
-
-    var links = broken.where((link) => link.origin.uri == uri);
-    for (var link in links) {
-      String tag = _buildTagSummary(link);
-      print("- (${link.origin.span.start.line}"
-          ":${link.origin.span.start.column}) "
-          "$tag"
-          "=> ${link.destination.uri}"
-          "${link.fragment == null
-              ? ''
-              : '#' + link.fragment} "
-          "(${link.destination.statusDescription}"
-          "${link.satisfiesFragment ? '' : ' but missing anchor'})");
-      if (link.destination.isRedirected) {
-        print("  - redirect path:");
-        String current = link.destination.url;
-        for (var redirect in link.destination.redirects) {
-          print("    - $current (${redirect.statusCode})");
-          current = redirect.url;
-        }
-        print("    - $current (${link.destination.statusCode})");
-      }
-    }
-    print("");
+  TextPen pen;
+  if (ansiTerm) {
+    pen = new TextPen();
   }
+
+  print("");
+
+  for (var uri in sourceUris) {
+    if (ansiTerm) {
+      printWithAnsi(uri, broken, pen);
+    } else {
+      printWithoutAnsi(uri, broken);
+    }
+  }
+}
+
+void printWithAnsi(Uri uri, List<Link> broken, TextPen pen) {
+  pen.reset();
+  pen
+      .setColor(Color.YELLOW)
+      .text(uri.toString())
+      .normal()
+      .print();
+
+  var links = broken.where((link) => link.origin.uri == uri);
+  for (var link in links) {
+    String tag = _buildTagSummary(link);
+    pen.reset();
+    pen
+        .normal()
+        .text("- ")
+        .lightGray()
+        .text("(")
+        .normal()
+        .text("${link.origin.span.start.line}")
+        .lightGray()
+        .text(":")
+        .normal()
+        .text("${link.origin.span.start.column}")
+        .lightGray()
+        .text(") ")
+        .magenta()
+        .text(tag)
+        .lightGray()
+        .text("=> ")
+        .normal()
+        .text(link.destination.url)
+        .lightGray()
+        .text(link.fragment == null ? '' : '#${link.fragment}')
+        .text(" (")
+        .setColor(link.hasError ? Color.RED : Color.YELLOW)
+        .text(link.destination.statusDescription)
+        .yellow()
+        .text(!link.hasError && !link.satisfiesFragment
+            ? ' but missing anchor'
+            : '')
+        .lightGray()
+        .text(')')
+        .normal()
+        .print();
+
+    if (link.destination.isRedirected) {
+      print("  - redirect path:");
+      String current = link.destination.url;
+      for (var redirect in link.destination.redirects) {
+        print("    - $current (${redirect.statusCode})");
+        current = redirect.url;
+      }
+      print("    - $current (${link.destination.statusCode})");
+    }
+  }
+  print("");
+}
+
+void printWithoutAnsi(Uri uri, List<Link> broken) {
+  print(uri);
+
+  var links = broken.where((link) => link.origin.uri == uri);
+  for (var link in links) {
+    String tag = _buildTagSummary(link);
+    print("- (${link.origin.span.start.line}"
+        ":${link.origin.span.start.column}) "
+        "$tag"
+        "=> ${link.destination.uri}"
+        "${link.fragment == null
+            ? ''
+            : '#' + link.fragment} "
+        "(${link.destination.statusDescription}"
+        "${!link.destination.isBroken && !link.satisfiesFragment
+            ? ' but missing anchor'
+            : ''})");
+    if (link.destination.isRedirected) {
+      print("  - redirect path:");
+      String current = link.destination.url;
+      for (var redirect in link.destination.redirects) {
+        print("    - $current (${redirect.statusCode})");
+        current = redirect.url;
+      }
+      print("    - $current (${link.destination.statusCode})");
+    }
+  }
+  print("");
 }
 
 String _buildTagSummary(Link link) {
