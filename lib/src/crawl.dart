@@ -66,6 +66,11 @@ Future<List<Link>> crawl(
   // List of hosts that do not support HTTP HEAD requests.
   Set<String> headIncompatible = new Set<String>();
 
+//  Map<String,ServerInfo> from hosts to info about them
+  // - robots, 401s, 403s ("nope"), 405 ("can't do HEAD"), 503 ("throttling?"), last request to this host
+  // separate channel for reporting this stuff (UPDATE_INFO, Worker<1>, time, ["example.com", "405_HEAD"])
+  // main is sending similar updates to all other workers, must be slim, not too often
+//  XXX START HERE
   // TODO: add hashmap with robots. Special case for localhost
 
   Set<Link> links = new Set<Link>();
@@ -92,13 +97,12 @@ Future<List<Link>> crawl(
 
   // TODO:
   // - --cache for creating a .linkcheck.cache file
-  // - hashmap with info on domains - allows HEAD, breaks connections, etc.
 
   var allDone = new Completer<Null>();
 
   // Respond to Ctrl-C
   StreamSubscription stopSignalSubscription;
-  stopSignalSubscription = stopSignal.listen((_) {
+  stopSignalSubscription = stopSignal.listen((_) async {
     if (ansiTerm) {
       pen
           .text("\n")
@@ -110,7 +114,7 @@ Future<List<Link>> crawl(
     } else {
       print("\nSIGINT: Terminating crawl");
     }
-    pool.close();
+    await pool.close();
     allDone.complete();
     stopSignalSubscription.cancel();
   });
@@ -218,7 +222,7 @@ Future<List<Link>> crawl(
       }
     }
 
-    while ((open.isNotEmpty || openExternal.isNotEmpty) && !pool.allWorking) {
+    while ((open.isNotEmpty || openExternal.isNotEmpty) && pool.anyIdle) {
       Destination destination;
       if (openExternal.isEmpty) {
         destination = open.removeFirst();
@@ -237,7 +241,7 @@ Future<List<Link>> crawl(
       bin[destination.url] = Bin.inProgress;
     }
 
-    if (open.isEmpty && pool.allIdle) {
+    if (open.isEmpty && openExternal.isEmpty && pool.allIdle) {
       allDone.complete();
       return;
     }
@@ -250,7 +254,7 @@ Future<List<Link>> crawl(
   }
 
   // Start the crawl.
-  while (open.isNotEmpty && !pool.allWorking) {
+  while (open.isNotEmpty && pool.anyIdle) {
     var seedDestination = open.removeFirst();
     pool.check(seedDestination);
     inProgress.add(seedDestination);
@@ -263,26 +267,23 @@ Future<List<Link>> crawl(
 
   // Fix links (dedupe destinations).
   for (var link in links) {
-    assert(bin[link.destination.url] == Bin.closed);
-
-    // If it wasn't for the posibility to SIGINT the process, we could
+    // If it wasn't for the posibility to SIGINT the process, we could assume
+    // there is exactly one [canonical]. Alas, we need to make sure.
     var canonical = closed.where((d) => d.url == link.destination.url).toList();
     if (canonical.length == 1) {
       link.destination = canonical.single;
     }
   }
 
-  if (!pool.finished) pool.close();
+  if (!pool.isShuttingDown) {
+    await pool.close();
+  }
 
   assert(open.isEmpty);
   assert(closed.every((destination) =>
       destination.wasTried ||
       (destination.isExternal && !shouldCheckExternal) ||
       destination.isUnsupportedScheme));
-
-//  for (var d in closed.where((d) => d.isSource && !d.isExternal).map((dest)=> dest.uriWithoutFragment).toSet()) {
-//    print(d);
-//  }
 
   if (verbose) {
     print("Broken links");
@@ -291,21 +292,3 @@ Future<List<Link>> crawl(
 
   return links.toList(growable: false);
 }
-
-//void _updateEquivalents(
-//    Destination current, Queue<Destination> open, Set<Destination> closed) {
-//  List<Destination> equivalents = _getEquivalents(current, open).toList();
-//  for (var other in equivalents) {
-//    other.updateFrom(current);
-//    open.remove(other);
-//    closed.add(other);
-//  }
-//}
-//
-///// Returns all destinations that share the same
-///// [Destination.uriWithoutFragment] with [current].
-//Iterable<Destination> _getEquivalents(
-//        Destination current, Iterable<Destination> destinations) =>
-//    destinations.where((destination) =>
-//        destination.uriWithoutFragment == current.uriWithoutFragment &&
-//        destination != current);

@@ -54,7 +54,7 @@ Future<FetchResults> fetch(
 
   if (response == null) {
     // Request failed completely.
-    // TODO: abort when we encounter X of these in a row
+    // TODO: abort when we encounter X of these in a row, send ServerInfo update
     //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
     //          "started the localhost server?");
     checked.didNotConnect = true;
@@ -104,7 +104,7 @@ void worker(SendPort port) {
   var sink = channel.sink;
   var stream = channel.stream;
 
-  var client = new HttpClient();
+  var client = new HttpClient()..userAgent = userAgent;
   var options = new FetchOptions(sink);
 
   bool alive = true;
@@ -127,7 +127,7 @@ void worker(SendPort port) {
       case addHostGlobVerb:
         options.addHostGlobs(message[dataKey] as List<String>);
         return null;
-      // TODO: add or update hosts map etc.
+      // TODO: add to server info from main isolate
       default:
         sink.add(unrecognizedMessage);
     }
@@ -172,7 +172,7 @@ class Worker {
   String name;
 
   Destination destinationToCheck;
-  bool get idle => destinationToCheck == null;
+  bool get idle => destinationToCheck == null && _spawned && !_isKilled;
 
   bool _spawned = false;
   bool get spawned => _spawned;
@@ -193,11 +193,13 @@ class Worker {
   }
 
   Future<Null> kill() async {
+    if (!_spawned) return;
     _isKilled = true;
-    if (sink == null) return;
     sink.add(dieMessage);
     await sink.close();
   }
 
   String toString() => "Worker<$name>";
 }
+
+const userAgent = "linkcheck tool (https://github.com/filiph/linkcheck)";

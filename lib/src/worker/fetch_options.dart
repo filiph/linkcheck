@@ -10,7 +10,7 @@ import 'worker.dart';
 class FetchOptions {
   final _compiledHostGlobs = new List<UriGlob>();
   final headIncompatible = new Set<String>(); // TODO: send to main
-  // TODO: hashmap of known problematic servers etc.
+  // TODO: hashmap of known problematic servers etc. = List<String,ServerInfo>
 
   final StreamSink<Map> _sink;
 

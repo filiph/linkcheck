@@ -58,7 +58,7 @@ FetchResults parseHtml(
   var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
 
   // Find parseable destinations
-  // TODO: add the following: media, meta refreshes, forms, metadata
+  // TODO: add the following: meta refreshes, forms, metadata
   //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
   // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
   // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
@@ -86,7 +86,7 @@ FetchResults parseHtml(
   // TODO: add srcset extractor (will create multiple links per element)
 
   var anchors = doc
-      .querySelectorAll("[id]")
+      .querySelectorAll("[id]") // TODO: add [name], extract below (with ??)
       .map((element) => element.attributes["id"])
       .toList();
   checked.anchors = anchors;
