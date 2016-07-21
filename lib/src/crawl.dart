@@ -21,7 +21,7 @@ const localhostOnlyThreads = 4;
 /// in [crawl].
 enum Bin { open, openExternal, inProgress, closed }
 
-Future<List<Link>> crawl(
+Future<CrawlResult> crawl(
     List<Uri> seeds,
     Set<String> hostGlobs,
     bool shouldCheckExternal,
@@ -51,6 +51,7 @@ Future<List<Link>> crawl(
   // the front of the queue take precedence.
   Queue<Destination> open =
       new Queue<Destination>.from(seeds.map((uri) => new Destination(uri)
+        ..isSeed = true
         ..isSource = true
         ..isExternal = false));
   open.forEach((destination) => bin[destination.url] = Bin.open);
@@ -73,6 +74,7 @@ Future<List<Link>> crawl(
 //  XXX START HERE
   // TODO: add hashmap with robots. Special case for localhost
 
+  // Crate the links Set.
   Set<Link> links = new Set<Link>();
 
   int threads;
@@ -290,5 +292,11 @@ Future<List<Link>> crawl(
     links.where((link) => link.destination.isBroken).forEach(print);
   }
 
-  return links.toList(growable: false);
+  return new CrawlResult(links, closed);
+}
+
+class CrawlResult {
+  final Set<Link> links;
+  final Set<Destination> destinations;
+  const CrawlResult(this.links, this.destinations);
 }

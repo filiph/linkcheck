@@ -60,7 +60,7 @@ FetchResults parseHtml(
   // Find parseable destinations
   // TODO: add the following: meta refreshes, forms, metadata
   //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
-  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere)
+  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere) (<base href="..">)
   // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
 
   var linkElements = doc.querySelectorAll(

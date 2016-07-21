@@ -52,6 +52,10 @@ class Destination {
 
   bool isInvalid = false;
 
+  /// This is true if this Destination was one of the ones provided at the
+  /// start of the crawl.
+  bool isSeed = false;
+
   bool didNotConnect = false;
 
   int _hashCode;

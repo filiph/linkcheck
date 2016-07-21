@@ -39,7 +39,6 @@ Future<Null> main(List<String> arguments) async {
     return;
   }
 
-
   bool ansiTerm = argResults[ansiFlag] && stdout.hasTerminal;
   bool verbose = argResults[verboseFlag];
   bool shouldCheckExternal = argResults[externalFlag];
@@ -81,17 +80,34 @@ Future<Null> main(List<String> arguments) async {
     }).toSet();
   }
 
-  List<Link> links = await crawl(uris, hosts, shouldCheckExternal, verbose,
+  CrawlResult result = await crawl(uris, hosts, shouldCheckExternal, verbose,
       ansiTerm, ProcessSignal.SIGINT.watch());
+  Set<Link> links = result.links;
 
-  var broken = links
-      .where((link) => link.destination.wasTried && link.destination.isBroken)
+  var broken = result.destinations
+      .where((destination) => destination.wasTried && destination.isBroken)
       .length;
 
   var withWarning = links
       .where((link) => link.destination.wasTried && link.hasWarning)
       .length;
 
+  if (broken == 0 && withWarning == 0) {
+    printStats(result, broken, withWarning, ansiTerm);
+  } else {
+    reportForWriters(result, ansiTerm);
+
+    printStats(result, broken, withWarning, ansiTerm);
+  }
+  print("");
+
+  if (withWarning > 0) exitCode = 1;
+  if (broken > 0) exitCode = 2;
+}
+
+void printStats(
+    CrawlResult result, int broken, int withWarning, bool ansiTerm) {
+  Set<Link> links = result.links;
   if (ansiTerm) {
     Console.write("\r");
     Console.eraseLine(3);
@@ -137,11 +153,6 @@ Future<Null> main(List<String> arguments) async {
     print("${broken.toString().padLeft(8)} are broken");
     print("");
   }
-
-  reportForWriters(links, ansiTerm);
-
-  if (withWarning > 0) exitCode = 1;
-  if (broken > 0) exitCode = 2;
 }
 
 const defaultUrl = "http://localhost:4000/";

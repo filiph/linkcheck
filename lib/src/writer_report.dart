@@ -2,12 +2,18 @@ library linkcheck.writer_report;
 
 import 'dart:math' show min;
 
-import 'link.dart';
 import 'package:console/console.dart';
+
+import 'crawl.dart' show CrawlResult;
+import 'link.dart';
+import 'destination.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
-void reportForWriters(List<Link> links, bool ansiTerm) {
+void reportForWriters(CrawlResult result, bool ansiTerm) {
+  print("");
+
+  Set<Link> links = result.links;
   List<Link> broken = links
       .where((link) =>
           link.destination.wasTried &&
@@ -23,6 +29,29 @@ void reportForWriters(List<Link> links, bool ansiTerm) {
     pen = new TextPen();
   }
 
+  List<Destination> brokenSeeds = result.destinations
+      .where((destination) => destination.isSeed && destination.isBroken)
+      .toList(growable: false);
+  brokenSeeds.sort((a, b) => a.toString().compareTo(b.toString()));
+
+  for (var destination in brokenSeeds) {
+    if (ansiTerm) {
+      pen
+          .yellow()
+          .text(destination.url)
+          .lightGray()
+          .text(" (")
+          .red()
+          .text(destination.statusDescription)
+          .lightGray()
+          .text(')')
+          .normal()
+          .print();
+    } else {
+      print("${destination.url} (${destination.statusDescription}");
+    }
+  }
+
   print("");
 
   for (var uri in sourceUris) {
@@ -36,11 +65,7 @@ void reportForWriters(List<Link> links, bool ansiTerm) {
 
 void printWithAnsi(Uri uri, List<Link> broken, TextPen pen) {
   pen.reset();
-  pen
-      .setColor(Color.YELLOW)
-      .text(uri.toString())
-      .normal()
-      .print();
+  pen.setColor(Color.YELLOW).text(uri.toString()).normal().print();
 
   var links = broken.where((link) => link.origin.uri == uri);
   for (var link in links) {
