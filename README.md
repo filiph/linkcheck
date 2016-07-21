@@ -4,30 +4,30 @@ Very fast link-checking.
 
 ## Philosophy:
 
-* Fast crawling is key
+* **Fast crawling is key**
   * You want to run the link-checker _at least_ before every deploy (on CI 
     or manually). When it takes ages, you're less likely to do so.
-  * linkcheck is currently several times faster than blc
-* Finds everything important
+  * `linkcheck` is currently several times faster than blc
+* **Finds everything important**
   * No link-checker can guarantee correct results: the web is too flaky 
     for that.
   * But at least the tool should correctly parse the HTML (not just try to
     guess what's a URL and what isn't) _and_ the CSS (for `url(...)` links).
-  * The tool already finds more than `linklint` and `blc`, and it has fewer
+  * `linkcheck` already finds more than `linklint` and `blc`, and it has fewer
     false positives.
-* Sane defaults (easy things are easy, advanced things are possible)
+* **Sane defaults**
   * The most frequent use cases should be only a few arguments. For example,
     unleashing `linkcheck` on http://localhost:4001 can be done via 
     `linkcheck :4001`. 
   * You want to crawl a served site, not directories of files.
   * Ignores throttling and robots.txt on localhost.
   * Should follow CLI 'standards' (no `@input` etc.)
-* Brief and meaningful output
+* **Brief and meaningful output**
   * When everything works, all you want to see is 'Perfect' + stats.
+    That's what `linkcheck` does.
   * When things are broken, you want to see where exactly is the problem
     and you want to have it sorted in a sane way.
-  * linkcheck does this.
-* Useful status code
+* **Useful status code**
   * For CI build, `linkcheck` returns status code `1` if there are warnings, and
     status code `2` if there are errors.
 
