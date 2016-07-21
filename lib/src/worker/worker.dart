@@ -194,6 +194,7 @@ class Worker {
 
   Future<Null> kill() async {
     _isKilled = true;
+    if (sink == null) return;
     sink.add(dieMessage);
     await sink.close();
   }
