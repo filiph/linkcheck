@@ -49,6 +49,17 @@ $ brew install dart
 pub global activate linkcheck
 ```
 
+Pub installs executables into `~/.pub-cache/bin`, which may not be on your path.
+You can fix that by adding the following to your shell's config file (.bashrc, 
+.bash_profile, etc.):
+
+```
+export PATH="$PATH":"~/.pub-cache/bin"
+```
+
+Then either restart the terminal or run `source ~/.bash_profile` (assuming
+`~/.bash_profile` is where you put the PATH export above).
+
 That's it.
 
 ## Usage
