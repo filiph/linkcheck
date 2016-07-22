@@ -10,20 +10,29 @@ class UriGlob {
   final String authority;
 
   /// Matches everything that comes after host.
-  final Glob glob;
+  final Glob _glob;
 
-  UriGlob(String glob)
-      : this._(
-            Uri.parse(glob).authority,
-            new Glob(Uri.parse(glob).path,
-                context: _urlContext, caseSensitive: true));
-  UriGlob._(this.authority, this.glob);
+  factory UriGlob(String glob) {
+    var uri = Uri.parse(glob);
+    var authority = uri.authority;
+    if (authority.endsWith('**')) {
+      authority = authority.substring(0, authority.length - 2);
+    }
+
+    var path = uri.path;
+    if (path.isEmpty) path = "/**";
+
+    return new UriGlob._(
+        authority, new Glob(path, context: _urlContext, caseSensitive: true));
+  }
+
+  UriGlob._(this.authority, this._glob);
 
   bool matches(Uri uri) {
     if (uri.authority != authority) return false;
     var path = uri.path;
     // Fix http://example.com into http://example.com/.
     if (path.isEmpty) path = "/";
-    return glob.matches(path);
+    return _glob.matches(path);
   }
 }
