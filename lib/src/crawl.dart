@@ -8,6 +8,7 @@ import 'package:console/console.dart';
 import 'destination.dart';
 import 'link.dart';
 import 'uri_glob.dart';
+import 'server_info.dart';
 import 'worker/pool.dart';
 import 'worker/fetch_results.dart';
 
@@ -64,15 +65,19 @@ Future<CrawlResult> crawl(
   // The set of destinations that have been tried.
   Set<Destination> closed = new Set<Destination>();
 
-  // List of hosts that do not support HTTP HEAD requests.
-  Set<String> headIncompatible = new Set<String>();
+  // Servers we are connecting to.
+  Map<String, ServerInfo> servers = new Map<String, ServerInfo>();
+  Queue<String> unknownServers = new Queue<String>();
+  Set<String> serversInProgress = new Set<String>();
+  seeds.map((uri) => uri.authority).toSet().forEach((String host) {
+    servers[host] = new ServerInfo(host);
+    unknownServers.add(host);
+  });
 
-//  Map<String,ServerInfo> from hosts to info about them
-  // - robots, 401s, 403s ("nope"), 405 ("can't do HEAD"), 503 ("throttling?"), last request to this host
-  // separate channel for reporting this stuff (UPDATE_INFO, Worker<1>, time, ["example.com", "405_HEAD"])
-  // main is sending similar updates to all other workers, must be slim, not too often
-//  XXX START HERE
-  // TODO: add hashmap with robots. Special case for localhost
+  if (verbose) {
+    print("Crawl will check the following servers (and their robots.txt) "
+        "first: $unknownServers");
+  }
 
   // Crate the links Set.
   Set<Link> links = new Set<Link>();
@@ -98,6 +103,8 @@ Future<CrawlResult> crawl(
   }
 
   // TODO:
+  // -v for version
+  // -d for debug (verbose now)
   // - --cache for creating a .linkcheck.cache file
 
   var allDone = new Completer<Null>();
@@ -121,6 +128,120 @@ Future<CrawlResult> crawl(
     stopSignalSubscription.cancel();
   });
 
+  /// Creates new jobs and sends them to the Pool of Workers, if able.
+  void sendNewJobs() {
+    while (unknownServers.isNotEmpty && pool.anyIdle) {
+      var host = unknownServers.removeFirst();
+      pool.checkServer(host);
+      serversInProgress.add(host);
+      if (verbose) {
+        print("Checking robots.txt and availability of server: $host");
+      }
+    }
+
+    bool _serverIsKnown(Destination destination) =>
+        servers.keys.contains(destination.uri.authority);
+
+    Iterable<Destination> availableDestinations =
+        _zip(open.where(_serverIsKnown), openExternal.where(_serverIsKnown));
+
+    // In order not to touch the underlying iterables, we keep track
+    // of the destinations we want to remove.
+    List<Destination> destinationsToRemove = new List<Destination>();
+
+    for (var destination in availableDestinations) {
+      if (pool.allBusy) break;
+
+      destinationsToRemove.add(destination);
+
+      String host = destination.uri.authority;
+      ServerInfo server = servers[host];
+      if (server.hasNotConnected) {
+        destination.didNotConnect = true;
+        closed.add(destination);
+        bin[destination.url] = Bin.closed;
+        if (verbose) {
+          print("Automatically failing $destination because server $host has "
+              "failed before.");
+        }
+        continue;
+      }
+
+      if (server.bouncer != null &&
+          !server.bouncer.allows(destination.uri.path)) {
+        destination.wasDeniedByRobotsTxt = true;
+        closed.add(destination);
+        bin[destination.url] = Bin.closed;
+        if (verbose) {
+          print("Skipping $destination because of robots.txt at $host.");
+        }
+        continue;
+      }
+
+      var delay = server.getThrottlingDuration();
+      if (delay > ServerInfo.minimumDelay) {
+        // Some other worker is already waiting with a checkPage request.
+        // Let's try and see if we have more interesting options down the
+        // iterable. Do not remove it.
+        destinationsToRemove.remove(destination);
+        continue;
+      }
+
+      var worker = pool.checkPage(destination, delay);
+      server.markRequestStart(delay);
+      if (verbose) {
+        print("Added: $destination to $worker with "
+            "${delay.inMilliseconds}ms delay");
+      }
+      inProgress.add(destination);
+      bin[destination.url] = Bin.inProgress;
+    }
+
+    for (var destination in destinationsToRemove) {
+      open.remove(destination);
+      openExternal.remove(destination);
+    }
+
+    if (unknownServers.isEmpty &&
+        open.isEmpty &&
+        openExternal.isEmpty &&
+        pool.allIdle) {
+      allDone.complete();
+      return;
+    }
+  }
+
+  // Respond to new server info from Worker
+  pool.serverCheckResults.listen((ServerInfoUpdate result) {
+    serversInProgress.remove(result.host);
+    servers
+        .putIfAbsent(result.host, () => new ServerInfo(result.host))
+        .updateFromServerCheck(result);
+    if (verbose) {
+      print("Server check of ${result.host} complete.");
+    }
+
+    if (verbose) {
+      count += 1;
+      print("Server check for ${result.host} complete: "
+          "${result.didNotConnect ? 'didn\'t connect' : 'connected'}, "
+          "${result.robotsTxtContents.isEmpty
+              ? 'no robots.txt'
+              : 'robots.txt found'}.");
+    } else {
+      if (ansiTerm) {
+        cursor.moveLeft(count.toString().length);
+        count += 1;
+        cursor.write(count.toString());
+      } else {
+        count += 1;
+      }
+    }
+
+    sendNewJobs();
+  });
+
+  // Respond to fetch results from a Worker
   pool.fetchResults.listen((FetchResults result) {
     assert(bin[result.checked.url] == Bin.inProgress);
     var checked =
@@ -224,29 +345,18 @@ Future<CrawlResult> crawl(
       }
     }
 
-    while ((open.isNotEmpty || openExternal.isNotEmpty) && pool.anyIdle) {
-      Destination destination;
-      if (openExternal.isEmpty) {
-        destination = open.removeFirst();
-      } else if (open.isEmpty) {
-        destination = openExternal.removeFirst();
-      } else {
-        // Alternate between internal and external.
-        destination =
-            count % 2 == 0 ? open.removeFirst() : openExternal.removeFirst();
-      }
-      var worker = pool.check(destination);
-      if (verbose) {
-        print("Added: $destination to $worker");
-      }
-      inProgress.add(destination);
-      bin[destination.url] = Bin.inProgress;
-    }
+    // Do any destinations have different hosts? Add them to unknownServers.
+    Iterable<String> newHosts = newDestinations
+        .where((destination) => shouldCheckExternal || !destination.isExternal)
+        .map((destination) => destination.uri.authority)
+        .where((String host) =>
+            !unknownServers.contains(host) &&
+            !serversInProgress.contains(host) &&
+            !servers.keys.contains(host));
+    unknownServers.addAll(newHosts);
 
-    if (open.isEmpty && openExternal.isEmpty && pool.allIdle) {
-      allDone.complete();
-      return;
-    }
+    // Continue sending new jobs.
+    sendNewJobs();
   });
 
   if (verbose) {
@@ -255,14 +365,10 @@ Future<CrawlResult> crawl(
     });
   }
 
-  // Start the crawl.
-  while (open.isNotEmpty && pool.anyIdle) {
-    var seedDestination = open.removeFirst();
-    pool.check(seedDestination);
-    inProgress.add(seedDestination);
-    bin[seedDestination.url] = Bin.inProgress;
-  }
+  // Start the crawl. First, check servers for robots.txt etc.
+  sendNewJobs();
 
+  // This will suspend until after everything is done (or user presses Ctrl-C).
   await allDone.future;
 
   stopSignalSubscription.cancel();
@@ -299,4 +405,23 @@ class CrawlResult {
   final Set<Link> links;
   final Set<Destination> destinations;
   const CrawlResult(this.links, this.destinations);
+}
+
+/// Zips two iterables of [Destination] into one.
+///
+/// Alternates between [a] and [b]. When one of the iterables is depleted,
+/// the second iterable's remaining values will be yielded.
+Iterable<Destination> _zip(
+    Iterable<Destination> a, Iterable<Destination> b) sync* {
+  var aIterator = a.iterator;
+  var bIterator = b.iterator;
+
+  while (true) {
+    bool aExists = aIterator.moveNext();
+    bool bExists = bIterator.moveNext();
+    if (!aExists && !bExists) break;
+
+    if (aExists) yield aIterator.current;
+    if (bExists) yield bIterator.current;
+  }
 }

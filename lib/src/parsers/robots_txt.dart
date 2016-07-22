@@ -1,4 +1,4 @@
-library linkcheck.parsers.html;
+library linkcheck.parsers.robots_txt;
 
 class RobotsBouncer {
   /// The shortest possible identifying part of the user agent.
@@ -50,8 +50,7 @@ class RobotsBouncer {
     }
   }
 
-  bool allows(String path, {String forRobot}) {
-    String robotName = forRobot ?? this.robotName;
+  bool allows(String path) {
 
     if (_rules.any((rule) => rule.fitsRobotName(robotName) && rule.allowsAll)) {
       return true;

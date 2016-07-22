@@ -3,6 +3,7 @@ library linkcheck.pool;
 import 'dart:async';
 
 import '../destination.dart';
+import '../server_info.dart';
 import 'fetch_results.dart';
 import 'worker.dart';
 
@@ -29,30 +30,54 @@ class Pool {
       new StreamController<FetchResults>();
 
   Stream<FetchResults> fetchResults;
+
   StreamController<String> _messagesSink = new StreamController<String>();
 
   Stream<String> messages;
+
+  StreamController<ServerInfoUpdate> _serverCheckSink =
+      new StreamController<ServerInfoUpdate>();
+
+  Stream<ServerInfoUpdate> serverCheckResults;
+
   bool _finished = false;
 
   Pool(this.count, this._hostGlobs) {
     fetchResults = _fetchResultsSink.stream;
     messages = _messagesSink.stream;
+    serverCheckResults = _serverCheckSink.stream;
   }
 
-  ///
+  /// Returns true if all workers are either waiting for a job or not really
+  /// alive (not spawned yet, or already killed).
   bool get allIdle => _workers
       .every((worker) => worker.idle || !worker.spawned || worker.isKilled);
 
   bool get anyIdle => _workers.any((worker) => worker.idle);
 
+  bool get allBusy => !anyIdle;
+
   bool get finished => _finished;
 
   bool get isShuttingDown => _isShuttingDown;
 
-  Worker check(Destination destination) {
+  /// Asks a worker to check the given [destination]. Waits [delay] before
+  /// doing so.
+  Worker checkPage(Destination destination, Duration delay) {
     var worker = pickWorker();
-    worker.sink.add({verbKey: checkVerb, dataKey: destination.toMap()});
+    _lastJobPosted[worker] = new DateTime.now();
     worker.destinationToCheck = destination;
+    new Timer(delay, () {
+      worker.sink.add({verbKey: checkPageVerb, dataKey: destination.toMap()});
+    });
+    return worker;
+  }
+
+  /// Starts a job to send request for /robots.txt on the server.
+  Worker checkServer(String host) {
+    var worker = pickWorker();
+    worker.sink.add({verbKey: checkServerVerb, dataKey: host});
+    worker.serverToCheck = host;
     _lastJobPosted[worker] = new DateTime.now();
     return worker;
   }
@@ -82,11 +107,17 @@ class Pool {
     await Future.wait(_workers.map((worker) => worker.spawn()));
     _workers.forEach((worker) => worker.stream.listen((Map message) {
           switch (message[verbKey]) {
-            case checkDoneVerb:
+            case checkPageDoneVerb:
               var result = new FetchResults.fromMap(
                   message[dataKey] as Map<String, Object>);
               _fetchResultsSink.add(result);
               worker.destinationToCheck = null;
+              return;
+            case checkServerDoneVerb:
+              var result = new ServerInfoUpdate.fromMap(
+                  message[dataKey] as Map<String, Object>);
+              _serverCheckSink.add(result);
+              worker.serverToCheck = null;
               return;
             case infoFromWorkerVerb:
               _messagesSink.add(message[dataKey]);
@@ -109,17 +140,27 @@ class Pool {
             now.difference(_lastJobPosted[worker]) > workerTimeout) {
           _messagesSink.add("Killing unresponsive $worker");
           var destination = worker.destinationToCheck;
+          var server = worker.serverToCheck;
+
           _lastJobPosted.remove(worker);
           var newWorker = new Worker()..name = '$i';
           _workers[i] = newWorker;
 
-          // Only notify about the failed destination when the old
-          // worker is gone. Otherwise, crawl could fail to wrap up, thinking
-          // that one Worker is still working.
-          var checked = new DestinationResult.fromDestination(destination);
-          checked.didNotConnect = true;
-          var result = new FetchResults(checked, const []);
-          _fetchResultsSink.add(result);
+          if (destination != null) {
+            // Only notify about the failed destination when the old
+            // worker is gone. Otherwise, crawl could fail to wrap up, thinking
+            // that one Worker is still working.
+            var checked = new DestinationResult.fromDestination(destination);
+            checked.didNotConnect = true;
+            var result = new FetchResults(checked, const []);
+            _fetchResultsSink.add(result);
+          }
+
+          if (server != null) {
+            var result = new ServerInfoUpdate(server);
+            result.didNotConnect = true;
+            _serverCheckSink.add(result);
+          }
 
           await newWorker.spawn();
           if (_isShuttingDown) {

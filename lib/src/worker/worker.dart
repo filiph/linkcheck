@@ -10,21 +10,85 @@ import 'package:stream_channel/stream_channel.dart';
 import '../destination.dart';
 import '../parsers/css.dart';
 import '../parsers/html.dart';
+import '../server_info.dart';
 import 'fetch_options.dart';
 import 'fetch_results.dart';
 
 const addHostGlobVerb = "ADD_HOST";
-const checkDoneVerb = "CHECK_DONE";
-const checkVerb = "CHECK";
+const checkPageDoneVerb = "CHECK_DONE";
+const checkPageVerb = "CHECK";
+const checkServerDoneVerb = "SERVER_CHECK_DONE";
+const checkServerVerb = "CHECK_SERVER";
 const dataKey = "data";
 const dieMessage = const {verbKey: dieVerb};
 const dieVerb = "DIE";
 const infoFromWorkerVerb = "INFO_FROM_WORKER";
 const unrecognizedMessage = const {verbKey: unrecognizedVerb};
 const unrecognizedVerb = "UNRECOGNIZED";
+const userAgent = "linkcheck tool (https://github.com/filiph/linkcheck)";
+
 const verbKey = "message";
 
-Future<FetchResults> fetch(
+Future<ServerInfoUpdate> checkServer(
+    String host, HttpClient client, FetchOptions options) async {
+  ServerInfoUpdate result = new ServerInfoUpdate(host);
+
+  int port;
+  if (host.contains(':')) {
+    var parts = host.split(':');
+    assert(parts.length == 2);
+    host = parts.first;
+    port = int.parse(parts.last);
+  }
+
+  Uri uri =
+      new Uri(scheme: "http", host: host, port: port, path: "/robots.txt");
+
+  // Fetch the HTTP response
+  HttpClientResponse response;
+  try {
+    response = await _fetch(client, uri);
+  } on HttpException {
+    // Leave response == null.
+  } on SocketException {
+    // Leave response == null.
+  } on HandshakeException {
+    // Leave response == null.
+  }
+
+  if (response == null) {
+    // Request failed completely.
+    result.didNotConnect = true;
+    return result;
+  }
+
+  // No robots.txt.
+  if (response.statusCode != 200) {
+    return result;
+  }
+
+  String content;
+  try {
+    Converter<List<int>, String> decoder;
+    if (response.headers.contentType.charset == LATIN1.name) {
+      // Some sites still use LATIN-1 for performance reasons.
+      decoder = LATIN1.decoder;
+    } else {
+      decoder = UTF8.decoder;
+    }
+    content = await response.transform(decoder).join();
+  } on FormatException {
+    // TODO: make warning instead, record in current, continue
+    throw new UnsupportedError("We don't support any encoding other than "
+        "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
+        "'${response.headers.contentType}' and couldn't be parsed by UTF8.");
+  }
+
+  result.robotsTxtContents = content;
+  return result;
+}
+
+Future<FetchResults> checkPage(
     Destination current, HttpClient client, FetchOptions options) async {
   DestinationResult checked = new DestinationResult.fromDestination(current);
   var uri = current.uri;
@@ -42,7 +106,7 @@ Future<FetchResults> fetch(
     }
 
     if (response == null) {
-      response = await _fetch(client, uri, current);
+      response = await _fetch(client, uri);
     }
   } on HttpException {
     // Leave response == null.
@@ -116,12 +180,19 @@ void worker(SendPort port) {
         sink.close();
         alive = false;
         return null;
-      case checkVerb:
+      case checkPageVerb:
         Destination destination =
             new Destination.fromMap(message[dataKey] as Map<String, Object>);
-        var results = await fetch(destination, client, options);
+        var results = await checkPage(destination, client, options);
         if (alive) {
-          sink.add({verbKey: checkDoneVerb, dataKey: results.toMap()});
+          sink.add({verbKey: checkPageDoneVerb, dataKey: results.toMap()});
+        }
+        return null;
+      case checkServerVerb:
+        String host = message[dataKey];
+        ServerInfoUpdate results = await checkServer(host, client, options);
+        if (alive) {
+          sink.add({verbKey: checkServerDoneVerb, dataKey: results.toMap()});
         }
         return null;
       case addHostGlobVerb:
@@ -135,8 +206,7 @@ void worker(SendPort port) {
 }
 
 /// Fetches the given [uri] by HTTP GET and returns a [HttpClientResponse].
-Future<HttpClientResponse> _fetch(
-    HttpClient client, Uri uri, Destination current) async {
+Future<HttpClientResponse> _fetch(HttpClient client, Uri uri) async {
   HttpClientRequest request = await client.getUrl(uri);
   var response = await request.close();
   return response;
@@ -172,17 +242,31 @@ class Worker {
   String name;
 
   Destination destinationToCheck;
-  bool get idle => destinationToCheck == null && _spawned && !_isKilled;
+
+  String serverToCheck;
 
   bool _spawned = false;
-  bool get spawned => _spawned;
-
-  StreamSink<Map> get sink => _sink;
 
   bool _isKilled = false;
+  bool get idle =>
+      destinationToCheck == null &&
+      serverToCheck == null &&
+      _spawned &&
+      !_isKilled;
+
   bool get isKilled => _isKilled;
 
+  StreamSink<Map> get sink => _sink;
+  bool get spawned => _spawned;
+
   Stream<Map> get stream => _stream;
+
+  Future<Null> kill() async {
+    if (!_spawned) return;
+    _isKilled = true;
+    sink.add(dieMessage);
+    await sink.close();
+  }
 
   Future<Null> spawn() async {
     assert(_channel == null);
@@ -192,14 +276,5 @@ class Worker {
     _spawned = true;
   }
 
-  Future<Null> kill() async {
-    if (!_spawned) return;
-    _isKilled = true;
-    sink.add(dieMessage);
-    await sink.close();
-  }
-
   String toString() => "Worker<$name>";
 }
-
-const userAgent = "linkcheck tool (https://github.com/filiph/linkcheck)";

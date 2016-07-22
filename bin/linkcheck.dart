@@ -180,6 +180,8 @@ String _sanitizeSeedUrl(String url) {
     url = "http://localhost$url/";
   }
 
+  // TODO: make sure we allow things like http://example.com/something/
+
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     url = "http://$url";
   }
