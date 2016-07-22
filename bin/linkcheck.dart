@@ -2,17 +2,21 @@ import 'dart:async';
 import 'dart:io' hide Link;
 
 import 'package:args/args.dart';
-import 'package:linkcheck/linkcheck.dart';
 import 'package:console/console.dart';
+import 'package:linkcheck/linkcheck.dart';
 
 Future<Null> main(List<String> arguments) async {
   // TODO: capture all exceptions, use http://news.dartlang.org/2016/01/unboxing-packages-stacktrace.html, and present the error in a 'prod' way (showing: unrecoverable error, and only files in this library, and how to report it)
   final parser = new ArgParser(allowTrailingOptions: true)
-    ..addFlag(helpFlag, abbr: 'h', negatable: false, help: "Prints usage.")
-    ..addFlag(ansiFlag,
-        help: "Use ANSI terminal capabilities for nicer input.",
-        defaultsTo: true)
-    ..addFlag(verboseFlag, abbr: 'v', negatable: false, help: "Verbose mode.")
+    ..addFlag(helpFlag,
+        abbr: 'h', negatable: false, help: "Prints this usage help.")
+    ..addFlag(versionFlag, abbr: 'v', negatable: false, help: "Prints version.")
+    ..addFlag(externalFlag,
+        abbr: 'e',
+        negatable: false,
+        help: "Check external (remote) links, too. By "
+            "default, the tool only checks internal links.")
+    ..addSeparator("Advanced")
     ..addOption(inputFlag,
         abbr: 'i',
         help: "Get list of URLs from the given "
@@ -25,22 +29,29 @@ Future<Null> main(List<String> arguments) async {
             "URIs. If your site spans multiple domains and you want to check "
             "HTML everywhere, use this. Provide as a glob, e.g. "
             "http://example.com/subdirectory/**.")
-    ..addFlag(externalFlag,
-        abbr: 'e',
-        negatable: false,
-        help: "Check external (remote) links, too. By "
-            "default, the tool only checks internal links.");
+    ..addFlag(ansiFlag,
+        help: "Use ANSI terminal capabilities for nicer input. Turn this off "
+            "if the output is broken.",
+        defaultsTo: true)
+    ..addFlag(debugFlag,
+        abbr: 'd', negatable: false, help: "Debug mode (very verbose).");
+
   final argResults = parser.parse(arguments);
 
   if (argResults[helpFlag]) {
     print("Linkcheck will crawl given site and check links.\n");
-    print("usage: linkcheck [switches] [url]");
+    print("usage: linkcheck [switches] [url]\n");
     print(parser.usage);
     return;
   }
 
+  if (argResults[versionFlag]) {
+    print("linkcheck version $version");
+    return;
+  }
+
   bool ansiTerm = argResults[ansiFlag] && stdout.hasTerminal;
-  bool verbose = argResults[verboseFlag];
+  bool verbose = argResults[debugFlag];
   bool shouldCheckExternal = argResults[externalFlag];
   String inputFile = argResults[inputFlag];
 
@@ -111,6 +122,18 @@ Future<Null> main(List<String> arguments) async {
   if (broken > 0) exitCode = 2;
 }
 
+const ansiFlag = "nice";
+const debugFlag = "debug";
+const defaultUrl = "http://localhost:4000/";
+const externalFlag = "external";
+const helpFlag = "help";
+const hostsFlag = "hosts";
+const inputFlag = "input-file";
+const versionFlag = "version";
+const version = "0.2.0";
+
+final _portOnlyRegExp = new RegExp(r"^:\d+$");
+
 void printStats(
     CrawlResult result, int broken, int withWarning, bool ansiTerm) {
   Set<Link> links = result.links;
@@ -160,17 +183,6 @@ void printStats(
     print("");
   }
 }
-
-const defaultUrl = "http://localhost:4000/";
-
-const ansiFlag = "nice";
-const externalFlag = "external";
-const helpFlag = "help";
-const hostsFlag = "hosts";
-const inputFlag = "input-file";
-const verboseFlag = "verbose";
-
-final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
 /// Takes input and makes it into a URL.
 String _sanitizeSeedUrl(String url) {
