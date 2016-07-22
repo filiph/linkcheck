@@ -86,6 +86,8 @@ Future<Null> main(List<String> arguments) async {
     // No host globs provided. Using the default (http://example.com/**).
     hosts = uris.map((uri) {
       var url = uri.toString();
+      if (uri.path.isEmpty) return "$url/**";
+      if (uri.path == '/') return "$url**";
       if (url.endsWith('/')) url = url.substring(0, url.length - 1);
       return "$url**";
     }).toSet();
@@ -130,7 +132,7 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const versionFlag = "version";
-const version = "0.2.0";
+const version = "0.2.2";
 
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 

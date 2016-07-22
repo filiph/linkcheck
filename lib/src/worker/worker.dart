@@ -118,9 +118,6 @@ Future<FetchResults> checkPage(
 
   if (response == null) {
     // Request failed completely.
-    // TODO: abort when we encounter X of these in a row, send ServerInfo update
-    //      print("\n\nERROR: Couldn't connect to $uri. Are you sure you've "
-    //          "started the localhost server?");
     checked.didNotConnect = true;
     return new FetchResults(checked, const []);
   }

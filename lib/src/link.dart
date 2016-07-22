@@ -19,7 +19,7 @@ class Link {
 
   bool get hasError => destination.isBroken;
 
-  bool get hasWarning => !satisfiesFragment;
+  bool get hasWarning => destination.wasDeniedByRobotsTxt || !satisfiesFragment;
 
   bool get satisfiesFragment => destination.satisfiesFragment(fragment);
 

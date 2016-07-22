@@ -133,6 +133,7 @@ class Destination {
   String get statusDescription {
     if (isInvalid) return "invalid URL";
     if (didNotConnect) return "connection failed";
+    if (wasDeniedByRobotsTxt) return "denied by robots.txt";
     if (isUnsupportedScheme) return "scheme unsupported";
     if (!wasTried) return "wasn't tried";
     if (statusCode == 200) return "HTTP 200";
