@@ -86,8 +86,8 @@ Future<Null> main(List<String> arguments) async {
     // No host globs provided. Using the default (http://example.com/**).
     hosts = uris.map((uri) {
       var url = uri.toString();
-      if (url.endsWith('/')) return "$url**";
-      return "$url/**";
+      if (url.endsWith('/')) url = url.substring(0, url.length - 1);
+      return "$url**";
     }).toSet();
   }
 

@@ -13,5 +13,23 @@ void main() {
       expect(options.matchesAsInternal(uri), isTrue);
       sink.close();
     });
+
+    test("parses localhost:4000/guides", () {
+      var sink = new StreamController<Map>();
+      var options = new FetchOptions(sink);
+      Uri uri = Uri.parse("http://localhost:4000/guides");
+      options.addHostGlobs([uri.toString() + "**"]);
+      expect(options.matchesAsInternal(uri), isTrue);
+      sink.close();
+    });
+
+    test("parses localhost:4000/guides/", () {
+      var sink = new StreamController<Map>();
+      var options = new FetchOptions(sink);
+      Uri uri = Uri.parse("http://localhost:4000/guides/");
+      options.addHostGlobs(["http://localhost:4000/guides**"]);
+      expect(options.matchesAsInternal(uri), isTrue);
+      sink.close();
+    });
   });
 }
