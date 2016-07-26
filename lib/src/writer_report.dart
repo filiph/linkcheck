@@ -16,10 +16,15 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
   Set<Link> links = result.links;
   List<Link> broken = links
       .where((link) =>
-          link.destination.wasDeniedByRobotsTxt ||
+          link.destination.isInvalid ||
           link.destination.wasTried &&
               (link.destination.isBroken || link.hasWarning))
       .toList(growable: false);
+
+  List<Destination> deniedByRobots = result.destinations
+      .where((destination) => destination.wasDeniedByRobotsTxt)
+      .toList(growable: false);
+  deniedByRobots.sort((a, b) => a.url.compareTo(b.url));
 
   List<Uri> sourceUris =
       broken.map((link) => link.origin.uri).toSet().toList(growable: false);
@@ -40,6 +45,7 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
     for (var destination in brokenSeeds) {
       if (ansiTerm) {
         pen
+            .reset()
             .yellow()
             .text(destination.url)
             .lightGray()
@@ -51,7 +57,27 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
             .normal()
             .print();
       } else {
-        print("${destination.url} (${destination.statusDescription}");
+        print("${destination.url} (${destination.statusDescription})");
+      }
+    }
+
+    print("");
+  }
+
+  if (deniedByRobots.isNotEmpty) {
+    print("Couldn't check, access was denied by robots.txt:");
+    for (var destination in deniedByRobots) {
+      if (ansiTerm) {
+        pen
+            .reset()
+            .normal()
+            .text("- ")
+            .yellow()
+            .text(destination.url)
+            .normal()
+            .print();
+      } else {
+        print("- ${destination.url}");
       }
     }
 
