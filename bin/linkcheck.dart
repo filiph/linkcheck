@@ -100,9 +100,7 @@ Future<Null> main(List<String> arguments) async {
       .where((destination) => destination.wasTried && destination.isBroken)
       .length;
 
-  var withWarning = result.links
-      .where((link) => link.destination.wasTried && link.hasWarning)
-      .length;
+  var withWarning = result.links.where((link) => link.hasWarning).length;
 
   if (broken == 0 && withWarning == 0) {
     printStats(result, broken, withWarning, ansiTerm);
@@ -138,6 +136,14 @@ final _portOnlyRegExp = new RegExp(r"^:\d+$");
 void printStats(
     CrawlResult result, int broken, int withWarning, bool ansiTerm) {
   Set<Link> links = result.links;
+  int count = result.destinations.length;
+  int externalIgnored = result.destinations
+      .where((destination) =>
+          destination.isExternal &&
+          !destination.wasTried &&
+          !destination.wasDeniedByRobotsTxt)
+      .length;
+
   if (ansiTerm) {
     Console.write("\r");
     Console.eraseLine(3);
@@ -154,14 +160,24 @@ void printStats(
           .green()
           .text("Perfect. ")
           .normal()
-          .text("${links.length} links checked.")
+          .text("Checked ${links.length} links, $count destination URLs")
+          .lightGray()
+          .text(
+              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .normal()
+          .text(".")
           .print();
     } else if (broken == 0) {
       pen
           .yellow()
           .text("Warnings. ")
           .normal()
-          .text("${links.length} links checked, ")
+          .text("Checked ${links.length} links, $count destination URLs")
+          .lightGray()
+          .text(
+              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .normal()
+          .text(", ")
           .text(withWarning == 1
               ? "1 has a warning"
               : "$withWarning have warnings.")
@@ -171,17 +187,24 @@ void printStats(
           .red()
           .text("Errors. ")
           .normal()
-          .text("${links.length} links checked, "
-              "$broken have errors, "
-              "$withWarning have warnings.")
+          .text("Checked ${links.length} links, $count destination URLs")
+          .lightGray()
+          .text(
+              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .normal()
+          .text(", ")
+          .text(broken == 1 ? "1 has error(s), " : "$broken have errors, ")
+          .text(withWarning == 1
+              ? "1 has warning(s)."
+              : "$withWarning have warnings.")
           .print();
     }
   } else {
-    print("\n\nStats:");
-    print("${links.length.toString().padLeft(8)} links checked");
-    print("${withWarning.toString().padLeft(8)} have warnings");
-    print("${broken.toString().padLeft(8)} are broken");
-    print("");
+    print("\nStats:");
+    print("${links.length.toString().padLeft(8)} links");
+    print("${count.toString().padLeft(8)} destination URLs");
+    print("${withWarning.toString().padLeft(8)} warnings");
+    print("${broken.toString().padLeft(8)} errors");
   }
 }
 
