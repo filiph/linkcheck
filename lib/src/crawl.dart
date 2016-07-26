@@ -54,7 +54,7 @@ Future<CrawlResult> crawl(
       new Queue<Destination>.from(seeds.map((uri) => new Destination(uri)
         ..isSeed = true
         ..isSource = true
-        ..isExternal = false));
+        ..isExternal = false).toSet());
   open.forEach((destination) => bin[destination.url] = Bin.open);
 
   // Queue for the external destinations.
