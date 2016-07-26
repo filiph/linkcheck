@@ -53,6 +53,7 @@ FetchResults parseCss(
     links.add(link);
   }
 
+  checked.wasParsed = true;
   return new FetchResults(checked, links);
 }
 

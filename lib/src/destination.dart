@@ -117,7 +117,7 @@ class Destination {
   /// HTTP 200 OK.
   ///
   /// Ignores URIs with unsupported scheme (like `mailto:`).
-  bool get isBroken => statusCode != 200;
+  bool get isBroken => statusCode != 200 && !wasDeniedByRobotsTxt;
 
   bool get isCssMimeType =>
       contentType.primaryType == "text" && contentType.subType == "css";

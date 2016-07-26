@@ -95,13 +95,12 @@ Future<Null> main(List<String> arguments) async {
 
   CrawlResult result = await crawl(uris, hosts, shouldCheckExternal, verbose,
       ansiTerm, ProcessSignal.SIGINT.watch());
-  Set<Link> links = result.links;
 
   var broken = result.destinations
       .where((destination) => destination.wasTried && destination.isBroken)
       .length;
 
-  var withWarning = links
+  var withWarning = result.links
       .where((link) => link.destination.wasTried && link.hasWarning)
       .length;
 

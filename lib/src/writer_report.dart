@@ -16,8 +16,9 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
   Set<Link> links = result.links;
   List<Link> broken = links
       .where((link) =>
+          link.destination.wasDeniedByRobotsTxt ||
           link.destination.wasTried &&
-          (link.destination.isBroken || link.hasWarning))
+              (link.destination.isBroken || link.hasWarning))
       .toList(growable: false);
 
   List<Uri> sourceUris =
@@ -103,9 +104,7 @@ void printWithAnsi(Uri uri, List<Link> broken, TextPen pen) {
         .setColor(link.hasError ? Color.RED : Color.YELLOW)
         .text(link.destination.statusDescription)
         .yellow()
-        .text(!link.hasError && link.breaksAnchor
-            ? ' but missing anchor'
-            : '')
+        .text(!link.hasError && link.breaksAnchor ? ' but missing anchor' : '')
         .lightGray()
         .text(')')
         .normal()

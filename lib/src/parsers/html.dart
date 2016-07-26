@@ -69,6 +69,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   checked.anchors = anchors;
 
   if (ignoreLinks) {
+    checked.wasParsed = true;
     return new FetchResults(checked, const []);
   }
 
@@ -94,5 +95,6 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
 
   // TODO: add srcset extractor (will create multiple links per element)
 
+  checked.wasParsed = true;
   return new FetchResults(checked, links);
 }
