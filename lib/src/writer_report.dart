@@ -140,7 +140,8 @@ void printWithoutAnsi(Uri uri, List<Link> broken) {
         "(${link.destination.statusDescription}"
         "${!link.destination.isBroken && !link.satisfiesFragment
             ? ' but missing anchor'
-            : ''})");
+            : ''}"
+        ")");
     if (link.destination.isRedirected) {
       print("  - redirect path:");
       String current = link.destination.url;
