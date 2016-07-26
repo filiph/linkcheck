@@ -50,6 +50,7 @@ class Destination {
   /// Only for [isSource] == `true`.
   List<String> anchors;
 
+  /// If the URL is unparseable (malformed), this will be `true`.
   bool isInvalid = false;
 
   /// This is true if this Destination was one of the ones provided at the

@@ -347,6 +347,7 @@ Future<CrawlResult> crawl(
 
     // Do any destinations have different hosts? Add them to unknownServers.
     Iterable<String> newHosts = newDestinations
+        .where((destination) => !destination.isInvalid)
         .where((destination) => shouldCheckExternal || !destination.isExternal)
         .map((destination) => destination.uri.authority)
         .where((String host) =>

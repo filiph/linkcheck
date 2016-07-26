@@ -57,6 +57,9 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
     print("");
   }
 
+  // TODO: when there are huge amounts of sourceURIs for a broken link, summarize
+
+  // TODO: report invalid links
 
   for (var uri in sourceUris) {
     if (ansiTerm) {
