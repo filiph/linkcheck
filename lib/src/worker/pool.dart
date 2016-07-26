@@ -68,6 +68,7 @@ class Pool {
     _lastJobPosted[worker] = new DateTime.now();
     worker.destinationToCheck = destination;
     new Timer(delay, () {
+      if (_isShuttingDown) return;
       worker.sink.add({verbKey: checkPageVerb, dataKey: destination.toMap()});
     });
     return worker;
