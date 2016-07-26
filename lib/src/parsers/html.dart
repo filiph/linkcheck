@@ -8,7 +8,6 @@ import '../link.dart';
 import '../origin.dart';
 import '../worker/fetch_results.dart';
 
-
 /// Takes a DOM element and extracts a link from it.
 ///
 /// The provided [attributes] will be checked in sequence.
@@ -53,8 +52,8 @@ Link extractLink(Uri uri, Element element, final List<String> attributes,
   return new Link(origin, destination, destinationUri.fragment);
 }
 
-FetchResults parseHtml(
-    String content, Uri uri, Destination current, DestinationResult checked) {
+FetchResults parseHtml(String content, Uri uri, Destination current,
+    DestinationResult checked, bool ignoreLinks) {
   var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
 
   // Find parseable destinations
@@ -62,6 +61,16 @@ FetchResults parseHtml(
   //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
   // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere) (<base href="..">)
   // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
+
+  var anchors = doc
+      .querySelectorAll("body [id], body [name]")
+      .map((element) => element.attributes["id"] ?? element.attributes["name"])
+      .toList();
+  checked.anchors = anchors;
+
+  if (ignoreLinks) {
+    return new FetchResults(checked, const []);
+  }
 
   var linkElements = doc.querySelectorAll(
       "a[href], area[href], iframe[src], link[rel='stylesheet']");
@@ -71,12 +80,12 @@ FetchResults parseHtml(
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
   List<Link> links = linkElements
       .map((element) => extractLink(current.finalUri, element,
-      const ["href", "src"], currentDestinations, true))
+          const ["href", "src"], currentDestinations, true))
       .toList();
 
   // Find resources
   var resourceElements =
-  doc.querySelectorAll("link[href], [src], object[data]");
+      doc.querySelectorAll("link[href], [src], object[data]");
   Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
       extractLink(current.finalUri, element, const ["src", "href", "data"],
           currentDestinations, false));
@@ -84,12 +93,6 @@ FetchResults parseHtml(
   links.addAll(currentResourceLinks);
 
   // TODO: add srcset extractor (will create multiple links per element)
-
-  var anchors = doc
-      .querySelectorAll("[id], [name]")
-      .map((element) => element.attributes["id"] ?? element.attributes["name"])
-      .toList();
-  checked.anchors = anchors;
 
   return new FetchResults(checked, links);
 }

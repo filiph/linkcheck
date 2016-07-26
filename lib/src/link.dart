@@ -19,9 +19,10 @@ class Link {
 
   bool get hasError => destination.isBroken;
 
-  bool get hasWarning => destination.wasDeniedByRobotsTxt || !satisfiesFragment;
+  bool get hasWarning => destination.wasDeniedByRobotsTxt || breaksAnchor;
 
-  bool get satisfiesFragment => destination.satisfiesFragment(fragment);
+  bool get breaksAnchor =>
+      destination.wasParsed && !destination.satisfiesFragment(fragment);
 
   Map<String, Object> toMap() => {
         "origin": origin.toMap(),

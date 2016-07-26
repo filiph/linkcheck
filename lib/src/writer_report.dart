@@ -103,7 +103,7 @@ void printWithAnsi(Uri uri, List<Link> broken, TextPen pen) {
         .setColor(link.hasError ? Color.RED : Color.YELLOW)
         .text(link.destination.statusDescription)
         .yellow()
-        .text(!link.hasError && !link.satisfiesFragment
+        .text(!link.hasError && link.breaksAnchor
             ? ' but missing anchor'
             : '')
         .lightGray()
@@ -138,7 +138,7 @@ void printWithoutAnsi(Uri uri, List<Link> broken) {
             ? ''
             : '#' + link.fragment} "
         "(${link.destination.statusDescription}"
-        "${!link.destination.isBroken && !link.satisfiesFragment
+        "${!link.destination.isBroken && link.breaksAnchor
             ? ' but missing anchor'
             : ''}"
         ")");

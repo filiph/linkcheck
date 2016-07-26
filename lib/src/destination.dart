@@ -66,6 +66,9 @@ class Destination {
 
   Uri _finalUri;
 
+  /// The encoding is not UTF-8 or LATIN-1.
+  bool hasUnsupportedEncoding = false;
+
   // TODO: add #! rewrite
 
   Destination(Uri uri)
@@ -90,7 +93,9 @@ class Destination {
       ..isSource = map["isSource"]
       ..anchors = map["anchors"] as List<String>
       ..isInvalid = map["isInvalid"]
-      ..didNotConnect = map["didNotConnect"];
+      ..didNotConnect = map["didNotConnect"]
+      ..wasParsed = map["wasParsed"]
+      ..hasUnsupportedEncoding = map["hasUnsupportedEncoding"];
     return destination;
   }
 
@@ -149,6 +154,8 @@ class Destination {
 
   bool get wasTried => didNotConnect || statusCode != null;
 
+  bool wasParsed = false;
+
   bool operator ==(other) => other is Destination && other.hashCode == hashCode;
 
   /// Returns `true` if the [fragment] (such as #something) will find it's mark
@@ -171,7 +178,9 @@ class Destination {
         "isSource": isSource,
         "anchors": anchors,
         "isInvalid": isInvalid,
-        "didNotConnect": didNotConnect
+        "didNotConnect": didNotConnect,
+        "wasParsed": wasParsed,
+        "hasUnsupportedEncoding": hasUnsupportedEncoding
       };
 
   String toString() => url;
@@ -187,6 +196,8 @@ class Destination {
     isSource = result.isSource;
     anchors = result.anchors;
     didNotConnect = result.didNotConnect;
+    wasParsed = result.wasParsed;
+    hasUnsupportedEncoding = result.hasUnsupportedEncoding;
   }
 }
 
@@ -201,6 +212,8 @@ class DestinationResult {
   bool isSource = false;
   List<String> anchors;
   bool didNotConnect = false;
+  bool wasParsed = false;
+  bool hasUnsupportedEncoding = false;
 
   DestinationResult.fromDestination(Destination destination)
       : url = destination.url,
@@ -218,7 +231,9 @@ class DestinationResult {
             .toList(),
         isSource = map["isSource"],
         anchors = map["anchors"] as List<String>,
-        didNotConnect = map["didNotConnect"];
+        didNotConnect = map["didNotConnect"],
+        wasParsed = map["wasParsed"],
+        hasUnsupportedEncoding = map["hasUnsupportedEncoding"];
 
   Map<String, Object> toMap() => {
         "url": url,
@@ -229,7 +244,9 @@ class DestinationResult {
         "redirects": redirects.map((info) => info.toMap()).toList(),
         "isSource": isSource,
         "anchors": anchors,
-        "didNotConnect": didNotConnect
+        "didNotConnect": didNotConnect,
+        "wasParsed": wasParsed,
+        "hasUnsupportedEncoding": hasUnsupportedEncoding
       };
 
   void updateFromResponse(HttpClientResponse response) {

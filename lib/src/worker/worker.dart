@@ -125,10 +125,18 @@ Future<FetchResults> checkPage(
   checked.updateFromResponse(response);
   current.updateFromResult(checked);
 
-  // Process all destinations that cannot or shouldn't be HTML-parsed.
-  if (current.statusCode != 200 ||
-      !options.matchesAsInternal(current.finalUri) ||
-      !current.isParseableMimeType /* TODO: add SVG/XML */) {
+  if (current.statusCode != 200) {
+    return new FetchResults(checked, const []);
+  }
+
+  if (!current.isParseableMimeType /* TODO: add SVG/XML */) {
+    return new FetchResults(checked, const []);
+  }
+
+  bool isExternal = !options.matchesAsInternal(current.finalUri);
+
+  if (isExternal && !current.isHtmlMimeType) {
+    // We only parse external HTML (to get anchors), not other mime types.
     return new FetchResults(checked, const []);
   }
 
@@ -143,20 +151,19 @@ Future<FetchResults> checkPage(
     }
     content = await response.transform(decoder).join();
   } on FormatException {
-    // TODO: make warning instead, record in current, continue
-    throw new UnsupportedError("We don't support any encoding other than "
-        "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
-        "'${current.contentType}' and couldn't be parsed by UTF8.");
+    // TODO: report as a warning
+    checked.hasUnsupportedEncoding = true;
+    return new FetchResults(checked, const []);
   }
 
-  if (current.statusCode == 200 && current.isCssMimeType) {
+  if (current.isCssMimeType) {
     return parseCss(content, current, checked);
   }
 
   // TODO: detect WEBrick/1.3.1 (Ruby/2.3.1/2016-04-26) (and potentially
   // other ugly index files).
 
-  return parseHtml(content, uri, current, checked);
+  return parseHtml(content, uri, current, checked, isExternal);
 }
 
 /// The entrypoint for the worker isolate.

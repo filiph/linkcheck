@@ -50,11 +50,12 @@ Future<CrawlResult> crawl(
 
   // The queue of destinations that haven't been tried yet. Destinations in
   // the front of the queue take precedence.
-  Queue<Destination> open =
-      new Queue<Destination>.from(seeds.map((uri) => new Destination(uri)
+  Queue<Destination> open = new Queue<Destination>.from(seeds
+      .map((uri) => new Destination(uri)
         ..isSeed = true
         ..isSource = true
-        ..isExternal = false).toSet());
+        ..isExternal = false)
+      .toSet());
   open.forEach((destination) => bin[destination.url] = Bin.open);
 
   // Queue for the external destinations.
@@ -392,7 +393,8 @@ Future<CrawlResult> crawl(
   assert(closed.every((destination) =>
       destination.wasTried ||
       (destination.isExternal && !shouldCheckExternal) ||
-      destination.isUnsupportedScheme));
+      destination.isUnsupportedScheme ||
+      destination.wasDeniedByRobotsTxt));
 
   if (verbose) {
     print("Broken links");
