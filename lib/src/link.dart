@@ -19,7 +19,9 @@ class Link {
 
   bool get hasError => destination.isBroken;
 
-  bool get hasWarning => destination.wasDeniedByRobotsTxt || breaksAnchor;
+  bool get hasWarning => breaksAnchor;
+
+  bool get hasInfo => destination.wasDeniedByRobotsTxt;
 
   bool get breaksAnchor =>
       destination.wasParsed && !destination.satisfiesFragment(fragment);

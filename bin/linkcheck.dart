@@ -102,8 +102,10 @@ Future<Null> main(List<String> arguments) async {
 
   var withWarning = result.links.where((link) => link.hasWarning).length;
 
-  if (broken == 0 && withWarning == 0) {
-    printStats(result, broken, withWarning, ansiTerm);
+  var withInfo = result.links.where((link) => link.hasInfo).length;
+
+  if (broken == 0 && withWarning == 0 && withInfo == 0) {
+    printStats(result, broken, withWarning, withInfo, ansiTerm);
   } else {
     if (ansiTerm) {
       Console.write("\r");
@@ -113,7 +115,7 @@ Future<Null> main(List<String> arguments) async {
 
     reportForWriters(result, ansiTerm);
 
-    printStats(result, broken, withWarning, ansiTerm);
+    printStats(result, broken, withWarning, withInfo, ansiTerm);
   }
   print("");
 
@@ -133,8 +135,8 @@ const version = "0.2.4";
 
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
-void printStats(
-    CrawlResult result, int broken, int withWarning, bool ansiTerm) {
+void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
+    bool ansiTerm) {
   Set<Link> links = result.links;
   int count = result.destinations.length;
   int externalIgnored = result.destinations
@@ -155,7 +157,7 @@ void printStats(
           .normal()
           .text("Couldn't connect or find any links.")
           .print();
-    } else if (broken == 0 && withWarning == 0) {
+    } else if (broken == 0 && withWarning == 0 && withInfo == 0) {
       pen
           .green()
           .text("Perfect. ")
@@ -164,6 +166,23 @@ void printStats(
           .lightGray()
           .text(
               externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .normal()
+          .text(".")
+          .print();
+    } else if (broken == 0 && withWarning == 0) {
+      pen
+          .cyan()
+          .text("Info. ")
+          .normal()
+          .text("Checked ${links.length} links, $count destination URLs")
+          .lightGray()
+          .text(
+          externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .normal()
+          .text(", ")
+          .text("0 have warnings or errors")
+          .lightGray()
+          .text(withInfo > 0 ? ', $withInfo have info' : '')
           .normal()
           .text(".")
           .print();
@@ -180,7 +199,11 @@ void printStats(
           .text(", ")
           .text(withWarning == 1
               ? "1 has a warning"
-              : "$withWarning have warnings.")
+              : "$withWarning have warnings")
+          .lightGray()
+          .text(withInfo > 0 ? ', $withInfo have info' : '')
+          .normal()
+          .text(".")
           .print();
     } else {
       pen
@@ -195,8 +218,12 @@ void printStats(
           .text(", ")
           .text(broken == 1 ? "1 has error(s), " : "$broken have errors, ")
           .text(withWarning == 1
-              ? "1 has warning(s)."
-              : "$withWarning have warnings.")
+              ? "1 has warning(s)"
+              : "$withWarning have warnings")
+          .lightGray()
+          .text(withInfo > 0 ? ', $withInfo have info' : '')
+          .normal()
+          .text(".")
           .print();
     }
   } else {
