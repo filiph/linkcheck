@@ -41,7 +41,7 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
   brokenSeeds.sort((a, b) => a.toString().compareTo(b.toString()));
 
   if (brokenSeeds.isNotEmpty) {
-    print("Seed URLs failing:");
+    print("Provided URLs failing:");
     for (var destination in brokenSeeds) {
       if (ansiTerm) {
         pen
@@ -65,7 +65,8 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
   }
 
   if (deniedByRobots.isNotEmpty) {
-    print("Couldn't check, access was denied by robots.txt:");
+    print("Access to these URLs denied by robots.txt, "
+        "so we couldn't check them:");
     for (var destination in deniedByRobots) {
       if (ansiTerm) {
         pen

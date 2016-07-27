@@ -151,11 +151,18 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
     Console.eraseLine(3);
     TextPen pen = new TextPen();
     if (links.isEmpty) {
+      bool wasLocalhost = false;
+      if (result.destinations.isNotEmpty &&
+          !result.destinations.first.isInvalid &&
+          result.destinations.first.uri.host == 'localhost') {
+        wasLocalhost = true;
+      }
       pen
           .red()
           .text("Error. ")
           .normal()
           .text("Couldn't connect or find any links.")
+          .text(wasLocalhost ? " Have you started the server?" : "")
           .print();
     } else if (broken == 0 && withWarning == 0 && withInfo == 0) {
       pen
@@ -177,13 +184,11 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .text("Checked ${links.length} links, $count destination URLs")
           .lightGray()
           .text(
-          externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
           .normal()
           .text(", ")
           .text("0 have warnings or errors")
-          .lightGray()
           .text(withInfo > 0 ? ', $withInfo have info' : '')
-          .normal()
           .text(".")
           .print();
     } else if (broken == 0) {
@@ -200,9 +205,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .text(withWarning == 1
               ? "1 has a warning"
               : "$withWarning have warnings")
-          .lightGray()
           .text(withInfo > 0 ? ', $withInfo have info' : '')
-          .normal()
           .text(".")
           .print();
     } else {
@@ -220,9 +223,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .text(withWarning == 1
               ? "1 has warning(s)"
               : "$withWarning have warnings")
-          .lightGray()
           .text(withInfo > 0 ? ', $withInfo have info' : '')
-          .normal()
           .text(".")
           .print();
     }
