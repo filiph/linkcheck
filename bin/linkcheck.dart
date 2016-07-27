@@ -131,7 +131,7 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const versionFlag = "version";
-const version = "0.2.5";
+const version = "0.2.6";
 
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
@@ -143,7 +143,8 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
       .where((destination) =>
           destination.isExternal &&
           !destination.wasTried &&
-          !destination.wasDeniedByRobotsTxt)
+          !destination.wasDeniedByRobotsTxt &&
+          !destination.isUnsupportedScheme)
       .length;
 
   if (ansiTerm) {
