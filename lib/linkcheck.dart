@@ -134,6 +134,10 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
   }
 }
 
+/// Parses command-line [arguments] and runs the crawl.
+///
+/// Provide `dart:io` [Stdout] as the second argument for normal operation,
+/// or provide a mock for testing.
 Future<int> run(List<String> arguments, Stdout stdout) async {
   // TODO: capture all exceptions, use http://news.dartlang.org/2016/01/unboxing-packages-stacktrace.html, and present the error in a 'prod' way (showing: unrecoverable error, and only files in this library, and how to report it)
 
@@ -225,6 +229,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
     }).toSet();
   }
 
+  // Start the actual crawl and await the result.
   CrawlResult result = await crawl(uris, hosts, shouldCheckExternal, verbose,
       ansiTerm, ProcessSignal.SIGINT.watch(), stdout);
 
