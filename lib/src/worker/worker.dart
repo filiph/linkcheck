@@ -48,6 +48,8 @@ Future<ServerInfoUpdate> checkServer(
   HttpClientResponse response;
   try {
     response = await _fetch(client, uri);
+  } on TimeoutException {
+    // Leave response == null.
   } on HttpException {
     // Leave response == null.
   } on SocketException {
@@ -78,10 +80,8 @@ Future<ServerInfoUpdate> checkServer(
     }
     content = await response.transform(decoder).join();
   } on FormatException {
-    // TODO: make warning instead, record in current, continue
-    throw new UnsupportedError("We don't support any encoding other than "
-        "utf-8 and iso-8859-1 (latin-1). Crawled site has explicit charset "
-        "'${response.headers.contentType}' and couldn't be parsed by UTF8.");
+    // TODO: report as a warning
+    content = "";
   }
 
   result.robotsTxtContents = content;
@@ -108,6 +108,8 @@ Future<FetchResults> checkPage(
     if (response == null) {
       response = await _fetch(client, uri);
     }
+  } on TimeoutException {
+    // Leave response == null.
   } on HttpException {
     // Leave response == null.
   } on SocketException {
@@ -209,10 +211,15 @@ void worker(SendPort port) {
   });
 }
 
+const connectionTimeout = const Duration(seconds: 5);
+const responseTimeout = const Duration(seconds: 5);
+final fetchTimeout = connectionTimeout + responseTimeout;
+
 /// Fetches the given [uri] by HTTP GET and returns a [HttpClientResponse].
 Future<HttpClientResponse> _fetch(HttpClient client, Uri uri) async {
-  HttpClientRequest request = await client.getUrl(uri);
-  var response = await request.close();
+  HttpClientRequest request =
+      await client.getUrl(uri).timeout(connectionTimeout);
+  var response = await request.close().timeout(responseTimeout);
   return response;
 }
 
@@ -221,8 +228,8 @@ Future<HttpClientResponse> _fetch(HttpClient client, Uri uri) async {
 /// Some servers don't support this request, in which case they return HTTP
 /// status code 405. If that's the case, this function returns `null`.
 Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
-  var request = await client.headUrl(uri);
-  var response = await request.close();
+  var request = await client.headUrl(uri).timeout(connectionTimeout);
+  var response = await request.close().timeout(responseTimeout);
 
   if (response.statusCode == 405) {
     return null;

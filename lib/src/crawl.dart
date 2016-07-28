@@ -109,8 +109,6 @@ Future<CrawlResult> crawl(
   }
 
   // TODO:
-  // -v for version
-  // -d for debug (verbose now)
   // - --cache for creating a .linkcheck.cache file
 
   var allDone = new Completer<Null>();

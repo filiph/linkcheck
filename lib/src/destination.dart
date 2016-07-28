@@ -59,7 +59,9 @@ class Destination {
 
   bool didNotConnect = false;
 
-  // TODO: this field (and some others) will never be updated in Worker - have them in a separate file so that it's clear why we're not sending them via toMap?
+  // TODO: this field (and some others) will never be updated in Worker
+  //   - have them in a separate file so that it's clear why we're not sending
+  //     them via toMap?
   bool wasDeniedByRobotsTxt = false;
 
   int _hashCode;
@@ -70,6 +72,7 @@ class Destination {
   bool hasUnsupportedEncoding = false;
 
   // TODO: add #! rewrite
+  // https://developers.google.com/webmasters/ajax-crawling/docs/getting-started
 
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),

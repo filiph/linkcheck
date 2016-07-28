@@ -2,10 +2,6 @@ library linkcheck.server_info;
 
 import 'parsers/robots_txt.dart';
 
-//- robots, 401s, 403s ("nope"), 405 ("can't do HEAD"), 503 ("throttling?"), last request to this host
-//   separate channel for reporting this stuff (UPDATE_INFO, Worker<1>, time, ["example.com", "405_HEAD"])
-//   main is sending similar updates to all other workers, must be slim, not too often
-
 const robotName = "linkcheck";
 
 class ServerInfo {
