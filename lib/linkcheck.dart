@@ -18,7 +18,7 @@ export 'src/writer_report.dart' show reportForWriters;
 
 const ansiFlag = "nice";
 const debugFlag = "debug";
-const defaultUrl = "http://localhost:4000/";
+const defaultUrl = "http://localhost:8080/";
 const externalFlag = "external";
 const helpFlag = "help";
 const hostsFlag = "hosts";
