@@ -1,7 +1,7 @@
 library linkcheck.executable;
 
 import 'dart:async';
-import 'dart:io' hide Link;
+import 'dart:io';
 
 import 'package:linkcheck/linkcheck.dart';
 

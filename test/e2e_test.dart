@@ -49,6 +49,20 @@ void main() {
       }
     });
 
+    test("reports info when link is behind robots.txt rule",
+        () async {
+      var server = await Dhttpd.start(path: getServingPath(5), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 0);
+        expect(out.output, contains("subdirectory/other.html"));
+        expect(out.output, contains("0 warnings"));
+        expect(out.output, contains("0 errors"));
+      } finally {
+        await server.destroy();
+      }
+    });
+
     group("reports exit code 2 for a site with errors", () {
       test("in CSS", () async {
         var server = await Dhttpd.start(path: getServingPath(1), port: port);
