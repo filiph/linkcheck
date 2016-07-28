@@ -12,6 +12,7 @@ linter:
     - comment_references
     - constant_identifier_names
     - control_flow_in_finally
+#    - close_sinks
     - empty_constructor_bodies
     - hash_and_equals
     - implementation_imports

@@ -2,6 +2,7 @@ library linkcheck.crawl;
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io' show Stdout;
 
 import 'package:console/console.dart';
 
@@ -28,7 +29,11 @@ Future<CrawlResult> crawl(
     bool shouldCheckExternal,
     bool verbose,
     bool ansiTerm,
-    Stream<dynamic> stopSignal) async {
+    Stream<dynamic> stopSignal,
+    Stdout stdout) async {
+  // Redirect output to injected [stdout] for better testing.
+  void print(Object message) => stdout.writeln(message);
+
   Cursor cursor;
   TextPen pen;
   if (ansiTerm) {

@@ -15,5 +15,6 @@ dependencies:
   stream_channel: ^1.5.0
 dev_dependencies:
   test:
+  dhttpd:
 executables:
   linkcheck: linkcheck

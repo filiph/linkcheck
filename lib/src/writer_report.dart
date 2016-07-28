@@ -1,5 +1,6 @@
 library linkcheck.writer_report;
 
+import 'dart:io' show Stdout;
 import 'dart:math' show min;
 
 import 'package:console/console.dart';
@@ -10,7 +11,9 @@ import 'destination.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
-void reportForWriters(CrawlResult result, bool ansiTerm) {
+void reportForWriters(CrawlResult result, bool ansiTerm, Stdout stdout) {
+  void print(Object message) => stdout.writeln(message);
+
   print("");
 
   Set<Link> links = result.links;
@@ -93,7 +96,7 @@ void reportForWriters(CrawlResult result, bool ansiTerm) {
     if (ansiTerm) {
       printWithAnsi(uri, broken, pen);
     } else {
-      printWithoutAnsi(uri, broken);
+      printWithoutAnsi(uri, broken, stdout);
     }
   }
 }
@@ -150,7 +153,10 @@ void printWithAnsi(Uri uri, List<Link> broken, TextPen pen) {
   print("");
 }
 
-void printWithoutAnsi(Uri uri, List<Link> broken) {
+void printWithoutAnsi(Uri uri, List<Link> broken, Stdout stdout) {
+  // Redirect output to injected [stdout] for better testing.
+  void print(Object message) => stdout.writeln(message);
+
   print(uri);
 
   var links = broken.where((link) => link.origin.uri == uri);

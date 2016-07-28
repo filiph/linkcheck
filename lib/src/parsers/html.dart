@@ -73,6 +73,14 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
     return new FetchResults(checked, const []);
   }
 
+  Uri baseUri = current.finalUri;
+  var baseElements = doc.querySelectorAll("base[href]");
+  if (baseElements.isNotEmpty) {
+    // More than one base element per page is not according to HTML specs.
+    // At the moment, we just ignore that. But TODO: solve for pages with more
+    baseUri = baseUri.resolve(baseElements.first.attributes["href"]);
+  }
+
   var linkElements = doc.querySelectorAll(
       "a[href], area[href], iframe[src], link[rel='stylesheet']");
 
@@ -80,7 +88,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
 
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
   List<Link> links = linkElements
-      .map((element) => extractLink(current.finalUri, element,
+      .map((element) => extractLink(baseUri, element,
           const ["href", "src"], currentDestinations, true))
       .toList();
 
@@ -88,7 +96,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   var resourceElements =
       doc.querySelectorAll("link[href], [src], object[data]");
   Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
-      extractLink(current.finalUri, element, const ["src", "href", "data"],
+      extractLink(baseUri, element, const ["src", "href", "data"],
           currentDestinations, false));
 
   links.addAll(currentResourceLinks);

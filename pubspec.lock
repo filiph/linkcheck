@@ -67,6 +67,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.13.2"
+  dhttpd:
+    description:
+      name: dhttpd
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.1"
   glob:
     description:
       name: glob
@@ -157,6 +163,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.5+2"
+  shelf_cors:
+    description:
+      name: shelf_cors
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.2.1"
   shelf_static:
     description:
       name: shelf_static
