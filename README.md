@@ -1,5 +1,7 @@
 # linkcheck
 
+[![Build Status](https://travis-ci.org/filiph/linkcheck.svg?branch=master)](https://travis-ci.org/filiph/linkcheck)
+
 Very fast link-checking.
 
 ## Philosophy:
