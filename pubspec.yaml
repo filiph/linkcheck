@@ -1,5 +1,5 @@
 name: linkcheck
-version: 0.2.7  # Don't forget to update in lib/linkcheck.dart, too.
+version: 0.2.8  # Don't forget to update in lib/linkcheck.dart, too.
 description: A very fast link-checker.
 homepage: https://github.com/filiph/linkcheck
 author: "Filip Hracek <filip.hracek@gmail.com>"
