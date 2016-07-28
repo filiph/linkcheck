@@ -8,7 +8,7 @@ import 'package:dhttpd/dhttpd.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
-import '../bin/linkcheck.dart' show run;
+import 'package:linkcheck/linkcheck.dart' show run;
 
 // Get the directory of the script being run.
 void main() {
