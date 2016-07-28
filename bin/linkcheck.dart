@@ -37,6 +37,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           !destination.wasDeniedByRobotsTxt &&
           !destination.isUnsupportedScheme)
       .length;
+  int checked = count - externalIgnored;
 
   if (ansiTerm) {
     Console.write("\r");
@@ -61,7 +62,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .green()
           .text("Perfect. ")
           .normal()
-          .text("Checked ${links.length} links, $count destination URLs")
+          .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
           .text(
               externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
@@ -73,7 +74,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .cyan()
           .text("Info. ")
           .normal()
-          .text("Checked ${links.length} links, $count destination URLs")
+          .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
           .text(
               externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
@@ -88,7 +89,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .yellow()
           .text("Warnings. ")
           .normal()
-          .text("Checked ${links.length} links, $count destination URLs")
+          .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
           .text(
               externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
@@ -105,7 +106,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .red()
           .text("Errors. ")
           .normal()
-          .text("Checked ${links.length} links, $count destination URLs")
+          .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
           .text(
               externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
@@ -122,7 +123,8 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
   } else {
     print("\nStats:");
     print("${links.length.toString().padLeft(8)} links");
-    print("${count.toString().padLeft(8)} destination URLs");
+    print("${checked.toString().padLeft(8)} destination URLs");
+    print("${externalIgnored.toString().padLeft(8)} external URLs ignored");
     print("${withWarning.toString().padLeft(8)} warnings");
     print("${broken.toString().padLeft(8)} errors");
   }
