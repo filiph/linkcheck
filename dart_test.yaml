@@ -1,0 +1,5 @@
+tags:
+  integration:
+    skip: >
+      The integration tests depend on serving the case folders, and for that
+      we need to know the path to those (which pub run test doesn't support).

@@ -1,0 +1,4 @@
+language: dart
+script:
+  - pub run test
+  - dart test/e2e_test.dart

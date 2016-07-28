@@ -87,7 +87,7 @@ void main() {
         }
       });
     });
-  });
+  }, tags: ["integration"]);
 }
 
 var directory = path.absolute(path.dirname(scriptPath));
