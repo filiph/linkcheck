@@ -101,6 +101,20 @@ void main() {
         }
       });
     });
+
+    test("reports all missing @font-face sources", () async {
+      var server = await Dhttpd.start(path: getServingPath(6), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 2);
+        expect(out.output, contains("asset1.eot"));
+        expect(out.output, contains("asset2.ttf"));
+        expect(out.output, contains("asset3.woff"));
+        expect(out.output, contains("asset4.svg"));
+      } finally {
+        await server.destroy();
+      }
+    });
   }, tags: ["integration"]);
 }
 

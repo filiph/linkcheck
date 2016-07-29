@@ -8,12 +8,35 @@ import '../worker/fetch_results.dart';
 import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
+import 'package:csslib/src/messages.dart';
+import 'package:logging/logging.dart';
 
 FetchResults parseCss(
     String content, Destination current, DestinationResult checked) {
-  var style = css.parse(content);
   var urlHarvester = new CssUrlHarvester();
-  style.visit(urlHarvester);
+  int start = 0;
+  bool foundError;
+  do {
+    // When CSS has fatal errors, move just after the last one and try to
+    // parse the rest of the document. Otherwise we'd be ignoring URLs
+    // just because CSS isn't valid.
+    foundError = false;
+    List<Message> errors = new List();
+    if (start > 0) {
+      start = content.indexOf("}", start);
+      if (start < content.length - 1) start += 1;
+    }
+    var style = css.parse(content.substring(start), errors: errors);
+    style.visit(urlHarvester);
+    int offset = 0;
+    errors.forEach((error) {
+      if (error.level == Level.SEVERE) {
+        offset = error.span.end.offset;
+        foundError = true;
+      }
+    });
+    start += offset;
+  } while (foundError);
 
   var links = new List<Link>();
   var currentDestinations = new List<Destination>();

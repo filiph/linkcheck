@@ -1,0 +1,7 @@
+@font-face {
+    font-family: 'dart';
+    src: url("/asset1.eot");
+    src: url("/asset1.eot#iefix") format("embedded-opentype"),url("/asset2.ttf") format("truetype"),url("/asset3.woff") format("woff"),url("/asset4.svg#dart") format("svg");
+    font-weight: normal;
+    font-style: normal
+}
