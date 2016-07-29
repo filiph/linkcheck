@@ -6,39 +6,94 @@ Very fast link-checking.
 
 ## Philosophy:
 
-* **Fast crawling is key**
-  * You want to run the link-checker _at least_ before every deploy (on CI 
-    or manually). When it takes ages, you're less likely to do so.
-  * `linkcheck` is currently several times faster than blc
-* **Finds everything important**
-  * No link-checker can guarantee correct results: the web is too flaky 
-    for that.
-  * But at least the tool should correctly parse the HTML (not just try to
-    guess what's a URL and what isn't) _and_ the CSS (for `url(...)` links).
-  * `linkcheck` already finds more than `linklint` and `blc`, and it has fewer
-    false positives.
-* **Sane defaults**
-  * The most frequent use cases should be only a few arguments. For example,
-    unleashing `linkcheck` on http://localhost:4001 can be done via 
-    `linkcheck :4001`. 
-  * You want to crawl a served site, not directories of files.
-  * Ignores throttling and robots.txt on localhost.
-  * Should follow CLI 'standards' (no `@input` etc.)
-* **Brief and meaningful output**
-  * When everything works, all you want to see is 'Perfect' + stats.
-    That's what `linkcheck` does.
-  * When things are broken, you want to see where exactly is the problem
-    and you want to have it sorted in a sane way.
-* **Useful status code**
-  * For CI build, `linkcheck` returns status code `1` if there are warnings, and
+A good utility is custom-made for a job. There are many link checkers out there,
+but none of them seems to be striving for the following set of goals.
+
+### Crawls fast
+
+* You want to run the link-checker _at least_ before every deploy (on CI 
+  or manually). When it takes ages, you're less likely to do so.
+  
+* `linkcheck` is currently several times faster than blc and all other link
+  checkers that go to at least comparable depth. It is 40 times faster than the
+  only link checker that goes to the same depth (linkchecker).
+
+### Finds all relevant problems
+
+* No link-checker can _guarantee_ correct results: the web is too flaky 
+  for that. But at least the tool should correctly parse the HTML (not just
+  try to guess what's a URL and what isn't) and 
+  the CSS (for `url(...)` links).
+  
+  * PENDING: srcset support
+  
+* `linkcheck` finds more than `linklint` and `blc`, and it has fewer
+  false positives.
+
+#### Leaves out irrelevant problems
+
+* `linkcheck` doesn't attempt to render JavaScript. It would make
+  it at least an order of magnitude slower and way more complex. (For example,
+  what links and buttons should the tool attempt to click, and how many
+  times? Should we only click visible links? How do we detect broken
+  links?) Validating SPAs is a very different problem than checking static 
+  links, and should be approached by dedicated tools.
+  
+* `linkcheck` only supports `http:` and `https:`. It won't try to check
+  FTP or telnet or nntp links.
+  
+* `linkcheck` doesn't validate file system directories. Servers often behave
+  very differently than file systems, so validating links on the file system
+  often leads to both false positives and false negatives. Links should be 
+  checked in their natural habitat, and as close to the production environment
+  as possible.
+    
+### Good <abbr title="User Experience">UX</abbr>
+
+* Yes, a command line utility can have good or bad UX. It has mostly to do with
+  giving sane defaults, not forcing users to learn new constructs, not making
+  them type more than needed, and showing concise output.
+
+* The most frequent use cases should be only a few arguments. 
+
+  * For example, unleashing `linkcheck` on http://localhost:4001/ can be done 
+    via `linkcheck :4001`.  
+  
+  * `linkcheck` doesn't throttle itself on localhost.
+
+  * `linkcheck` follows POSIX CLI standards (no `@input` and similar constructs
+    in linklint).
+
+#### Brief and meaningful output
+
+* When everything works, you don't want to see a huge list of links. 
+
+  * In this scenario, `linkcheck` just outputs 'Perfect' and some stats on
+    a single line.
+    
+* When things are broken, you want to see where exactly is the problem
+  and you want to have it sorted in a sane way.
+  
+  * `linkcheck` lists broken links by their source URL first so that you can
+    fix many links at once. It also sorts the URLs alphabetically, and shows
+    both the exact location of the link (line:column) but also the anchor
+    text or the tag.
+  
+* For <abbr title="Continuous Integration">CI</abbr> builds, you want non-zero 
+  exit code whenever there is a problem.
+  
+  * `linkcheck` returns status code `1` if there are warnings, and
     status code `2` if there are errors.
 
+It goes without saying that `linkcheck` honors robots.txt and throttles itself
+when accessing websites.
 
 ## Installation
 
 #### Step 1. Install Dart
 
-[Full installation guide here](https://www.dartlang.org/install). For example, on a Mac, assuming you have [homebrew](http://brew.sh/), run:
+[Full installation guide here](https://www.dartlang.org/install). **For example, 
+on a Mac,** assuming you have [homebrew](http://brew.sh/), you just run:
 
 ```
 $ brew tap dart-lang/dart
@@ -47,8 +102,10 @@ $ brew install dart
 
 #### Step 2. Install `linkcheck`
 
+Once Dart is installed, run:
+
 ```
-pub global activate linkcheck
+$ pub global activate linkcheck
 ```
 
 Pub installs executables into `~/.pub-cache/bin`, which may not be on your path.
@@ -70,10 +127,20 @@ If in doubt, run `linkcheck -h`. Here are some examples to get you started.
 
 #### Localhost
 
-Assuming you run your server on http://localhost:8000/, you can do:
+Running `linkcheck` without arguments will try to crawl 
+http://localhost:8080/ (which is the most common local server URL).
 
-* `linkcheck :8000` to crawl the site and ignore external links
-* `linkcheck :8000 -e` to try external links
+* `linkcheck` to crawl the site and ignore external links
+* `linkcheck -e` to try external links
+
+If you run your local server on http://localhost:4000/, for example, you can do:
+
+* `linkcheck :4000` to crawl the site and ignore external links
+* `linkcheck :4000 -e` to try external links
+
+`linkcheck` will _not_ throttle itself when accessing localhost. It will go as
+fast as possible.
+
 
 #### Deployed sites
 
@@ -81,6 +148,8 @@ Assuming you run your server on http://localhost:8000/, you can do:
 * `linkcheck https://www.example.com` to start directly on https
 * `linkcheck www.example.com www.other.com` to crawl both sites and check links
   between the two (but ignore external links outside those two sites)
+
+#### Many entry points
 
 Assuming you have a text file `mysites.txt` like this:
 
@@ -91,4 +160,24 @@ https://alojz.cz/
 ```
 
 You can run `linkcheck -i mysites.txt` and it will crawl all of them and also
-check links between them.
+check links between them. This is useful for:
+
+1. Link-checking projects spanning many domains (or subdomains).
+2. Checking all your public websites / blogs / etc.
+
+There's another use for this, and that is when you have a list of inbound links,
+like this:
+
+```
+http://www.dartlang.org/
+http://www.dartlang.org/tools/
+http://www.dartlang.org/downloads/
+```
+
+You probably want to make sure you never break your inbound links. For example,
+if a page changes URL, the previous URL should still work (redirecting to the
+new page when appropriate).
+
+Where do you get a list of inbound links? Try your site's sitemap.xml as
+a starting point, and — additionally — try something like the Google Webmaster 
+Tools’ [crawl error page](https://www.google.com/webmasters/tools/crawl-errors).
