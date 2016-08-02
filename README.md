@@ -27,8 +27,8 @@ but none of them seems to be striving for the following set of goals.
   
   * PENDING: srcset support
   
-* `linkcheck` finds more than `linklint` and `blc`, and it has fewer
-  false positives.
+* `linkcheck` finds more than `linklint` and `blc`. It finds the same amount
+  or more problems than the best alternative, `linkchecker`.
 
 #### Leaves out irrelevant problems
 
@@ -59,10 +59,10 @@ but none of them seems to be striving for the following set of goals.
   * For example, unleashing `linkcheck` on http://localhost:4001/ can be done 
     via `linkcheck :4001`.  
   
-  * `linkcheck` doesn't throttle itself on localhost.
+* `linkcheck` doesn't throttle itself on localhost.
 
-  * `linkcheck` follows POSIX CLI standards (no `@input` and similar constructs
-    in linklint).
+* `linkcheck` follows POSIX CLI standards (no `@input` and similar constructs
+  in linklint).
 
 #### Brief and meaningful output
 
@@ -92,8 +92,14 @@ when accessing websites.
 
 #### Step 1. Install Dart
 
-[Full installation guide here](https://www.dartlang.org/install). **For example, 
-on a Mac,** assuming you have [homebrew](http://brew.sh/), you just run:
+Full installation guides per platform:
+
+* [Install Dart on Windows](https://www.dartlang.org/install/windows)
+* [Install Dart on Linux](https://www.dartlang.org/install/linux)
+* [Install Dart on Mac](https://www.dartlang.org/install/mac)
+
+**For example,** on a Mac, assuming you have [homebrew](http://brew.sh/), 
+you just run:
 
 ```
 $ brew tap dart-lang/dart
@@ -118,8 +124,6 @@ export PATH="$PATH":"~/.pub-cache/bin"
 
 Then either restart the terminal or run `source ~/.bash_profile` (assuming
 `~/.bash_profile` is where you put the PATH export above).
-
-That's it.
 
 ## Usage
 
