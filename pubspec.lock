@@ -277,4 +277,5 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.10"
-sdk: ">=1.18.0 <2.0.0"
+sdks:
+  dart: ">=1.18.0 <2.0.0"
