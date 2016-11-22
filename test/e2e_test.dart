@@ -115,6 +115,18 @@ void main() {
         await server.destroy();
       }
     });
+
+    test("allows non-Base64-encoded SVG inline", () async {
+      var server = await Dhttpd.start(path: getServingPath(7), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 0);
+        expect(out.output, contains("0 warnings"));
+        expect(out.output, contains("0 errors"));
+      } finally {
+        await server.destroy();
+      }
+    });
   }, tags: ["integration"]);
 }
 
