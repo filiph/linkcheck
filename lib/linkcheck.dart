@@ -23,7 +23,7 @@ const externalFlag = "external";
 const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
-const version = "0.2.11";
+const version = "0.2.12";
 const versionFlag = "version";
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 

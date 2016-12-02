@@ -16,9 +16,11 @@ but none of them seems to be striving for the following set of goals.
 * You want to run the link-checker _at least_ before every deploy (on CI 
   or manually). When it takes ages, you're less likely to do so.
   
-* `linkcheck` is currently several times faster than blc and all other link
+* `linkcheck` is currently several times faster than 
+  [blc](https://www.npmjs.com/package/broken-link-checker) and all other link
   checkers that go to at least comparable depth. It is 40 times faster than the
-  only link checker that goes to the same depth (linkchecker).
+  only tool that goes to the same depth 
+  ([linkchecker](https://github.com/wummel/linkchecker)).
 
 ### Finds all relevant problems
 
@@ -29,15 +31,17 @@ but none of them seems to be striving for the following set of goals.
   
   * PENDING: srcset support
   
-* `linkcheck` finds more than `linklint` and `blc`. It finds the same amount
-  or more problems than the best alternative, `linkchecker`.
+* `linkcheck` finds more than [linklint](http://www.linklint.org/) and 
+  [blc](https://www.npmjs.com/package/broken-link-checker). It finds the
+  same amount or more problems than the best alternative, 
+  [linkchecker](https://github.com/wummel/linkchecker).
 
 #### Leaves out irrelevant problems
 
 * `linkcheck` doesn't attempt to render JavaScript. It would make
   it at least an order of magnitude slower and way more complex. (For example,
   what links and buttons should the tool attempt to click, and how many
-  times? Should we only click visible links? How do we detect broken
+  times? Should we only click visible links? How exactly do we detect broken
   links?) Validating SPAs is a very different problem than checking static 
   links, and should be approached by dedicated tools.
   
@@ -48,7 +52,8 @@ but none of them seems to be striving for the following set of goals.
   very differently than file systems, so validating links on the file system
   often leads to both false positives and false negatives. Links should be 
   checked in their natural habitat, and as close to the production environment
-  as possible.
+  as possible. You can (and should) run `linkcheck` on your localhost server,
+  of course.
     
 ### Good <abbr title="User Experience">UX</abbr>
 
@@ -59,12 +64,12 @@ but none of them seems to be striving for the following set of goals.
 * The most frequent use cases should be only a few arguments. 
 
   * For example, unleashing `linkcheck` on http://localhost:4001/ can be done 
-    via `linkcheck :4001`.  
+    via `linkcheck :4001`.
   
 * `linkcheck` doesn't throttle itself on localhost.
 
 * `linkcheck` follows POSIX CLI standards (no `@input` and similar constructs
-  in linklint).
+  like in [linklint](http://www.linklint.org/)).
 
 #### Brief and meaningful output
 
@@ -78,8 +83,8 @@ but none of them seems to be striving for the following set of goals.
   
   * `linkcheck` lists broken links by their source URL first so that you can
     fix many links at once. It also sorts the URLs alphabetically, and shows
-    both the exact location of the link (line:column) but also the anchor
-    text or the tag.
+    both the exact location of the link (line:column) and the anchor
+    text (or the tag if it wasn't an anchor).
   
 * For <abbr title="Continuous Integration">CI</abbr> builds, you want non-zero 
   exit code whenever there is a problem.
