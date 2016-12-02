@@ -1,4 +1,4 @@
 language: dart
 script:
-  - pub run test
+  - pub run test -x integration
   - dart test/e2e_test.dart
