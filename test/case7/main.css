@@ -1,3 +1,7 @@
 .bg {
     background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 195.6 107.8"><path fill="#B5B5B5" d="M97.8 107.8c-2.6 0-5.1-1-7.1-2.9L2.9 17.1C-1 13.2-1 6.8 2.9 2.9 6.8-1 13.2-1 17.1 2.9l80.7 80.7 80.7-80.7c3.9-3.9 10.2-3.9 14.1 0 3.9 3.9 3.9 10.2 0 14.1l-87.8 87.8c-1.9 2-4.4 3-7 3z"/></svg>');
 }
+
+.active {
+    background: no-repeat url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path fill='#FFFFFF' d='M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z'/></svg>");
+}

@@ -164,7 +164,7 @@ void printWithoutAnsi(Uri uri, List<Link> broken, Stdout stdout) {
     print("- (${link.origin.span.start.line}"
         ":${link.origin.span.start.column}) "
         "$tag"
-        "=> ${link.destination.uri}"
+        "=> ${link.destination.url}"
         "${link.fragment == null
             ? ''
             : '#' + link.fragment} "

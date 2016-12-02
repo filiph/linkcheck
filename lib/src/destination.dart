@@ -153,7 +153,17 @@ class Destination {
     return "HTTP $statusCode";
   }
 
-  Uri get uri => _uri ??= Uri.parse(url);
+  Uri get uri {
+    if (_uri != null) return _uri;
+    try {
+      _uri = Uri.parse(url);
+    } on FormatException catch (e, s) {
+      print("Stack trace: $s");
+      throw new StateError("Tried parsing '$url' as URI:\n"
+          "$e");
+    }
+    return _uri;
+  }
 
   bool get wasTried => didNotConnect || statusCode != null;
 
