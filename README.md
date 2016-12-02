@@ -4,6 +4,8 @@
 
 Very fast link-checking.
 
+![linkcheck versus the popular blc tool](https://raw.githubusercontent.com/filiph/linkcheck/master/assets/img/linkcheck-vs-blc.gif)
+
 ## Philosophy:
 
 A good utility is custom-made for a job. There are many link checkers out there,
