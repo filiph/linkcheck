@@ -114,7 +114,7 @@ void printWithAnsi(Uri uri, List<Link> broken, TextPen pen) {
         .lightGray()
         .text("(")
         .normal()
-        .text("${link.origin.span.start.line}")
+        .text("${link.origin.span.start.line + 1}")
         .lightGray()
         .text(":")
         .normal()
@@ -161,7 +161,7 @@ void printWithoutAnsi(Uri uri, List<Link> broken, Stdout stdout) {
   var links = broken.where((link) => link.origin.uri == uri);
   for (var link in links) {
     String tag = _buildTagSummary(link);
-    print("- (${link.origin.span.start.line}"
+    print("- (${link.origin.span.start.line + 1}"
         ":${link.origin.span.start.column}) "
         "$tag"
         "=> ${link.destination.url}"

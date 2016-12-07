@@ -21,7 +21,7 @@ class Origin {
             map["text"],
             map["outerHtml"]);
 
-  String toString() => "$uri (${span.start.line}:${span.start.column})";
+  String toString() => "$uri (${span.start.line + 1}:${span.start.column})";
 
   Map<String, Object> toMap() => {
         "uri": uri.toString(),
