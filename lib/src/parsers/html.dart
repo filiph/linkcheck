@@ -12,12 +12,20 @@ import '../worker/fetch_results.dart';
 ///
 /// The provided [attributes] will be checked in sequence.
 ///
+/// [originUri] is the final URI of the document from which the link originates,
+/// whereas [baseUri] is the same with applied `<base>` tag, if present.
+///
 /// Setting [parseable] to true will create a link to a destination with
 /// [Destination.isSource] set to `true`. For example, links in <a href> are
 /// often parseable (they are HTML), links in <img src> often aren't.
-Link extractLink(Uri uri, Element element, final List<String> attributes,
-    final List<Destination> destinations, bool parseable) {
-  var origin = new Origin(uri, element.sourceSpan, element.localName,
+Link extractLink(
+    Uri originUri,
+    Uri baseUri,
+    Element element,
+    final List<String> attributes,
+    final List<Destination> destinations,
+    bool parseable) {
+  var origin = new Origin(originUri, element.sourceSpan, element.localName,
       element.text, element.outerHtml);
   String reference;
   for (var attributeName in attributes) {
@@ -33,7 +41,7 @@ Link extractLink(Uri uri, Element element, final List<String> attributes,
   reference = reference.trim();
   Uri destinationUri;
   try {
-    destinationUri = uri.resolve(reference);
+    destinationUri = baseUri.resolve(reference);
   } on FormatException {
     Destination destination = new Destination.invalid(reference);
     return new Link(origin, destination, null);
@@ -88,7 +96,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
 
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
   List<Link> links = linkElements
-      .map((element) => extractLink(baseUri, element,
+      .map((element) => extractLink(current.finalUri, baseUri, element,
           const ["href", "src"], currentDestinations, true))
       .toList();
 
@@ -96,8 +104,8 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   var resourceElements =
       doc.querySelectorAll("link[href], [src], object[data]");
   Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
-      extractLink(baseUri, element, const ["src", "href", "data"],
-          currentDestinations, false));
+      extractLink(current.finalUri, baseUri, element,
+          const ["src", "href", "data"], currentDestinations, false));
 
   links.addAll(currentResourceLinks);
 
