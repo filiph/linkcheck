@@ -102,7 +102,7 @@ packages:
       name: http_parser
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.3"
+    version: "3.1.0"
   isolate:
     description:
       name: isolate
@@ -180,7 +180,7 @@ packages:
       name: shelf
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.6.7+1"
+    version: "0.6.7+2"
   shelf_cors:
     description:
       name: shelf_cors
@@ -246,7 +246,7 @@ packages:
       name: test
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.12.17"
+    version: "0.12.17+1"
   typed_data:
     description:
       name: typed_data
