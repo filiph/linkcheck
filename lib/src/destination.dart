@@ -40,6 +40,12 @@ class Destination {
 
   bool isExternal;
 
+  /// Whether or not this destination was marked as skipped.
+  ///
+  /// User has an option to skip URLs via regexp patterns. When this destination
+  /// has a match, [wasSkipped] will be `true`.
+  bool wasSkipped = false;
+
   /// True if this [Destination] is parseable and could contain links to
   /// other destinations. For example, HTML and CSS files are sources. JPEGs
   /// and
@@ -73,6 +79,8 @@ class Destination {
 
   // TODO: add #! rewrite
   // https://developers.google.com/webmasters/ajax-crawling/docs/getting-started
+
+  bool wasParsed = false;
 
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),
@@ -166,8 +174,6 @@ class Destination {
   }
 
   bool get wasTried => didNotConnect || statusCode != null;
-
-  bool wasParsed = false;
 
   bool operator ==(other) => other is Destination && other.hashCode == hashCode;
 

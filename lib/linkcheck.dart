@@ -6,6 +6,7 @@ import 'dart:io' hide Link;
 import 'package:args/args.dart';
 import 'package:console/console.dart';
 
+import 'package:linkcheck/src/parsers/url_skipper.dart';
 import 'src/crawl.dart' show crawl, CrawlResult;
 import 'src/link.dart' show Link;
 import 'src/writer_report.dart' show reportForWriters;
@@ -22,8 +23,9 @@ const defaultUrl = "http://localhost:8080/";
 const externalFlag = "external";
 const helpFlag = "help";
 const hostsFlag = "hosts";
-const inputFlag = "input-file";
 const version = "0.2.14";
+const inputFlag = "input-file";
+const skipFlag = "skip-file";
 const versionFlag = "version";
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
@@ -34,14 +36,16 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
 
   Set<Link> links = result.links;
   int count = result.destinations.length;
-  int externalIgnored = result.destinations
+  int ignored = result.destinations
       .where((destination) =>
-          destination.isExternal &&
-          !destination.wasTried &&
-          !destination.wasDeniedByRobotsTxt &&
-          !destination.isUnsupportedScheme)
+          destination.wasSkipped ||
+          destination.wasDeniedByRobotsTxt ||
+          destination.isUnsupportedScheme ||
+          (destination.isExternal && !destination.wasTried))
       .length;
-  int checked = count - externalIgnored;
+  int leftUntried =
+      result.destinations.where((destination) => !destination.wasTried).length;
+  int checked = count - leftUntried;
 
   if (ansiTerm) {
     Console.write("\r");
@@ -68,8 +72,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .normal()
           .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
-          .text(
-              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(".")
           .print();
@@ -80,8 +83,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .normal()
           .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
-          .text(
-              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(", ")
           .text("0 have warnings or errors")
@@ -95,8 +97,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .normal()
           .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
-          .text(
-              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(", ")
           .text(withWarning == 1
@@ -112,8 +113,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .normal()
           .text("Checked ${links.length} links, $checked destination URLs")
           .lightGray()
-          .text(
-              externalIgnored > 0 ? ' ($externalIgnored external ignored)' : '')
+          .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(", ")
           .text(broken == 1 ? "1 has error(s), " : "$broken have errors, ")
@@ -128,7 +128,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
     print("\nStats:");
     print("${links.length.toString().padLeft(8)} links");
     print("${checked.toString().padLeft(8)} destination URLs");
-    print("${externalIgnored.toString().padLeft(8)} external URLs ignored");
+    print("${ignored.toString().padLeft(8)} URLs ignored");
     print("${withWarning.toString().padLeft(8)} warnings");
     print("${broken.toString().padLeft(8)} errors");
   }
@@ -139,8 +139,6 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
 /// Provide `dart:io` [Stdout] as the second argument for normal operation,
 /// or provide a mock for testing.
 Future<int> run(List<String> arguments, Stdout stdout) async {
-  // TODO: capture all exceptions, use http://news.dartlang.org/2016/01/unboxing-packages-stacktrace.html, and present the error in a 'prod' way (showing: unrecoverable error, and only files in this library, and how to report it)
-
   // Redirect output to injected [stdout] for better testing.
   void print(Object message) => stdout.writeln(message);
 
@@ -156,8 +154,10 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
     ..addSeparator("Advanced")
     ..addOption(inputFlag,
         abbr: 'i',
-        help: "Get list of URLs from the given "
-            "text file (one URL per line).")
+        help: "Get list of URLs from the given text file (one URL per line).")
+    ..addOption(skipFlag,
+        help: "Get list of URLs to skip from given text file (one RegExp "
+            "pattern per line).")
     ..addOption(hostsFlag,
         allowMultiple: true,
         splitCommas: true,
@@ -191,8 +191,10 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   bool verbose = argResults[debugFlag];
   bool shouldCheckExternal = argResults[externalFlag];
   String inputFile = argResults[inputFlag];
+  String skipFile = argResults[skipFlag];
 
   List<String> urls = argResults.rest.toList();
+  UrlSkipper skipper = new UrlSkipper.empty();
 
   if (inputFile != null) {
     var file = new File(inputFile);
@@ -200,6 +202,16 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
       urls.addAll(file.readAsLinesSync().where((url) => url.isNotEmpty));
     } on FileSystemException {
       print("Can't read file '$inputFile'.");
+      return 2;
+    }
+  }
+
+  if (skipFile != null) {
+    var file = new File(skipFile);
+    try {
+      skipper = new UrlSkipper(file.path, file.readAsLinesSync());
+    } on FileSystemException {
+      print("Can't read file '$skipFile'.");
       return 2;
     }
   }
@@ -214,6 +226,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
     urls.forEach(print);
   }
 
+  // TODO: exit gracefully if provided URL isn't a parseable URI
   List<Uri> uris = urls.map((url) => Uri.parse(url)).toList();
   Set<String> hosts;
   if ((argResults[hostsFlag] as Iterable<String>).isNotEmpty) {
@@ -230,8 +243,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   }
 
   // Start the actual crawl and await the result.
-  CrawlResult result = await crawl(uris, hosts, shouldCheckExternal, verbose,
-      ansiTerm, ProcessSignal.SIGINT.watch(), stdout);
+  CrawlResult result = await crawl(uris, hosts, shouldCheckExternal, skipper,
+      verbose, ansiTerm, ProcessSignal.SIGINT.watch(), stdout);
 
   var broken = result.destinations
       .where((destination) => destination.wasTried && destination.isBroken)

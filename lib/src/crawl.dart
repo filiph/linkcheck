@@ -8,6 +8,7 @@ import 'package:console/console.dart';
 
 import 'destination.dart';
 import 'link.dart';
+import 'package:linkcheck/src/parsers/url_skipper.dart';
 import 'uri_glob.dart';
 import 'server_info.dart';
 import 'worker/pool.dart';
@@ -27,6 +28,7 @@ Future<CrawlResult> crawl(
     List<Uri> seeds,
     Set<String> hostGlobs,
     bool shouldCheckExternal,
+    UrlSkipper skipper,
     bool verbose,
     bool ansiTerm,
     Stream<dynamic> stopSignal,
@@ -45,6 +47,7 @@ Future<CrawlResult> crawl(
   if (verbose) {
     print("Crawl will start on the following URLs: $seeds");
     print("Crawl will check pages only on URLs satisfying: $hostGlobs");
+    print("Crawl will skip links that match patterns: $skipper");
   }
 
   List<UriGlob> uriGlobs = hostGlobs.map((glob) => new UriGlob(glob)).toList();
@@ -89,7 +92,9 @@ Future<CrawlResult> crawl(
   Set<Link> links = new Set<Link>();
 
   int threads;
-  if (shouldCheckExternal || seeds.any((seed) => seed.host != 'localhost')) {
+  if (shouldCheckExternal ||
+      seeds.any(
+          (seed) => seed.host != 'localhost' && seed.host != '127.0.0.1')) {
     threads = defaultThreads;
   } else {
     threads = localhostOnlyThreads;
@@ -311,9 +316,6 @@ Future<CrawlResult> crawl(
         continue;
       }
 
-      destination.isExternal =
-          !uriGlobs.any((glob) => glob.matches(destination.uri));
-
       if (destination.isUnsupportedScheme) {
         // Don't check unsupported schemes (like mailto:).
         closed.add(destination);
@@ -324,6 +326,26 @@ Future<CrawlResult> crawl(
         continue;
       }
 
+      destination.wasSkipped = skipper.skips(destination.url);
+
+      // Making sure this is set. The next (wasSkipped) section could
+      // short-circuit this loop so we have to assign to isExternal here
+      // while we have the chance.
+      destination.isExternal =
+          !uriGlobs.any((glob) => glob.matches(destination.uri));
+
+      if (destination.wasSkipped) {
+        closed.add(destination);
+        bin[destination.url] = Bin.closed;
+        if (verbose) {
+          print("Will not be checking: $destination - "
+              "${skipper.explain(destination.url)}");
+        }
+        continue;
+      }
+
+      // The URL is external and wasn't skipped. We'll find out whether to
+      // check it according to the [shouldCheckExternal] option.
       if (destination.isExternal) {
         if (shouldCheckExternal) {
           openExternal.add(destination);
@@ -352,6 +374,7 @@ Future<CrawlResult> crawl(
     // Do any destinations have different hosts? Add them to unknownServers.
     Iterable<String> newHosts = newDestinations
         .where((destination) => !destination.isInvalid)
+        .where((destination) => !destination.wasSkipped)
         .where((destination) => shouldCheckExternal || !destination.isExternal)
         .map((destination) => destination.uri.authority)
         .where((String host) =>
@@ -397,6 +420,7 @@ Future<CrawlResult> crawl(
       destination.wasTried ||
       (destination.isExternal && !shouldCheckExternal) ||
       destination.isUnsupportedScheme ||
+      destination.wasSkipped ||
       destination.wasDeniedByRobotsTxt));
 
   if (verbose) {
