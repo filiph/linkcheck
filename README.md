@@ -204,20 +204,23 @@ example, and fill it with regular expressions like so:
 
 ```
 # Lines starting with a hash are comments.
+
 admin/
 \.s?css$
 \#info
 ```
 
-The file above includes a comment on line 1 and will be ignored. Line 2 contains
-a broad regular expression that will make linkcheck ignore any link to a URL
-containing `admin/` anywhere in it. Line 3 shows that there is full support for
-regular expressions – it will ignore URLs ending with `.css` and `.scss`.
-Line 4 shows the only special escape sequence.If you need to start your regular
-expression with a `#` (which linkcheck would normally parse as a comment)
-you can precede the `#` with a backslash (`\`). This will force linkcheck
-not to ignore the line. In this case, the regular expression on line 4 will
-match `#info` anywhere in the URL.
+The file above includes a comment on line 1 which will be ignored. Line 2 is
+blank and will be ignored as well. Line 3 contains a broad regular expression
+that will make linkcheck ignore any link to a URL containing `admin/`
+anywhere in it. Line 4 shows that there is full support for
+regular expressions – it will ignore URLs ending with `.css` and
+`.scss`. Line 5 shows the only special escape sequence.
+If you need to start your regular expression with a `#`
+(which linkcheck would normally parse as a comment) you can
+precede the `#` with a backslash (`\`). This will force linkcheck
+not to ignore the line. In this case, the regular expression on line 4
+will match `#info` anywhere in the URL.
 
 To use this file, you run linkcheck like this:
 
