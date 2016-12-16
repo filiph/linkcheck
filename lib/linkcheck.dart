@@ -23,9 +23,9 @@ const defaultUrl = "http://localhost:8080/";
 const externalFlag = "external";
 const helpFlag = "help";
 const hostsFlag = "hosts";
-const version = "0.2.14";
 const inputFlag = "input-file";
 const skipFlag = "skip-file";
+const version = "1.0.0";
 const versionFlag = "version";
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
