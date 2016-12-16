@@ -199,23 +199,25 @@ Sometimes, it is legitimate to ignore some failing URLs. This is done via
 the `--skip-file` option.
 
 Let's say you're working on a site and a significant portion of it is currently
-under construction. You can create a file called `my_skip_file.txt` and
-fill it with regular expressions like so:
+under construction. You can create a file called `my_skip_file.txt`, for 
+example, and fill it with regular expressions like so:
 
 ```
-# Lines starting with a hash are ignored.
+# Lines starting with a hash are comments.
 admin/
 \.s?css$
 \#info
 ```
 
-The file above includes a comment on line 1. Line 2 contains a broad
-regular expression that will make linkcheck ignore any link to a URL containing
-`admin/` anywhere in it. Line 3 shows that there is full support for regular
-expressions – it will ignore URLs ending with `.css` and `.scss`. Line 4
-shows the only special escape sequence. If you need to start your regular
-expression with a `#` (which linkcheck would normally parse as a comment) you
-can precede the `#` with a backslash (`\`)
+The file above includes a comment on line 1 and will be ignored. Line 2 contains
+a broad regular expression that will make linkcheck ignore any link to a URL
+containing `admin/` anywhere in it. Line 3 shows that there is full support for
+regular expressions – it will ignore URLs ending with `.css` and `.scss`.
+Line 4 shows the only special escape sequence.If you need to start your regular
+expression with a `#` (which linkcheck would normally parse as a comment)
+you can precede the `#` with a backslash (`\`). This will force linkcheck
+not to ignore the line. In this case, the regular expression on line 4 will
+match `#info` anywhere in the URL.
 
 To use this file, you run linkcheck like this:
 
@@ -223,5 +225,5 @@ To use this file, you run linkcheck like this:
 linkcheck example.com --skip-file my_skip_file.txt
 ```
 
-Regular expressions are hard. If you want to debug, use the `-d` option to make
-sure linkcheck is ignoring exactly what you want. 
+Regular expressions are hard. If unsure, use the `-d` option to see what URLs
+your skip file is ignoring, exactly.
