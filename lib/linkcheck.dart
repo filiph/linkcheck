@@ -38,7 +38,6 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
   int count = result.destinations.length;
   int ignored = result.destinations
       .where((destination) =>
-          destination.wasSkipped ||
           destination.wasDeniedByRobotsTxt ||
           destination.isUnsupportedScheme ||
           (destination.isExternal && !destination.wasTried))
@@ -200,8 +199,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
     var file = new File(inputFile);
     try {
       urls.addAll(file.readAsLinesSync().where((url) => url.isNotEmpty));
-    } on FileSystemException {
-      print("Can't read file '$inputFile'.");
+    } on FileSystemException catch (e) {
+      print("Can't read input file '$inputFile': $e");
       return 2;
     }
   }
@@ -210,8 +209,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
     var file = new File(skipFile);
     try {
       skipper = new UrlSkipper(file.path, file.readAsLinesSync());
-    } on FileSystemException {
-      print("Can't read file '$skipFile'.");
+    } on FileSystemException catch (e) {
+      print("Can't read skip file '$skipFile': $e");
       return 2;
     }
   }

@@ -35,7 +35,7 @@ class UrlSkipper {
         .map((rec) => "${rec.pattern.pattern} (line ${rec.line})")
         .join(", ");
     return "URL '$url' skipped because it was matched by the following "
-        "regural expressions of skip file '$path': $list";
+        "regular expressions of skip file '$path': $list";
   }
 
   static Iterable<_UrlSkipperRecord> _parse(Iterable<String> lines) sync* {

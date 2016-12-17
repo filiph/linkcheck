@@ -283,6 +283,16 @@ Future<CrawlResult> crawl(
     // Add links' destinations to [newDestinations] if they haven't been
     // seen before.
     for (var link in result.links) {
+      // Mark links as skipped first.
+      if (skipper.skips(link.destinationUrlWithFragment)) {
+        link.wasSkipped = true;
+        if (verbose) {
+          print("- will not be checking: ${link.destination} - "
+              "${skipper.explain(link.destinationUrlWithFragment)}");
+        }
+        continue;
+      }
+
       if (bin[link.destination.url] == null) {
         // Completely new destination.
         assert(open.where((d) => d.url == link.destination.url).isEmpty);
@@ -297,12 +307,14 @@ Future<CrawlResult> crawl(
             print("- destination: ${link.destination} already "
                 "seen on this page");
           }
-        } else {
-          if (verbose) {
-            print("- completely new destination: ${link.destination}");
-          }
-          newDestinations.add(link.destination);
+          continue;
         }
+
+        if (verbose) {
+          print("- completely new destination: ${link.destination}");
+        }
+
+        newDestinations.add(link.destination);
       }
     }
 
@@ -326,23 +338,11 @@ Future<CrawlResult> crawl(
         continue;
       }
 
-      destination.wasSkipped = skipper.skips(destination.url);
-
       // Making sure this is set. The next (wasSkipped) section could
       // short-circuit this loop so we have to assign to isExternal here
       // while we have the chance.
       destination.isExternal =
           !uriGlobs.any((glob) => glob.matches(destination.uri));
-
-      if (destination.wasSkipped) {
-        closed.add(destination);
-        bin[destination.url] = Bin.closed;
-        if (verbose) {
-          print("Will not be checking: $destination - "
-              "${skipper.explain(destination.url)}");
-        }
-        continue;
-      }
 
       // The URL is external and wasn't skipped. We'll find out whether to
       // check it according to the [shouldCheckExternal] option.
@@ -374,7 +374,6 @@ Future<CrawlResult> crawl(
     // Do any destinations have different hosts? Add them to unknownServers.
     Iterable<String> newHosts = newDestinations
         .where((destination) => !destination.isInvalid)
-        .where((destination) => !destination.wasSkipped)
         .where((destination) => shouldCheckExternal || !destination.isExternal)
         .map((destination) => destination.uri.authority)
         .where((String host) =>
@@ -420,7 +419,6 @@ Future<CrawlResult> crawl(
       destination.wasTried ||
       (destination.isExternal && !shouldCheckExternal) ||
       destination.isUnsupportedScheme ||
-      destination.wasSkipped ||
       destination.wasDeniedByRobotsTxt));
 
   if (verbose) {

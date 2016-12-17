@@ -49,8 +49,7 @@ void main() {
       }
     });
 
-    test("reports info when link is behind robots.txt rule",
-        () async {
+    test("reports info when link is behind robots.txt rule", () async {
       var server = await Dhttpd.start(path: getServingPath(5), port: port);
       try {
         int result = await run([":$port"], out);
@@ -120,6 +119,19 @@ void main() {
       var server = await Dhttpd.start(path: getServingPath(7), port: port);
       try {
         int result = await run([":$port"], out);
+        expect(result, 0);
+        expect(out.output, contains("0 warnings"));
+        expect(out.output, contains("0 errors"));
+      } finally {
+        await server.destroy();
+      }
+    });
+
+    test("skips URLs according to their resolved URL with fragment", () async {
+      var server = await Dhttpd.start(path: getServingPath(8), port: port);
+      try {
+        int result = await run(
+            [":$port", "--skip-file", "test/case8/skip-file.txt"], out);
         expect(result, 0);
         expect(out.output, contains("0 warnings"));
         expect(out.output, contains("0 errors"));
