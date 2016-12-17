@@ -6,7 +6,7 @@ packages:
       name: analyzer
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.29.1"
+    version: "0.29.2"
   args:
     description:
       name: args
@@ -284,4 +284,4 @@ packages:
     source: hosted
     version: "2.1.12"
 sdks:
-  dart: ">=1.21.0-dev.2.0 <2.0.0"
+  dart: ">=1.21.0 <2.0.0"

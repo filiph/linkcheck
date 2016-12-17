@@ -4,17 +4,17 @@ description: A very fast link-checker.
 homepage: https://github.com/filiph/linkcheck
 author: "Filip Hracek <filip.hracek@gmail.com>"
 environment:
-  sdk: ">=1.18.0 <2.0.0"
+  sdk: ">=1.21.0 <2.0.0"
 dependencies:
-  args: ^0.13.4+2
-  console: ^2.2.3
-  csslib: ^0.13.2
+  args: ^0.13.7
+  console: ^2.2.4
+  csslib: ^0.13.2+2
   glob: ^1.1.3
-  html: ^0.13.0
-  path: ^1.3.9
+  html: ^0.13.1
+  path: ^1.4.1
   stream_channel: ^1.5.0
 dev_dependencies:
-  test:
-  dhttpd:
+  dhttpd: 0.3.1
+  test: 0.12.17+3
 executables:
   linkcheck: linkcheck
