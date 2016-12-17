@@ -111,7 +111,9 @@ class Destination {
 
   Destination.invalid(String url)
       : url = url,
-        isInvalid = true;
+        isInvalid = true {
+    _hashCode = url.hashCode;
+  }
 
   /// Parsed [finalUrl].
   Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
