@@ -398,16 +398,31 @@ Future<CrawlResult> crawl(
   // This will suspend until after everything is done (or user presses Ctrl-C).
   await allDone.future;
 
+  if (verbose) {
+    print("All jobs are done or user pressed Ctrl-C");
+  }
+
   stopSignalSubscription.cancel();
 
+  if (verbose) {
+    print("Deduping destinations");
+  }
+
   // Fix links (dedupe destinations).
+  var urlMap = new Map<String, Destination>.fromIterable(closed,
+      key: (dest) => dest.url);
   for (var link in links) {
-    // If it wasn't for the posibility to SIGINT the process, we could assume
-    // there is exactly one [canonical]. Alas, we need to make sure.
-    var canonical = closed.where((d) => d.url == link.destination.url).toList();
-    if (canonical.length == 1) {
-      link.destination = canonical.single;
+    var canonical = urlMap[link.destination.url];
+    // Note: If it wasn't for the posibility to SIGINT the process, we could
+    // assert there is exactly one Destination per URL. There might not be,
+    // though.
+    if (canonical != null) {
+      link.destination = canonical;
     }
+  }
+
+  if (verbose) {
+    print("Closing the isolate pool");
   }
 
   if (!pool.isShuttingDown) {
