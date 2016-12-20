@@ -39,6 +39,13 @@ Link extractLink(
 
   // Valid URLs can be surrounded by spaces.
   reference = reference.trim();
+
+  // Deal with unsupported schemes such as `telnet:` or `mailto:`.
+  if (!checkSchemeSupported(reference, baseUri)) {
+    Destination destination = new Destination.unsupported(reference);
+    return new Link(origin, destination, null);
+  }
+
   Uri destinationUri;
   try {
     destinationUri = baseUri.resolve(reference);

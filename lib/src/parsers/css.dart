@@ -48,6 +48,14 @@ FetchResults parseCss(
     var url = reference.url.trim();
     Link link;
 
+    // Deal with unsupported schemes such as `telnet:` or `mailto:`.
+    if (!checkSchemeSupported(url, current.finalUri)) {
+      Destination destination = new Destination.unsupported(url);
+      link = new Link(origin, destination, null);
+      links.add(link);
+      continue;
+    }
+
     Uri destinationUri;
     try {
       destinationUri = current.finalUri.resolve(url);

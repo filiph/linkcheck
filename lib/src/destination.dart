@@ -2,6 +2,28 @@ library linkcheck.destination;
 
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
+/// RegExp for detecting URI scheme, such as `http:`, `mailto:`, etc.
+final _scheme = new RegExp(r"$(\w[\w\-]*\w):");
+
+/// Takes a trimmed URL and returns [bool] indicating whether
+/// we support the URL's scheme or not. When there is no scheme in the URL,
+/// the [source]'s scheme's support is returned.
+///
+/// [source] must be a fully resolved [Uri] with a non-empty [Uri.scheme]
+/// component.
+bool checkSchemeSupported(String url, Uri source) {
+  var match = _scheme.firstMatch(url);
+  String scheme;
+  if (match == null) {
+    // No scheme provided, so the source's scheme is used.
+    scheme = source.scheme;
+    assert(source.scheme.isNotEmpty);
+  } else {
+    scheme = match.group(1);
+  }
+  return Destination.supportedSchemes.contains(scheme);
+}
+
 class BasicRedirectInfo {
   String url;
   int statusCode;
@@ -76,6 +98,8 @@ class Destination {
 
   bool wasParsed = false;
 
+  bool _isUnsupportedScheme;
+
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),
         _uri = uri.removeFragment() {
@@ -115,6 +139,13 @@ class Destination {
     _hashCode = url.hashCode;
   }
 
+  Destination.unsupported(String url) : url = url {
+    _isUnsupportedScheme = true;
+    _hashCode = url.hashCode;
+  }
+
+  // TODO: make sure we don't assign the same hashcode to two destinations like
+  //       '../' from different subdirectory levels.
   /// Parsed [finalUrl].
   Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
 
@@ -124,7 +155,8 @@ class Destination {
   /// HTTP 200 OK.
   ///
   /// Ignores URIs with unsupported scheme (like `mailto:`).
-  bool get isBroken => statusCode != 200 && !wasDeniedByRobotsTxt;
+  bool get isBroken =>
+      statusCode != 200 && !wasDeniedByRobotsTxt && !isUnsupportedScheme;
 
   bool get isCssMimeType =>
       contentType.primaryType == "text" && contentType.subType == "css";
@@ -141,13 +173,24 @@ class Destination {
   bool get isRedirected => redirects != null && redirects.isNotEmpty;
 
   /// True if the destination URI isn't one of the [supportedSchemes].
-  bool get isUnsupportedScheme => !supportedSchemes.contains(finalUri.scheme);
+  bool get isUnsupportedScheme {
+    if (_isUnsupportedScheme != null) return _isUnsupportedScheme;
+    bool result = true;
+    try {
+      // This can throw a FormatException when the URI cannot be parsed.
+      result = !supportedSchemes.contains(finalUri.scheme);
+    } on FormatException {
+      // Pass.
+    }
+    _isUnsupportedScheme = result;
+    return result;
+  }
 
   String get statusDescription {
+    if (isUnsupportedScheme) return "scheme unsupported";
     if (isInvalid) return "invalid URL";
     if (didNotConnect) return "connection failed";
     if (wasDeniedByRobotsTxt) return "denied by robots.txt";
-    if (isUnsupportedScheme) return "scheme unsupported";
     if (!wasTried) return "wasn't tried";
     if (statusCode == 200) return "HTTP 200";
     if (isRedirected) {

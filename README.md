@@ -48,6 +48,10 @@ but none of them seems to be striving for the following set of goals.
 * `linkcheck` only supports `http:` and `https:`. It won't try to check
   FTP or telnet or nntp links.
   
+  * Note: `linkcheck` will currently completely ignore unsupported schemes
+    like `ftp:` or `mailto:` or `data:`. This may change in the future to
+    at least show info-level warning.
+  
 * `linkcheck` doesn't validate file system directories. Servers often behave
   very differently than file systems, so validating links on the file system
   often leads to both false positives and false negatives. Links should be 

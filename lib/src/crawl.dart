@@ -328,6 +328,12 @@ Future<CrawlResult> crawl(
         continue;
       }
 
+      // Making sure this is set. The next (wasSkipped) section could
+      // short-circuit this loop so we have to assign to isExternal here
+      // while we have the chance.
+      destination.isExternal =
+          !uriGlobs.any((glob) => glob.matches(destination.uri));
+
       if (destination.isUnsupportedScheme) {
         // Don't check unsupported schemes (like mailto:).
         closed.add(destination);
@@ -337,12 +343,6 @@ Future<CrawlResult> crawl(
         }
         continue;
       }
-
-      // Making sure this is set. The next (wasSkipped) section could
-      // short-circuit this loop so we have to assign to isExternal here
-      // while we have the chance.
-      destination.isExternal =
-          !uriGlobs.any((glob) => glob.matches(destination.uri));
 
       // The URL is external and wasn't skipped. We'll find out whether to
       // check it according to the [shouldCheckExternal] option.
@@ -374,6 +374,7 @@ Future<CrawlResult> crawl(
     // Do any destinations have different hosts? Add them to unknownServers.
     Iterable<String> newHosts = newDestinations
         .where((destination) => !destination.isInvalid)
+        .where((destination) => !destination.isUnsupportedScheme)
         .where((destination) => shouldCheckExternal || !destination.isExternal)
         .map((destination) => destination.uri.authority)
         .where((String host) =>
@@ -432,6 +433,7 @@ Future<CrawlResult> crawl(
   assert(open.isEmpty);
   assert(closed.every((destination) =>
       destination.wasTried ||
+      destination.isUnsupportedScheme ||
       (destination.isExternal && !shouldCheckExternal) ||
       destination.isUnsupportedScheme ||
       destination.wasDeniedByRobotsTxt));

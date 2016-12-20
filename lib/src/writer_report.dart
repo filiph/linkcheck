@@ -19,9 +19,10 @@ void reportForWriters(CrawlResult result, bool ansiTerm, Stdout stdout) {
   Set<Link> links = result.links;
   List<Link> broken = links
       .where((link) =>
-          link.destination.isInvalid ||
-          link.destination.wasTried &&
-              (link.destination.isBroken || link.hasWarning))
+          !link.destination.isUnsupportedScheme &&
+          (link.destination.isInvalid ||
+              link.destination.wasTried &&
+                  (link.destination.isBroken || link.hasWarning)))
       .toList(growable: false);
 
   List<Destination> deniedByRobots = result.destinations
