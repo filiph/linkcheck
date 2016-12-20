@@ -20,6 +20,7 @@ void reportForWriters(CrawlResult result, bool ansiTerm, Stdout stdout) {
   List<Link> broken = links
       .where((link) =>
           !link.destination.isUnsupportedScheme &&
+          !link.wasSkipped &&
           (link.destination.isInvalid ||
               link.destination.wasTried &&
                   (link.destination.isBroken || link.hasWarning)))
