@@ -5,10 +5,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dhttpd/dhttpd.dart';
+import 'package:linkcheck/linkcheck.dart' show run;
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
-
-import 'package:linkcheck/linkcheck.dart' show run;
 
 // Get the directory of the script being run.
 void main() {
@@ -175,6 +174,9 @@ class _MockStdout implements Stdout {
   }
 
   String get output => buf.toString();
+
+  @override
+  bool get supportsAnsiEscapes => false;
 
   int get terminalColumns => 80;
 

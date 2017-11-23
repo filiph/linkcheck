@@ -1,5 +1,5 @@
 name: linkcheck
-version: 1.0.4  # Don't forget to update in lib/linkcheck.dart, too.
+version: 1.0.5  # Don't forget to update in lib/linkcheck.dart, too.
 description: A very fast link-checker.
 homepage: https://github.com/filiph/linkcheck
 author: "Filip Hracek <filip.hracek@gmail.com>"
@@ -8,13 +8,13 @@ environment:
 dependencies:
   args: ^0.13.7
   console: ^2.2.4
-  csslib: ^0.13.2+2
-  glob: ^1.1.3
-  html: ^0.13.1
-  path: ^1.4.1
-  stream_channel: ^1.5.0
+  csslib: ^0.14.1
+  glob: ^1.1.5
+  html: ^0.13.2
+  path: ^1.5.1
+  stream_channel: ^1.6.2
 dev_dependencies:
-  dhttpd: 0.3.1
-  test: 0.12.17+3
+  dhttpd: ^0.3.1
+  test: ^0.12.28
 executables:
   linkcheck: linkcheck
