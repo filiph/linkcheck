@@ -138,6 +138,16 @@ void main() {
         await server.destroy();
       }
     });
+
+    test("works with unicode in title", () async {
+      var server = await Dhttpd.start(path: getServingPath(9), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 0);
+      } finally {
+        await server.destroy();
+      }
+    }, skip: "blocked on package:html bug");
   }, tags: ["integration"]);
 }
 
