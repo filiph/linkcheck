@@ -222,7 +222,7 @@ class Destination {
   bool satisfiesFragment(String fragment) {
     if (fragment == null || fragment == '') return true;
     if (anchors == null) return false;
-    return anchors.contains(fragment);
+    return anchors.contains(Uri.decodeComponent(fragment));
   }
 
   Map<String, Object> toMap() => {

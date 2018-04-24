@@ -74,12 +74,12 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   // Find parseable destinations
   // TODO: add the following: meta refreshes, forms, metadata
   //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
-  // TODO: work with http://www.w3schools.com/tags/tag_base.asp (can be anywhere) (<base href="..">)
   // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
 
   var anchors = doc
       .querySelectorAll("body [id], body [name]")
       .map((element) => element.attributes["id"] ?? element.attributes["name"])
+      .map((fragment) => Uri.decodeComponent(fragment))
       .toList();
   checked.anchors = anchors;
 

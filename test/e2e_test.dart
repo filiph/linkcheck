@@ -148,6 +148,16 @@ void main() {
         await server.destroy();
       }
     }, skip: "blocked on package:html bug");
+
+    test("anchors are normalized", () async {
+      var server = await Dhttpd.start(path: getServingPath(10), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 0);
+      } finally {
+        await server.destroy();
+      }
+    });
   }, tags: ["integration"]);
 }
 
