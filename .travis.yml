@@ -1,4 +1,17 @@
 language: dart
+
+dart: dev
+
+env:
+  global:
+    - LIBS="bin lib test"
+
 script:
+  - dartanalyzer --preview-dart-2 --fatal-warnings $LIBS
+  - dartfmt -n --set-exit-if-changed $LIBS
   - pub run test -x integration
   - dart test/e2e_test.dart
+
+cache:
+  directories:
+    - $HOME/.pub-cache
