@@ -72,11 +72,11 @@ Future<ServerInfoUpdate> checkServer(
   String content;
   try {
     Converter<List<int>, String> decoder;
-    if (response.headers.contentType.charset == LATIN1.name) {
+    if (response.headers.contentType.charset == latin1.name) {
       // Some sites still use LATIN-1 for performance reasons.
-      decoder = LATIN1.decoder;
+      decoder = latin1.decoder;
     } else {
-      decoder = UTF8.decoder;
+      decoder = utf8.decoder;
     }
     content = await response.transform(decoder).join();
   } on FormatException {
@@ -145,11 +145,11 @@ Future<FetchResults> checkPage(
   String content;
   try {
     Converter<List<int>, String> decoder;
-    if (current.contentType.charset == LATIN1.name) {
+    if (current.contentType.charset == latin1.name) {
       // Some sites still use LATIN-1 for performance reasons.
-      decoder = LATIN1.decoder;
+      decoder = latin1.decoder;
     } else {
-      decoder = UTF8.decoder;
+      decoder = utf8.decoder;
     }
     content = await response.transform(decoder).join();
   } on FormatException {
