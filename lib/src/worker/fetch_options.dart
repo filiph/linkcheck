@@ -5,7 +5,6 @@ import 'dart:async';
 import '../uri_glob.dart';
 import 'worker.dart';
 
-
 /// The set of known facts and options for the Worker to use when fetching.
 class FetchOptions {
   final _compiledHostGlobs = new List<UriGlob>();

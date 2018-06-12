@@ -41,7 +41,9 @@ void main() {
     var contents = r"""
     \.com$
     /else
-    """.trim().split("\n");
+    """
+        .trim()
+        .split("\n");
     var skipper = new UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
@@ -53,7 +55,9 @@ void main() {
     # This is a comment
     \.com$
     /else
-    """.trim().split("\n");
+    """
+        .trim()
+        .split("\n");
     var skipper = new UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
@@ -65,7 +69,9 @@ void main() {
     \#
     \.com$
     /else
-    """.trim().split("\n");
+    """
+        .trim()
+        .split("\n");
     var skipper = new UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
@@ -79,7 +85,9 @@ void main() {
 
     \.com$
     /else
-    """.trim().split("\n");
+    """
+        .trim()
+        .split("\n");
     var skipper = new UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
