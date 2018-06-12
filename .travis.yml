@@ -11,7 +11,9 @@ script:
   - dartanalyzer --preview-dart-2 --fatal-warnings $LIBS
   - dartfmt -n --set-exit-if-changed $LIBS
   - pub run test -x integration
-  - dart --preview-dart-2 test/e2e_test.dart
+  # https://github.com/dart-lang/sdk/issues/33430
+  # - dart --preview-dart-2 test/e2e_test.dart
+  - dart test/e2e_test.dart
 
 cache:
   directories:
