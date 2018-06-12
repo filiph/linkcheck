@@ -4,13 +4,14 @@ dart: dev
 
 env:
   global:
+    - DART_VM_OPTIONS=--preview-dart-2
     - LIBS="bin lib test"
 
 script:
   - dartanalyzer --preview-dart-2 --fatal-warnings $LIBS
   - dartfmt -n --set-exit-if-changed $LIBS
   - pub run test -x integration
-  - dart test/e2e_test.dart
+  - dart --preview-dart-2 test/e2e_test.dart
 
 cache:
   directories:
