@@ -46,11 +46,9 @@ packages:
   console:
     dependency: "direct main"
     description:
-      path: "."
-      ref: chalin-dart-2-0612
-      resolved-ref: "3bc0b51bd3277346d78af711b826a51625841cd1"
-      url: "https://github.com/chalin/console.dart.git"
-    source: git
+      name: console
+      url: "https://pub.dartlang.org"
+    source: hosted
     version: "3.0.0"
   convert:
     dependency: transitive
@@ -205,7 +203,7 @@ packages:
       name: path
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.1"
   plugin:
     dependency: transitive
     description:
@@ -284,13 +282,11 @@ packages:
     source: hosted
     version: "1.9.2"
   stream_channel:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: c702d4eb3223a194606dcec0acfbb0761bce867c
-      url: "https://github.com/dart-lang/stream_channel.git"
-    source: git
+      name: stream_channel
+      url: "https://pub.dartlang.org"
+    source: hosted
     version: "1.6.7+1"
   string_scanner:
     dependency: transitive
@@ -356,4 +352,4 @@ packages:
     source: hosted
     version: "2.1.14"
 sdks:
-  dart: ">=2.0.0-dev.55.0 <=2.0.0-dev.61.0"
+  dart: "2.0.0-dev.62.0"

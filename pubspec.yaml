@@ -1,5 +1,5 @@
 name: linkcheck
-version: 2.0.0-dev.1  # Don't forget to update in lib/linkcheck.dart, too.
+version: 2.0.0-dev.2  # Don't forget to update in lib/linkcheck.dart, too.
 
 description: A very fast link-checker.
 
@@ -16,7 +16,7 @@ dependencies:
   glob: ^1.1.5
   html: ^0.13.3
   logging: ^0.11.3+1
-  path: ^1.5.1
+  path: ^1.6.1
   source_span: ^1.4.0
 
 dev_dependencies:
@@ -25,11 +25,3 @@ dev_dependencies:
 
 executables:
   linkcheck: linkcheck
-
-dependency_overrides:
-  console:
-    git:
-      url: https://github.com/chalin/console.dart.git
-      ref: chalin-dart-2-0612
-  stream_channel:
-    git: https://github.com/dart-lang/stream_channel.git
