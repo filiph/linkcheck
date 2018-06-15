@@ -161,7 +161,7 @@ class Destination {
   bool get isCssMimeType =>
       contentType.primaryType == "text" && contentType.subType == "css";
 
-  bool get isHtmlMimeType => contentType.mimeType == ContentType.HTML.mimeType;
+  bool get isHtmlMimeType => contentType.mimeType == ContentType.html.mimeType;
 
   bool get isParseableMimeType => isHtmlMimeType || isCssMimeType;
 

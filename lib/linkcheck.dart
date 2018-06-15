@@ -25,7 +25,7 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const skipFlag = "skip-file";
-const version = "1.0.6";
+const version = "2.0.0";
 const versionFlag = "version";
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
@@ -243,7 +243,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
 
   // Start the actual crawl and await the result.
   CrawlResult result = await crawl(uris, hosts, shouldCheckExternal, skipper,
-      verbose, ansiTerm, ProcessSignal.SIGINT.watch(), stdout);
+      verbose, ansiTerm, ProcessSignal.sigint.watch(), stdout);
 
   var broken = result.destinations
       .where((destination) => destination.wasTried && destination.isBroken)

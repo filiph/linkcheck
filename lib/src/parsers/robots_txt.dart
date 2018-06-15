@@ -51,7 +51,6 @@ class RobotsBouncer {
   }
 
   bool allows(String path) {
-
     if (_rules.any((rule) => rule.fitsRobotName(robotName) && rule.allowsAll)) {
       return true;
     }
