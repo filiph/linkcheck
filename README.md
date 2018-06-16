@@ -234,3 +234,13 @@ linkcheck example.com --skip-file my_skip_file.txt
 
 Regular expressions are hard. If unsure, use the `-d` option to see what URLs
 your skip file is ignoring, exactly.
+
+#### User agent
+
+The tool identifies itself to servers with the following [user agent string][]:
+
+```
+linkcheck tool (https://github.com/filiph/linkcheck)
+```
+
+[user agent string]: https://en.wikipedia.org/wiki/User_agent#User_agent_identification
