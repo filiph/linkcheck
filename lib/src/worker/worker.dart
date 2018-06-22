@@ -20,10 +20,10 @@ const checkPageVerb = "CHECK";
 const checkServerDoneVerb = "SERVER_CHECK_DONE";
 const checkServerVerb = "CHECK_SERVER";
 const dataKey = "data";
-const dieMessage = const {verbKey: dieVerb};
+final dieMessage = {verbKey: dieVerb};
 const dieVerb = "DIE";
 const infoFromWorkerVerb = "INFO_FROM_WORKER";
-const unrecognizedMessage = const {verbKey: unrecognizedVerb};
+final unrecognizedMessage = {verbKey: unrecognizedVerb};
 const unrecognizedVerb = "UNRECOGNIZED";
 const userAgent = "linkcheck tool (https://github.com/filiph/linkcheck)";
 
