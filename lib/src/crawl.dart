@@ -234,9 +234,7 @@ Future<CrawlResult> crawl(
       count += 1;
       print("Server check for ${result.host} complete: "
           "${result.didNotConnect ? 'didn\'t connect' : 'connected'}, "
-          "${result.robotsTxtContents.isEmpty
-              ? 'no robots.txt'
-              : 'robots.txt found'}.");
+          "${result.robotsTxtContents.isEmpty ? 'no robots.txt' : 'robots.txt found'}.");
     } else {
       if (ansiTerm) {
         cursor.moveLeft(count.toString().length);
