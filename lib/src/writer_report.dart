@@ -167,13 +167,9 @@ void printWithoutAnsi(Uri uri, List<Link> broken, Stdout stdout) {
         ":${link.origin.span.start.column}) "
         "$tag"
         "=> ${link.destination.url}"
-        "${link.fragment == null
-            ? ''
-            : '#' + link.fragment} "
+        "${link.fragment == null ? '' : '#' + link.fragment} "
         "(${link.destination.statusDescription}"
-        "${!link.destination.isBroken && link.breaksAnchor
-            ? ' but missing anchor'
-            : ''}"
+        "${!link.destination.isBroken && link.breaksAnchor ? ' but missing anchor' : ''}"
         ")");
     if (link.destination.isRedirected) {
       print("  - redirect path:");

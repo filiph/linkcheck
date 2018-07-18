@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Set max SDK version to <3.0.0
+
 ## 2.0.0, 2.0.0+1
 
 - First Dart-2-only version.
