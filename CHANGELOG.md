@@ -1,3 +1,7 @@
+## 2.0.3
+
+- Add missing dependency on stream_channel
+
 ## 2.0.2
 
 - Fix minor problems with Dart 2 upgrade

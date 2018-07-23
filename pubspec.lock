@@ -289,7 +289,7 @@ packages:
     source: hosted
     version: "1.9.3"
   stream_channel:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: stream_channel
       url: "https://pub.dartlang.org"
