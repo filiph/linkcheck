@@ -25,7 +25,7 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const skipFlag = "skip-file";
-const version = "2.0.1";
+const version = "2.0.2";
 const versionFlag = "version";
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
@@ -157,8 +157,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
     ..addOption(skipFlag,
         help: "Get list of URLs to skip from given text file (one RegExp "
             "pattern per line).")
-    ..addOption(hostsFlag,
-        allowMultiple: true,
+    ..addMultiOption(hostsFlag,
         splitCommas: true,
         help: "Paths to check. By default, the crawler "
             "doesn't parse HTML on sites with different path than the seed"

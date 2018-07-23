@@ -1,6 +1,7 @@
 library linkcheck.parsers.css;
 
 import 'package:csslib/parser.dart' as css;
+import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
 import 'package:source_span/source_span.dart';
 
@@ -8,7 +9,6 @@ import '../worker/fetch_results.dart';
 import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
-import 'package:csslib/src/messages.dart';
 import 'package:logging/logging.dart';
 
 FetchResults parseCss(

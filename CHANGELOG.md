@@ -1,3 +1,7 @@
+## 2.0.2
+
+- Fix minor problems with Dart 2 upgrade
+
 ## 2.0.1
 
 - Set max SDK version to <3.0.0
