@@ -29,6 +29,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.4"
+  build_cli_annotations:
+    dependency: transitive
+    description:
+      name: build_cli_annotations
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.2+1"
   charcode:
     dependency: transitive
     description:
@@ -77,7 +84,7 @@ packages:
       name: dhttpd
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.0"
+    version: "3.0.0"
   front_end:
     dependency: transitive
     description:
@@ -189,7 +196,7 @@ packages:
       name: node_preamble
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.4.3"
+    version: "1.4.4"
   package_config:
     dependency: transitive
     description:
@@ -366,4 +373,4 @@ packages:
     source: hosted
     version: "2.1.15"
 sdks:
-  dart: ">=2.0.0-dev.62.0 <=2.0.0-dev.69.1"
+  dart: ">=2.0.0-dev.62.0 <3.0.0"

@@ -1,5 +1,5 @@
 name: linkcheck
-version: 2.0.3  # Don't forget to update in lib/linkcheck.dart, too.
+version: 2.0.4  # Don't forget to update in lib/linkcheck.dart, too.
 
 description: >
   A very fast link-checker. Crawls sites and checks integrity of links
@@ -23,7 +23,7 @@ dependencies:
   stream_channel: ^1.6.8
 
 dev_dependencies:
-  dhttpd: ^2.0.0
+  dhttpd: '>=2.0.0 <4.0.0'
   test: ^1.0.0
 
 executables:
