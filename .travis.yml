@@ -1,18 +1,15 @@
 language: dart
 
-dart: dev
+dart: stable
 
 env:
   global:
-    - DART_VM_OPTIONS=--preview-dart-2
     - LIBS="bin lib test"
 
 script:
-  - dartanalyzer --preview-dart-2 --fatal-warnings $LIBS
+  - dartanalyzer --fatal-warnings $LIBS #  --fatal-infos --fatal-hints
   - dartfmt -n --set-exit-if-changed $LIBS
   - pub run test -x integration
-  # https://github.com/dart-lang/sdk/issues/33430
-  # - dart --preview-dart-2 test/e2e_test.dart
   - dart test/e2e_test.dart
 
 cache:

@@ -1,3 +1,7 @@
+## 2.0.4
+
+- Set min SDK to 2.0.0.
+
 ## 2.0.3
 
 - Add missing dependency on stream_channel
