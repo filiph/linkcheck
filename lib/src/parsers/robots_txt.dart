@@ -85,6 +85,9 @@ class _Rule {
     if (allowsAll) return false;
     return paths.any((rulePath) => path.startsWith(rulePath));
   }
+
+  @override
+  String toString() => "Rule<userAgents=$userAgents, paths=$paths>";
 }
 
 const _asterisk = "*";

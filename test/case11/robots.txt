@@ -1,0 +1,5 @@
+User-agent: linkcheck
+Disallow:
+
+User-agent: *
+Disallow: /subdirectory/

@@ -61,6 +61,20 @@ void main() {
       }
     });
 
+    test(
+        "reports bad link in file that is disallowed in robots.txt "
+        "but allowed for linkcheck", () async {
+      var server = await Dhttpd.start(path: getServingPath(11), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 2);
+        expect(out.output, contains("non-existent.html"));
+        expect(out.output, contains("1 error"));
+      } finally {
+        await server.destroy();
+      }
+    });
+
     group("reports exit code 2 for a site with errors", () {
       test("in CSS", () async {
         var server = await Dhttpd.start(path: getServingPath(1), port: port);
