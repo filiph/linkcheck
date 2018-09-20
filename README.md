@@ -143,6 +143,8 @@ avoiding local Dart installation.
 
 #### Build
 
+In the project directory, run
+
 ```
 docker build -t filiph/linkcheck .
 ```
