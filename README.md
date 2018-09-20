@@ -136,6 +136,26 @@ export PATH="$PATH":"~/.pub-cache/bin"
 Then either restart the terminal or run `source ~/.bash_profile` (assuming
 `~/.bash_profile` is where you put the PATH export above).
 
+## Docker
+
+If you have Docker installed, you can build the image and use the container
+avoiding local Dart installation.
+
+#### Build
+
+```
+docker build -t filiph/linkcheck .
+```
+
+#### Usage (container mode)
+
+```
+docker run filiph/linkcheck <URL>
+```
+
+All bellow usage are valid running on container too.
+
+
 ## Usage
 
 If in doubt, run `linkcheck -h`. Here are some examples to get you started.
