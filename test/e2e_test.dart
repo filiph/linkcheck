@@ -153,6 +153,20 @@ void main() {
       }
     });
 
+    test("skips external URLs according to their resolved URL with fragment",
+        () async {
+      var server = await Dhttpd.start(path: getServingPath(12), port: port);
+      try {
+        int result = await run(
+            [":$port", "-e", "--skip-file", "test/case12/skip-file.txt"], out);
+        expect(result, 0);
+        expect(out.output, contains("0 warnings"));
+        expect(out.output, contains("0 errors"));
+      } finally {
+        await server.destroy();
+      }
+    });
+
     test("works with unicode in title", () async {
       var server = await Dhttpd.start(path: getServingPath(9), port: port);
       try {
