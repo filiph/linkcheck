@@ -186,6 +186,16 @@ void main() {
         await server.destroy();
       }
     });
+
+    test("fragment checking works with non-percent-encoded anchors", () async {
+      var server = await Dhttpd.start(path: getServingPath(13), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 0);
+      } finally {
+        await server.destroy();
+      }
+    });
   }, tags: ["integration"]);
 }
 

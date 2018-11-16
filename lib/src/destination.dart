@@ -2,6 +2,8 @@ library linkcheck.destination;
 
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
+import 'package:linkcheck/src/parsers/html.dart';
+
 /// RegExp for detecting URI scheme, such as `http:`, `mailto:`, etc.
 final _scheme = new RegExp(r"$(\w[\w\-]*\w):");
 
@@ -222,7 +224,7 @@ class Destination {
   bool satisfiesFragment(String fragment) {
     if (fragment == null || fragment == '') return true;
     if (anchors == null) return false;
-    return anchors.contains(Uri.decodeComponent(fragment));
+    return anchors.contains(normalizeAnchor(fragment));
   }
 
   Map<String, Object> toMap() => {

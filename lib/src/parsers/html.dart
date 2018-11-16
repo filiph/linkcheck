@@ -67,6 +67,25 @@ Link extractLink(
   return new Link(origin, destination, destinationUri.fragment);
 }
 
+/// Takes an anchor (`id` or `name` attribute of an HTML element, or
+/// a fragment of a link) and normalizes it.
+///
+/// Anchors that can be percent-decoded, will. ("Hr%C3%A1%C4%8Dek" will
+/// become "Hráček".) Others will be kept the same. ("Hráček" will stay
+/// "Hráček".)
+String normalizeAnchor(String anchor) {
+  String decoded;
+  try {
+    decoded = Uri.decodeComponent(anchor);
+  } on ArgumentError {
+    // TODO: Report or handle ids and attributes that are not
+    //       percent-decodable (they were not percent-encoded and they
+    //       contain an invalid character.
+    decoded = anchor;
+  }
+  return decoded;
+}
+
 FetchResults parseHtml(String content, Uri uri, Destination current,
     DestinationResult checked, bool ignoreLinks) {
   var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
@@ -79,7 +98,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   var anchors = doc
       .querySelectorAll("body [id], body [name]")
       .map((element) => element.attributes["id"] ?? element.attributes["name"])
-      .map((fragment) => Uri.decodeComponent(fragment))
+      .map(normalizeAnchor)
       .toList();
   checked.anchors = anchors;
 
