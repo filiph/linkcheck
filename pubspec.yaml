@@ -24,6 +24,7 @@ dependencies:
 
 dev_dependencies:
   dhttpd: ^3.0.1
+  pedantic: ^1.7.0
   test: ^1.6.3
 
 executables:

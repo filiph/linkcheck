@@ -134,7 +134,7 @@ Future<CrawlResult> crawl(
     }
     await pool.close();
     allDone.complete();
-    stopSignalSubscription.cancel();
+    await stopSignalSubscription.cancel();
   });
 
   /// Creates new jobs and sends them to the Pool of Workers, if able.
@@ -401,7 +401,7 @@ Future<CrawlResult> crawl(
     print("All jobs are done or user pressed Ctrl-C");
   }
 
-  stopSignalSubscription.cancel();
+  await stopSignalSubscription.cancel();
 
   if (verbose) {
     print("Deduping destinations");

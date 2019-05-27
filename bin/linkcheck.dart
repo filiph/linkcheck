@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:linkcheck/linkcheck.dart';
 
 Future<int> main(List<String> arguments) async {
-  runZoned(() async {
+  await runZoned(() async {
     // Run the link checker. The returned value will be the program's exit code.
     exitCode = await run(arguments, stdout);
   }, onError: (e) {

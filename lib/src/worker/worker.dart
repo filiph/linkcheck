@@ -184,8 +184,8 @@ void worker(SendPort port) {
     switch (message[verbKey]) {
       case dieVerb:
         client.close(force: true);
-        sink.close();
         alive = false;
+        await sink.close();
         return null;
       case checkPageVerb:
         Destination destination =

@@ -8,7 +8,7 @@ class RobotsBouncer {
   final String robotName;
   final List<_Rule> _rules = new List<_Rule>();
 
-  RobotsBouncer(Iterable<String> lines, {String forRobot: _asterisk})
+  RobotsBouncer(Iterable<String> lines, {String forRobot = _asterisk})
       : robotName = forRobot {
     const userAgentString = "User-agent:";
     const disallowString = "Disallow:";
