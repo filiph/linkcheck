@@ -18,6 +18,7 @@ export 'src/origin.dart' show Origin;
 export 'src/writer_report.dart' show reportForWriters;
 
 const ansiFlag = "nice";
+const connectionFailuresAsWarnings = "connection-failures-as-warnings";
 const debugFlag = "debug";
 const defaultUrl = "http://localhost:8080/";
 const externalFlag = "external";
@@ -25,7 +26,7 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const skipFlag = "skip-file";
-const version = "2.0.5";
+const version = "2.0.6";
 const versionFlag = "version";
 final _portOnlyRegExp = new RegExp(r"^:\d+$");
 
@@ -168,6 +169,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
         help: "Use ANSI terminal capabilities for nicer input. Turn this off "
             "if the output is broken.",
         defaultsTo: true)
+    ..addFlag(connectionFailuresAsWarnings,
+        help: "Report connection failures as warnings rather than errors.")
     ..addFlag(debugFlag,
         abbr: 'd', negatable: false, help: "Debug mode (very verbose).");
 
@@ -186,6 +189,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   }
 
   bool ansiTerm = argResults[ansiFlag] && stdout.hasTerminal;
+  bool reportConnectionFailuresAsWarnings =
+      argResults[connectionFailuresAsWarnings];
   bool verbose = argResults[debugFlag];
   bool shouldCheckExternal = argResults[externalFlag];
   String inputFile = argResults[inputFlag];
@@ -245,10 +250,17 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
       verbose, ansiTerm, ProcessSignal.sigint.watch(), stdout);
 
   var broken = result.destinations
-      .where((destination) => destination.wasTried && destination.isBroken)
+      .where((destination) =>
+          destination.wasTried &&
+          destination.isBroken &&
+          (!reportConnectionFailuresAsWarnings || !destination.didNotConnect))
       .length;
 
-  var withWarning = result.links.where((link) => link.hasWarning).length;
+  var withWarning = result.links
+      .where((link) =>
+          link.hasWarning ||
+          reportConnectionFailuresAsWarnings && link.destination.didNotConnect)
+      .length;
 
   var withInfo = result.links.where((link) => link.hasInfo).length;
 
