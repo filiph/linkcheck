@@ -13,7 +13,7 @@ class Pool {
   /// This should give it enough time for the HttpClient [fetchTimeout]
   /// plus buffer for actual Dart code.
   static final workerTimeout = fetchTimeout + const Duration(milliseconds: 500);
-  static const healthCheckFrequency = const Duration(seconds: 1);
+  static const healthCheckFrequency = Duration(seconds: 1);
 
   /// The number of threads.
   final int count;
@@ -23,20 +23,20 @@ class Pool {
 
   Timer _healthCheckTimer;
 
-  Map<Worker, DateTime> _lastJobPosted = new Map<Worker, DateTime>();
+  Map<Worker, DateTime> _lastJobPosted = Map<Worker, DateTime>();
   final Set<String> _hostGlobs;
 
   StreamController<FetchResults> _fetchResultsSink =
-      new StreamController<FetchResults>();
+      StreamController<FetchResults>();
 
   Stream<FetchResults> fetchResults;
 
-  StreamController<String> _messagesSink = new StreamController<String>();
+  StreamController<String> _messagesSink = StreamController<String>();
 
   Stream<String> messages;
 
   StreamController<ServerInfoUpdate> _serverCheckSink =
-      new StreamController<ServerInfoUpdate>();
+      StreamController<ServerInfoUpdate>();
 
   Stream<ServerInfoUpdate> serverCheckResults;
 
@@ -65,9 +65,9 @@ class Pool {
   /// doing so.
   Worker checkPage(Destination destination, Duration delay) {
     var worker = pickWorker();
-    _lastJobPosted[worker] = new DateTime.now();
+    _lastJobPosted[worker] = DateTime.now();
     worker.destinationToCheck = destination;
-    new Timer(delay, () {
+    Timer(delay, () {
       if (_isShuttingDown) return;
       worker.sink.add({verbKey: checkPageVerb, dataKey: destination.toMap()});
     });
@@ -79,7 +79,7 @@ class Pool {
     var worker = pickWorker();
     worker.sink.add({verbKey: checkServerVerb, dataKey: host});
     worker.serverToCheck = host;
-    _lastJobPosted[worker] = new DateTime.now();
+    _lastJobPosted[worker] = DateTime.now();
     return worker;
   }
 
@@ -98,24 +98,23 @@ class Pool {
     for (var worker in _workers) {
       if (worker.spawned && worker.idle) return worker;
     }
-    throw new StateError("Attempt to use Pool when all workers are busy. "
+    throw StateError("Attempt to use Pool when all workers are busy. "
         "Please make sure to wait until Pool.allWorking is false.");
   }
 
   Future<Null> spawn() async {
-    _workers =
-        new List<Worker>.generate(count, (i) => new Worker()..name = '$i');
+    _workers = List<Worker>.generate(count, (i) => Worker()..name = '$i');
     await Future.wait(_workers.map((worker) => worker.spawn()));
     _workers.forEach((worker) => worker.stream.listen((Map message) {
           switch (message[verbKey]) {
             case checkPageDoneVerb:
-              var result = new FetchResults.fromMap(
-                  message[dataKey] as Map<String, Object>);
+              var result =
+                  FetchResults.fromMap(message[dataKey] as Map<String, Object>);
               _fetchResultsSink.add(result);
               worker.destinationToCheck = null;
               return;
             case checkServerDoneVerb:
-              var result = new ServerInfoUpdate.fromMap(
+              var result = ServerInfoUpdate.fromMap(
                   message[dataKey] as Map<String, Object>);
               _serverCheckSink.add(result);
               worker.serverToCheck = null;
@@ -124,15 +123,15 @@ class Pool {
               _messagesSink.add(message[dataKey]);
               return;
             default:
-              throw new StateError("Unrecognized verb from Worker: "
+              throw StateError("Unrecognized verb from Worker: "
                   "${message[verbKey]}");
           }
         }));
     _addHostGlobs();
 
-    _healthCheckTimer = new Timer.periodic(healthCheckFrequency, (_) async {
+    _healthCheckTimer = Timer.periodic(healthCheckFrequency, (_) async {
       if (_isShuttingDown) return null;
-      var now = new DateTime.now();
+      var now = DateTime.now();
       for (int i = 0; i < _workers.length; i++) {
         var worker = _workers[i];
         if (!worker.idle &&
@@ -144,21 +143,21 @@ class Pool {
           var server = worker.serverToCheck;
 
           _lastJobPosted.remove(worker);
-          var newWorker = new Worker()..name = '$i';
+          var newWorker = Worker()..name = '$i';
           _workers[i] = newWorker;
 
           if (destination != null) {
             // Only notify about the failed destination when the old
             // worker is gone. Otherwise, crawl could fail to wrap up, thinking
             // that one Worker is still working.
-            var checked = new DestinationResult.fromDestination(destination);
+            var checked = DestinationResult.fromDestination(destination);
             checked.didNotConnect = true;
-            var result = new FetchResults(checked, const []);
+            var result = FetchResults(checked, const []);
             _fetchResultsSink.add(result);
           }
 
           if (server != null) {
-            var result = new ServerInfoUpdate(server);
+            var result = ServerInfoUpdate(server);
             result.didNotConnect = true;
             _serverCheckSink.add(result);
           }

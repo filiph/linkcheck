@@ -25,7 +25,7 @@ Link extractLink(
     final List<String> attributes,
     final List<Destination> destinations,
     bool parseable) {
-  var origin = new Origin(originUri, element.sourceSpan, element.localName,
+  var origin = Origin(originUri, element.sourceSpan, element.localName,
       element.text, element.outerHtml);
   String reference;
   for (var attributeName in attributes) {
@@ -33,7 +33,7 @@ Link extractLink(
     if (reference != null) break;
   }
   if (reference == null) {
-    throw new StateError("Element $element does not have any of the attributes "
+    throw StateError("Element $element does not have any of the attributes "
         "$attributes");
   }
 
@@ -42,29 +42,29 @@ Link extractLink(
 
   // Deal with unsupported schemes such as `telnet:` or `mailto:`.
   if (!checkSchemeSupported(reference, baseUri)) {
-    Destination destination = new Destination.unsupported(reference);
-    return new Link(origin, destination, null);
+    Destination destination = Destination.unsupported(reference);
+    return Link(origin, destination, null);
   }
 
   Uri destinationUri;
   try {
     destinationUri = baseUri.resolve(reference);
   } on FormatException {
-    Destination destination = new Destination.invalid(reference);
-    return new Link(origin, destination, null);
+    Destination destination = Destination.invalid(reference);
+    return Link(origin, destination, null);
   }
   var destinationUrlNaked = destinationUri.removeFragment().toString();
 
   for (var existing in destinations) {
     if (destinationUrlNaked == existing.url) {
-      return new Link(origin, existing, destinationUri.fragment);
+      return Link(origin, existing, destinationUri.fragment);
     }
   }
 
-  Destination destination = new Destination(destinationUri);
+  Destination destination = Destination(destinationUri);
   destination.isSource = parseable;
   destinations.add(destination);
-  return new Link(origin, destination, destinationUri.fragment);
+  return Link(origin, destination, destinationUri.fragment);
 }
 
 /// Takes an anchor (`id` or `name` attribute of an HTML element, or
@@ -104,7 +104,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
 
   if (ignoreLinks) {
     checked.wasParsed = true;
-    return new FetchResults(checked, const []);
+    return FetchResults(checked, const []);
   }
 
   Uri baseUri = current.finalUri;
@@ -138,5 +138,5 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   // TODO: add srcset extractor (will create multiple links per element)
 
   checked.wasParsed = true;
-  return new FetchResults(checked, links);
+  return FetchResults(checked, links);
 }

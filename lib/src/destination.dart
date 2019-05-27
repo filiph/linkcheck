@@ -5,7 +5,7 @@ import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 import 'package:linkcheck/src/parsers/html.dart';
 
 /// RegExp for detecting URI scheme, such as `http:`, `mailto:`, etc.
-final _scheme = new RegExp(r"$(\w[\w\-]*\w):");
+final _scheme = RegExp(r"$(\w[\w\-]*\w):");
 
 /// Takes a trimmed URL and returns [bool] indicating whether
 /// we support the URL's scheme or not. When there is no scheme in the URL,
@@ -43,7 +43,7 @@ class BasicRedirectInfo {
 }
 
 class Destination {
-  static const List<String> supportedSchemes = const ["http", "https", "file"];
+  static const List<String> supportedSchemes = ["http", "https", "file"];
 
   /// This is the naked URL (no fragment).
   final String url;
@@ -109,15 +109,15 @@ class Destination {
   }
 
   factory Destination.fromMap(Map<String, Object> map) {
-    var destination = new Destination.fromString(map["url"]);
+    var destination = Destination.fromString(map["url"]);
     var contentType = map["primaryType"] == null
         ? null
-        : new ContentType(map["primaryType"], map["subType"]);
+        : ContentType(map["primaryType"], map["subType"]);
     destination
       ..statusCode = map["statusCode"]
       ..contentType = contentType
       ..redirects = (map["redirects"] as List<Map<String, Object>>)
-          ?.map((obj) => new BasicRedirectInfo.fromMap(obj))
+          ?.map((obj) => BasicRedirectInfo.fromMap(obj))
           ?.toList()
       ..finalUrl = map["finalUrl"]
       ..isExternal = map["isExternal"]
@@ -208,7 +208,7 @@ class Destination {
       _uri = Uri.parse(url);
     } on FormatException catch (e, s) {
       print("Stack trace: $s");
-      throw new StateError("Tried parsing '$url' as URI:\n"
+      throw StateError("Tried parsing '$url' as URI:\n"
           "$e");
     }
     return _uri;
@@ -251,7 +251,7 @@ class Destination {
     statusCode = result.statusCode;
     contentType = result.primaryType == null
         ? null
-        : new ContentType(result.primaryType, result.subType);
+        : ContentType(result.primaryType, result.subType);
     redirects = result.redirects;
     isSource = result.isSource;
     anchors = result.anchors;
@@ -287,7 +287,7 @@ class DestinationResult {
         primaryType = map["primaryType"],
         subType = map["subType"],
         redirects = (map["redirects"] as List<Map<String, Object>>)
-            .map((obj) => new BasicRedirectInfo.fromMap(obj))
+            .map((obj) => BasicRedirectInfo.fromMap(obj))
             .toList(),
         isSource = map["isSource"],
         anchors = map["anchors"] as List<String>,
@@ -311,9 +311,8 @@ class DestinationResult {
 
   void updateFromResponse(HttpClientResponse response) {
     statusCode = response.statusCode;
-    redirects = response.redirects
-        .map((info) => new BasicRedirectInfo.from(info))
-        .toList();
+    redirects =
+        response.redirects.map((info) => BasicRedirectInfo.from(info)).toList();
     if (redirects.isEmpty) {
       finalUrl = url;
     } else {

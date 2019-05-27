@@ -38,7 +38,7 @@ Map<String, Object> _serializeSpan(SourceSpan span) => {
       "text": span.text
     };
 
-SourceSpan _deserializeSpan(Map<String, Object> map) => new SourceSpan(
+SourceSpan _deserializeSpan(Map<String, Object> map) => SourceSpan(
     _deserializeSourceLocation(map["start"] as Map<String, Object>),
     _deserializeSourceLocation(map["end"] as Map<String, Object>),
     map["text"]);
@@ -52,7 +52,7 @@ Map<String, Object> _serializeSourceLocation(SourceLocation location) =>
     };
 
 SourceLocation _deserializeSourceLocation(Map<String, Object> map) =>
-    new SourceLocation(map["offset"],
+    SourceLocation(map["offset"],
         sourceUrl: Uri.parse(map["sourceUrl"]),
         line: map["line"],
         column: map["column"]);

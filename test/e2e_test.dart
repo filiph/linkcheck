@@ -16,7 +16,7 @@ void main() {
     int port = 4321;
 
     setUp(() {
-      out = new _MockStdout();
+      out = _MockStdout();
     });
 
     tearDown(() {
@@ -213,7 +213,7 @@ class _MockStdout implements Stdout {
 //  StreamController<List<int>> _controller = new StreamController();
 //  StreamSink<List<int>> _sink;
 
-  StringBuffer buf = new StringBuffer();
+  StringBuffer buf = StringBuffer();
 
   final Encoding encoding = Encoding.getByName("utf-8");
 
@@ -221,16 +221,16 @@ class _MockStdout implements Stdout {
 //    _sink = _controller.sink;
   }
 
-  Future get done => throw new UnimplementedError();
+  Future get done => throw UnimplementedError();
 
   set encoding(Encoding encoding) {
-    throw new UnimplementedError();
+    throw UnimplementedError();
   }
 
   bool get hasTerminal => false;
 
   IOSink get nonBlocking {
-    throw new UnimplementedError();
+    throw UnimplementedError();
   }
 
   String get output => buf.toString();
@@ -243,7 +243,7 @@ class _MockStdout implements Stdout {
   int get terminalLines => 40;
 
   void add(List<int> data) {
-    throw new UnimplementedError();
+    throw UnimplementedError();
 //    _sink.add(data);
   }
 
@@ -252,7 +252,7 @@ class _MockStdout implements Stdout {
 //    _sink.addError(error, stackTrace);
   }
 
-  Future addStream(Stream<List<int>> stream) => throw new UnimplementedError();
+  Future addStream(Stream<List<int>> stream) => throw UnimplementedError();
 
   void clearOutput() {
     buf.clear();
@@ -263,7 +263,7 @@ class _MockStdout implements Stdout {
 //    await _controller.close();
   }
 
-  Future flush() => throw new UnimplementedError();
+  Future flush() => throw UnimplementedError();
 
   void write(Object object) {
     String string = '$object';
@@ -287,7 +287,7 @@ class _MockStdout implements Stdout {
   }
 
   void writeCharCode(int charCode) {
-    write(new String.fromCharCode(charCode));
+    write(String.fromCharCode(charCode));
   }
 
   void writeln([Object object = ""]) {

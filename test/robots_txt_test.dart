@@ -12,7 +12,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isFalse);
     expect(robots.allows("/#something"), isFalse);
@@ -29,7 +29,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -45,7 +45,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -60,7 +60,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -77,7 +77,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -96,7 +96,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -115,7 +115,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -132,7 +132,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);
@@ -152,7 +152,7 @@ void main() {
         .split("\n")
         .map((line) => line.trim())
         .toList(growable: false);
-    var robots = new RobotsBouncer(contents, forRobot: robotName);
+    var robots = RobotsBouncer(contents, forRobot: robotName);
 
     expect(robots.allows("/"), isTrue);
     expect(robots.allows("/#something"), isTrue);

@@ -7,8 +7,8 @@ import 'worker.dart';
 
 /// The set of known facts and options for the Worker to use when fetching.
 class FetchOptions {
-  final _compiledHostGlobs = new List<UriGlob>();
-  final headIncompatible = new Set<String>(); // TODO: send to main
+  final _compiledHostGlobs = List<UriGlob>();
+  final headIncompatible = Set<String>(); // TODO: send to main
   // TODO: hashmap of known problematic servers etc. = List<String,ServerInfo>
 
   final StreamSink<Map> _sink;
@@ -17,7 +17,7 @@ class FetchOptions {
 
   void addHostGlobs(List<String> values) {
     for (String value in values) {
-      _compiledHostGlobs.add(new UriGlob(value));
+      _compiledHostGlobs.add(UriGlob(value));
     }
   }
 

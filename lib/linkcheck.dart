@@ -28,7 +28,7 @@ const inputFlag = "input-file";
 const skipFlag = "skip-file";
 const version = "2.0.7";
 const versionFlag = "version";
-final _portOnlyRegExp = new RegExp(r"^:\d+$");
+final _portOnlyRegExp = RegExp(r"^:\d+$");
 
 void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
     bool ansiTerm, Stdout stdout) {
@@ -50,7 +50,7 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
   if (ansiTerm) {
     Console.write("\r");
     Console.eraseLine(3);
-    TextPen pen = new TextPen();
+    TextPen pen = TextPen();
     if (links.isEmpty) {
       bool wasLocalhost = false;
       if (result.destinations.isNotEmpty &&
@@ -142,7 +142,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   // Redirect output to injected [stdout] for better testing.
   void print(Object message) => stdout.writeln(message);
 
-  final parser = new ArgParser(allowTrailingOptions: true)
+  final parser = ArgParser(allowTrailingOptions: true)
     ..addFlag(helpFlag,
         abbr: 'h', negatable: false, help: "Prints this usage help.")
     ..addFlag(versionFlag, abbr: 'v', negatable: false, help: "Prints version.")
@@ -197,10 +197,10 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   String skipFile = argResults[skipFlag];
 
   List<String> urls = argResults.rest.toList();
-  UrlSkipper skipper = new UrlSkipper.empty();
+  UrlSkipper skipper = UrlSkipper.empty();
 
   if (inputFile != null) {
-    var file = new File(inputFile);
+    var file = File(inputFile);
     try {
       urls.addAll(file.readAsLinesSync().where((url) => url.isNotEmpty));
     } on FileSystemException catch (e) {
@@ -210,9 +210,9 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   }
 
   if (skipFile != null) {
-    var file = new File(skipFile);
+    var file = File(skipFile);
     try {
-      skipper = new UrlSkipper(file.path, file.readAsLinesSync());
+      skipper = UrlSkipper(file.path, file.readAsLinesSync());
     } on FileSystemException catch (e) {
       print("Can't read skip file '$skipFile': $e");
       return 2;
@@ -233,7 +233,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   List<Uri> uris = urls.map((url) => Uri.parse(url)).toList();
   Set<String> hosts;
   if ((argResults[hostsFlag] as Iterable<String>).isNotEmpty) {
-    hosts = new Set<String>.from(argResults[hostsFlag] as Iterable<String>);
+    hosts = Set<String>.from(argResults[hostsFlag] as Iterable<String>);
   } else {
     // No host globs provided. Using the default (http://example.com/**).
     hosts = uris.map((uri) {

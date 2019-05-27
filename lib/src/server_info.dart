@@ -6,10 +6,10 @@ const robotName = "linkcheck";
 
 class ServerInfo {
   /// Minimum delay between requests sent to a single server.
-  static const Duration minimumDelay = const Duration(milliseconds: 100);
+  static const Duration minimumDelay = Duration(milliseconds: 100);
 
   /// No duration.
-  static const immediate = const Duration();
+  static const immediate = Duration();
 
   String host;
 
@@ -59,7 +59,7 @@ class ServerInfo {
   Duration getThrottlingDuration() {
     if (_lastRequest == null) return immediate;
     if (isLocalhost) return immediate;
-    var sinceLastRequest = new DateTime.now().difference(_lastRequest);
+    var sinceLastRequest = DateTime.now().difference(_lastRequest);
     if (sinceLastRequest.isNegative) {
       // There's a request scheduled in the future.
       return -sinceLastRequest + minimumDelay;
@@ -70,7 +70,7 @@ class ServerInfo {
 
   /// Before any request, this should be called.
   void markRequestStart(Duration delay) {
-    _lastRequest = new DateTime.now().add(delay);
+    _lastRequest = DateTime.now().add(delay);
   }
 
   void updateFromServerCheck(ServerInfoUpdate result) {
@@ -79,7 +79,7 @@ class ServerInfo {
       didNotConnectCount += 1;
       return;
     }
-    bouncer = new RobotsBouncer(result.robotsTxtContents.split("\n"),
+    bouncer = RobotsBouncer(result.robotsTxtContents.split("\n"),
         forRobot: robotName);
   }
 

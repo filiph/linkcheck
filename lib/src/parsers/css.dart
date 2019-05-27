@@ -15,7 +15,7 @@ Logger _log = Logger('parseCSS');
 
 FetchResults parseCss(
     String content, Destination current, DestinationResult checked) {
-  var urlHarvester = new CssUrlHarvester();
+  var urlHarvester = CssUrlHarvester();
   int start = 0;
   bool foundError;
   do {
@@ -23,7 +23,7 @@ FetchResults parseCss(
     // parse the rest of the document. Otherwise we'd be ignoring URLs
     // just because CSS isn't valid.
     foundError = false;
-    List<Message> errors = new List();
+    List<Message> errors = List();
     if (start > 0) {
       start = content.indexOf("}", start);
       if (start < content.length - 1) start += 1;
@@ -49,11 +49,11 @@ FetchResults parseCss(
     start += offset;
   } while (foundError);
 
-  var links = new List<Link>();
-  var currentDestinations = new List<Destination>();
+  var links = List<Link>();
+  var currentDestinations = List<Destination>();
   for (var reference in urlHarvester.references) {
-    var origin = new Origin(current.finalUri, reference.span, "url",
-        reference.url, "url(\"${reference.url}\")");
+    var origin = Origin(current.finalUri, reference.span, "url", reference.url,
+        "url(\"${reference.url}\")");
 
     // Valid URLs can be surrounded by spaces.
     var url = reference.url.trim();
@@ -61,8 +61,8 @@ FetchResults parseCss(
 
     // Deal with unsupported schemes such as `telnet:` or `mailto:`.
     if (!checkSchemeSupported(url, current.finalUri)) {
-      Destination destination = new Destination.unsupported(url);
-      link = new Link(origin, destination, null);
+      Destination destination = Destination.unsupported(url);
+      link = Link(origin, destination, null);
       links.add(link);
       continue;
     }
@@ -71,15 +71,15 @@ FetchResults parseCss(
     try {
       destinationUri = current.finalUri.resolve(url);
     } on FormatException {
-      Destination destination = new Destination.invalid(url);
-      link = new Link(origin, destination, null);
+      Destination destination = Destination.invalid(url);
+      link = Link(origin, destination, null);
       links.add(link);
       continue;
     }
 
     for (var existing in currentDestinations) {
       if (destinationUri == existing.uri) {
-        link = new Link(origin, existing, null);
+        link = Link(origin, existing, null);
         break;
       }
     }
@@ -89,14 +89,14 @@ FetchResults parseCss(
       continue;
     }
 
-    Destination destination = new Destination(destinationUri);
+    Destination destination = Destination(destinationUri);
     currentDestinations.add(destination);
-    link = new Link(origin, destination, null);
+    link = Link(origin, destination, null);
     links.add(link);
   }
 
   checked.wasParsed = true;
-  return new FetchResults(checked, links);
+  return FetchResults(checked, links);
 }
 
 class CssReference {
@@ -106,10 +106,10 @@ class CssReference {
 }
 
 class CssUrlHarvester extends Visitor {
-  List<CssReference> references = new List<CssReference>();
+  List<CssReference> references = List<CssReference>();
 
   @override
   void visitUriTerm(UriTerm node) {
-    references.add(new CssReference(node.span, node.text));
+    references.add(CssReference(node.span, node.text));
   }
 }

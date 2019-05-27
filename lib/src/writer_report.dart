@@ -37,7 +37,7 @@ void reportForWriters(CrawlResult result, bool ansiTerm, Stdout stdout) {
 
   TextPen pen;
   if (ansiTerm) {
-    pen = new TextPen();
+    pen = TextPen();
   }
 
   List<Destination> brokenSeeds = result.destinations

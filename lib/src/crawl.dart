@@ -40,8 +40,8 @@ Future<CrawlResult> crawl(
   TextPen pen;
   if (ansiTerm) {
     Console.init();
-    cursor = new Cursor();
-    pen = new TextPen();
+    cursor = Cursor();
+    pen = TextPen();
   }
 
   if (verbose) {
@@ -50,16 +50,16 @@ Future<CrawlResult> crawl(
     print("Crawl will skip links that match patterns: $skipper");
   }
 
-  List<UriGlob> uriGlobs = hostGlobs.map((glob) => new UriGlob(glob)).toList();
+  List<UriGlob> uriGlobs = hostGlobs.map((glob) => UriGlob(glob)).toList();
 
   // Maps from URLs (without fragment) to where their corresponding destination
   // lives.
-  Map<String, Bin> bin = new Map<String, Bin>();
+  Map<String, Bin> bin = Map<String, Bin>();
 
   // The queue of destinations that haven't been tried yet. Destinations in
   // the front of the queue take precedence.
-  Queue<Destination> open = new Queue<Destination>.from(seeds
-      .map((uri) => new Destination(uri)
+  Queue<Destination> open = Queue<Destination>.from(seeds
+      .map((uri) => Destination(uri)
         ..isSeed = true
         ..isSource = true
         ..isExternal = false)
@@ -67,19 +67,19 @@ Future<CrawlResult> crawl(
   open.forEach((destination) => bin[destination.url] = Bin.open);
 
   // Queue for the external destinations.
-  Queue<Destination> openExternal = new Queue<Destination>();
+  Queue<Destination> openExternal = Queue<Destination>();
 
-  Set<Destination> inProgress = new Set<Destination>();
+  Set<Destination> inProgress = Set<Destination>();
 
   // The set of destinations that have been tried.
-  Set<Destination> closed = new Set<Destination>();
+  Set<Destination> closed = Set<Destination>();
 
   // Servers we are connecting to.
-  Map<String, ServerInfo> servers = new Map<String, ServerInfo>();
-  Queue<String> unknownServers = new Queue<String>();
-  Set<String> serversInProgress = new Set<String>();
+  Map<String, ServerInfo> servers = Map<String, ServerInfo>();
+  Queue<String> unknownServers = Queue<String>();
+  Set<String> serversInProgress = Set<String>();
   seeds.map((uri) => uri.authority).toSet().forEach((String host) {
-    servers[host] = new ServerInfo(host);
+    servers[host] = ServerInfo(host);
     unknownServers.add(host);
   });
 
@@ -89,7 +89,7 @@ Future<CrawlResult> crawl(
   }
 
   // Crate the links Set.
-  Set<Link> links = new Set<Link>();
+  Set<Link> links = Set<Link>();
 
   int threads;
   if (shouldCheckExternal ||
@@ -101,7 +101,7 @@ Future<CrawlResult> crawl(
   }
   if (verbose) print("Using $threads threads.");
 
-  Pool pool = new Pool(threads, hostGlobs);
+  Pool pool = Pool(threads, hostGlobs);
   await pool.spawn();
 
   int count = 0;
@@ -116,7 +116,7 @@ Future<CrawlResult> crawl(
   // TODO:
   // - --cache for creating a .linkcheck.cache file
 
-  var allDone = new Completer<Null>();
+  var allDone = Completer<Null>();
 
   // Respond to Ctrl-C
   StreamSubscription stopSignalSubscription;
@@ -156,7 +156,7 @@ Future<CrawlResult> crawl(
 
     // In order not to touch the underlying iterables, we keep track
     // of the destinations we want to remove.
-    List<Destination> destinationsToRemove = new List<Destination>();
+    List<Destination> destinationsToRemove = List<Destination>();
 
     for (var destination in availableDestinations) {
       if (pool.allBusy) break;
@@ -224,7 +224,7 @@ Future<CrawlResult> crawl(
   pool.serverCheckResults.listen((ServerInfoUpdate result) {
     serversInProgress.remove(result.host);
     servers
-        .putIfAbsent(result.host, () => new ServerInfo(result.host))
+        .putIfAbsent(result.host, () => ServerInfo(result.host))
         .updateFromServerCheck(result);
     if (verbose) {
       print("Server check of ${result.host} complete.");
@@ -276,7 +276,7 @@ Future<CrawlResult> crawl(
     closed.add(checked);
     bin[checked.url] = Bin.closed;
 
-    var newDestinations = new Set<Destination>();
+    var newDestinations = Set<Destination>();
 
     // Add links' destinations to [newDestinations] if they haven't been
     // seen before.
@@ -408,8 +408,8 @@ Future<CrawlResult> crawl(
   }
 
   // Fix links (dedupe destinations).
-  var urlMap = new Map<String, Destination>.fromIterable(closed,
-      key: (dest) => dest.url);
+  var urlMap =
+      Map<String, Destination>.fromIterable(closed, key: (dest) => dest.url);
   for (var link in links) {
     var canonical = urlMap[link.destination.url];
     // Note: If it wasn't for the posibility to SIGINT the process, we could
@@ -441,7 +441,7 @@ Future<CrawlResult> crawl(
     links.where((link) => link.destination.isBroken).forEach(print);
   }
 
-  return new CrawlResult(links, closed);
+  return CrawlResult(links, closed);
 }
 
 class CrawlResult {

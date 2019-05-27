@@ -32,7 +32,7 @@ const verbKey = "message";
 
 Future<ServerInfoUpdate> checkServer(
     String host, HttpClient client, FetchOptions options) async {
-  ServerInfoUpdate result = new ServerInfoUpdate(host);
+  ServerInfoUpdate result = ServerInfoUpdate(host);
 
   int port;
   if (host.contains(':')) {
@@ -42,8 +42,7 @@ Future<ServerInfoUpdate> checkServer(
     port = int.parse(parts.last);
   }
 
-  Uri uri =
-      new Uri(scheme: "http", host: host, port: port, path: "/robots.txt");
+  Uri uri = Uri(scheme: "http", host: host, port: port, path: "/robots.txt");
 
   // Fetch the HTTP response
   HttpClientResponse response;
@@ -91,7 +90,7 @@ Future<ServerInfoUpdate> checkServer(
 
 Future<FetchResults> checkPage(
     Destination current, HttpClient client, FetchOptions options) async {
-  DestinationResult checked = new DestinationResult.fromDestination(current);
+  DestinationResult checked = DestinationResult.fromDestination(current);
   var uri = current.uri;
 
   // Fetch the HTTP response
@@ -122,25 +121,25 @@ Future<FetchResults> checkPage(
   if (response == null) {
     // Request failed completely.
     checked.didNotConnect = true;
-    return new FetchResults(checked, const []);
+    return FetchResults(checked, const []);
   }
 
   checked.updateFromResponse(response);
   current.updateFromResult(checked);
 
   if (current.statusCode != 200) {
-    return new FetchResults(checked, const []);
+    return FetchResults(checked, const []);
   }
 
   if (!current.isParseableMimeType /* TODO: add SVG/XML */) {
-    return new FetchResults(checked, const []);
+    return FetchResults(checked, const []);
   }
 
   bool isExternal = !options.matchesAsInternal(current.finalUri);
 
   if (isExternal && !current.isHtmlMimeType) {
     // We only parse external HTML (to get anchors), not other mime types.
-    return new FetchResults(checked, const []);
+    return FetchResults(checked, const []);
   }
 
   String content;
@@ -156,7 +155,7 @@ Future<FetchResults> checkPage(
   } on FormatException {
     // TODO: report as a warning
     checked.hasUnsupportedEncoding = true;
-    return new FetchResults(checked, const []);
+    return FetchResults(checked, const []);
   }
 
   if (current.isCssMimeType) {
@@ -171,12 +170,12 @@ Future<FetchResults> checkPage(
 
 /// The entrypoint for the worker isolate.
 void worker(SendPort port) {
-  var channel = new IsolateChannel<Map>.connectSend(port);
+  var channel = IsolateChannel<Map>.connectSend(port);
   var sink = channel.sink;
   var stream = channel.stream;
 
-  var client = new HttpClient()..userAgent = userAgent;
-  var options = new FetchOptions(sink);
+  var client = HttpClient()..userAgent = userAgent;
+  var options = FetchOptions(sink);
 
   bool alive = true;
 
@@ -189,7 +188,7 @@ void worker(SendPort port) {
         return null;
       case checkPageVerb:
         Destination destination =
-            new Destination.fromMap(message[dataKey] as Map<String, Object>);
+            Destination.fromMap(message[dataKey] as Map<String, Object>);
         var results = await checkPage(destination, client, options);
         if (alive) {
           sink.add({verbKey: checkPageDoneVerb, dataKey: results.toMap()});
@@ -212,8 +211,8 @@ void worker(SendPort port) {
   });
 }
 
-const connectionTimeout = const Duration(seconds: 5);
-const responseTimeout = const Duration(seconds: 5);
+const connectionTimeout = Duration(seconds: 5);
+const responseTimeout = Duration(seconds: 5);
 final fetchTimeout = connectionTimeout + responseTimeout;
 
 /// Fetches the given [uri] by HTTP GET and returns a [HttpClientResponse].
@@ -241,9 +240,9 @@ Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
 /// Spawns a worker isolate and returns a [StreamChannel] for communicating with
 /// it.
 Future<StreamChannel<Map>> _spawnWorker() async {
-  var port = new ReceivePort();
+  var port = ReceivePort();
   await Isolate.spawn(worker, port.sendPort);
-  return new IsolateChannel<Map>.connectReceive(port);
+  return IsolateChannel<Map>.connectReceive(port);
 }
 
 class Worker {

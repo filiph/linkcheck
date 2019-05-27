@@ -28,7 +28,7 @@ class UrlSkipper {
   String explain(String url) {
     var records = _records.where((record) => record.skips(url));
     if (records.isEmpty) {
-      throw new ArgumentError("Url $url was passed to explain() but there "
+      throw ArgumentError("Url $url was passed to explain() but there "
           "is no record that skips it.");
     }
     var list = records
@@ -51,7 +51,7 @@ class UrlSkipper {
         line = line.substring(1);
       }
 
-      yield new _UrlSkipperRecord(lineNumber, line);
+      yield _UrlSkipperRecord(lineNumber, line);
       lineNumber += 1;
     }
   }
@@ -62,8 +62,7 @@ class _UrlSkipperRecord {
 
   final RegExp pattern;
 
-  _UrlSkipperRecord(this.line, String pattern)
-      : this.pattern = new RegExp(pattern);
+  _UrlSkipperRecord(this.line, String pattern) : this.pattern = RegExp(pattern);
 
   bool skips(String url) => pattern.hasMatch(url);
 }

@@ -20,8 +20,8 @@ class Link {
 
   Link.fromMap(Map<String, Object> map)
       : this(
-            new Origin.fromMap(map["origin"] as Map<String, Object>),
-            new Destination.fromMap(map["destination"] as Map<String, Object>),
+            Origin.fromMap(map["origin"] as Map<String, Object>),
+            Destination.fromMap(map["destination"] as Map<String, Object>),
             map["destinationAnchor"],
             map["wasSkipped"]);
 

@@ -7,7 +7,7 @@ void main() {
 
   test("empty file", () {
     var contents = [""];
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), false);
     expect(skipper.skips("http://google.com/something/"), false);
     expect(skipper.skips("http://google.com/something/else"), false);
@@ -15,7 +15,7 @@ void main() {
 
   test("simple pattern", () {
     var contents = ["something"];
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), false);
     expect(skipper.skips("http://google.com/something/"), true);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -23,7 +23,7 @@ void main() {
 
   test("full regexp (th.*ng)", () {
     var contents = [r"th.*ng"];
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), false);
     expect(skipper.skips("http://google.com/something/"), true);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -31,7 +31,7 @@ void main() {
 
   test(r"full regexp (\w$)", () {
     var contents = [r"\w$"];
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -44,7 +44,7 @@ void main() {
     """
         .trim()
         .split("\n");
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -58,7 +58,7 @@ void main() {
     """
         .trim()
         .split("\n");
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -72,7 +72,7 @@ void main() {
     """
         .trim()
         .split("\n");
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -88,7 +88,7 @@ void main() {
     """
         .trim()
         .split("\n");
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://google.com"), true);
     expect(skipper.skips("http://google.com/something/"), false);
     expect(skipper.skips("http://google.com/something/else"), true);
@@ -96,7 +96,7 @@ void main() {
 
   test("hash (#) at end of regexp works", () {
     var contents = ["/path/to/page#"];
-    var skipper = new UrlSkipper(dummyPath, contents);
+    var skipper = UrlSkipper(dummyPath, contents);
     expect(skipper.skips("http://example.com/path/to/page"), false);
     expect(skipper.skips("http://example.com/path/to/page#rxjs"), true);
   });
