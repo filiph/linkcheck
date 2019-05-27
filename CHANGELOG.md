@@ -1,3 +1,9 @@
+## 2.0.7
+
+- Upgrade dependencies to latest.
+- Walk around `csslib` bug where some CSS makes the parser crash. This will
+  currently just ignore the CSS file.
+
 ## 2.0.6
 
 - Add support for `--connection-failures-as-warnings` flag.
