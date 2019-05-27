@@ -11,6 +11,8 @@ import '../link.dart';
 import '../origin.dart';
 import 'package:logging/logging.dart';
 
+Logger _log = Logger('parseCSS');
+
 FetchResults parseCss(
     String content, Destination current, DestinationResult checked) {
   var urlHarvester = new CssUrlHarvester();
@@ -26,11 +28,20 @@ FetchResults parseCss(
       start = content.indexOf("}", start);
       if (start < content.length - 1) start += 1;
     }
-    var style = css.parse(content.substring(start), errors: errors);
+    StyleSheet style;
+    try {
+      style = css.parse(content.substring(start), errors: errors);
+    } catch (e) {
+      // csslib itself crashes when trying to parse this.
+      // TODO: remove when https://github.com/dart-lang/csslib/issues/92
+      //       is fixed.
+      _log.severe('Parsing ${current.url} crashed csslib');
+      break;
+    }
     style.visit(urlHarvester);
     int offset = 0;
     errors.forEach((error) {
-      if (error.level == Level.SEVERE) {
+      if (error.level == MessageLevel.severe) {
         offset = error.span.end.offset;
         foundError = true;
       }
