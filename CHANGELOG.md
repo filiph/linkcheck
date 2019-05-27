@@ -1,3 +1,8 @@
+## 2.0.8
+
+- Style fixes to achieve 100% health metric on pub.dev.
+- Add programmatic usage in `example/example.dart`.
+
 ## 2.0.7
 
 - Upgrade dependencies to latest.
