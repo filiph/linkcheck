@@ -175,7 +175,9 @@ void main() {
       } finally {
         await server.destroy();
       }
-    }, skip: "blocked on package:html bug");
+    },
+        skip: "blocked on package:html bug: "
+            "https://github.com/dart-lang/html/issues/70");
 
     test("anchors are normalized", () async {
       var server = await Dhttpd.start(path: getServingPath(10), port: port);
