@@ -78,7 +78,7 @@ Future<ServerInfoUpdate> checkServer(
     } else {
       decoder = utf8.decoder;
     }
-    content = await response.transform(decoder).join();
+    content = await response.cast<List<int>>().transform(decoder).join();
   } on FormatException {
     // TODO: report as a warning
     content = "";
@@ -151,7 +151,7 @@ Future<FetchResults> checkPage(
     } else {
       decoder = utf8.decoder;
     }
-    content = await response.transform(decoder).join();
+    content = await response.cast<List<int>>().transform(decoder).join();
   } on FormatException {
     // TODO: report as a warning
     checked.hasUnsupportedEncoding = true;
