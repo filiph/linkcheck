@@ -257,6 +257,14 @@ linkcheck example.com --skip-file my_skip_file.txt
 Regular expressions are hard. If unsure, use the `-d` option to see what URLs
 your skip file is ignoring, exactly.
 
+To use a skipfile while running linkchecker through docker create a directory 
+to use as a volume in docker and put your skip file in it. Then use a command 
+simliar to the following (assuming the folder was named skipfiles):
+
+```
+docker run -v "$(pwd)/skipfiles/:/skipfiles/" filiph/linkcheck http://example.com/ --skip-file /skipfiles/skipfile.txt
+```
+
 #### User agent
 
 The tool identifies itself to servers with the following [user agent string][]:
