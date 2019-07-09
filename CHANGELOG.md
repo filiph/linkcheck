@@ -1,3 +1,8 @@
+## 2.0.9
+
+- Prepare for upcoming change to HttpRequest and HttpClientResponse
+- Add Docker skipfile documentation to README
+
 ## 2.0.8
 
 - Style fixes to achieve 100% health metric on pub.dev.
