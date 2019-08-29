@@ -1,3 +1,8 @@
+## 2.0.10
+
+- Guard against servers that do not provide `Content-Type`. No guarantees about
+  crawling such servers but at least `linkcheck` will not crash.
+
 ## 2.0.9
 
 - Prepare for upcoming change to HttpRequest and HttpClientResponse
