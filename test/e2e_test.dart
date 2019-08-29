@@ -198,6 +198,16 @@ void main() {
         await server.destroy();
       }
     });
+
+    test("destinations with wrong mime-types aren't checked", () async {
+      var server = await Dhttpd.start(path: getServingPath(14), port: port);
+      try {
+        int result = await run([":$port"], out);
+        expect(result, 0);
+      } finally {
+        await server.destroy();
+      }
+    });
   }, tags: ["integration"]);
 }
 
