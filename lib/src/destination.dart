@@ -153,6 +153,9 @@ class Destination {
 
   int get hashCode => _hashCode;
 
+  /// A bad or busted server didn't give us any content type. This is a warning.
+  bool get hasNoMimeType => wasTried && contentType == null;
+
   /// Link that wasn't valid, didn't connect, or the [statusCode] was not
   /// HTTP 200 OK.
   ///
@@ -161,9 +164,13 @@ class Destination {
       statusCode != 200 && !wasDeniedByRobotsTxt && !isUnsupportedScheme;
 
   bool get isCssMimeType =>
-      contentType.primaryType == "text" && contentType.subType == "css";
+      contentType?.primaryType == "text" && contentType?.subType == "css";
 
-  bool get isHtmlMimeType => contentType.mimeType == ContentType.html.mimeType;
+  bool get isHtmlMimeType =>
+      // Assume the server is just poorly implemented.
+      hasNoMimeType ||
+      // But if it isn't, then only html destinations are valid.
+      contentType?.mimeType == ContentType.html.mimeType;
 
   bool get isParseableMimeType => isHtmlMimeType || isCssMimeType;
 
@@ -193,6 +200,7 @@ class Destination {
     if (isInvalid) return "invalid URL";
     if (didNotConnect) return "connection failed";
     if (wasDeniedByRobotsTxt) return "denied by robots.txt";
+    if (hasNoMimeType) return "server reported no mime type";
     if (!wasTried) return "wasn't tried";
     if (statusCode == 200) return "HTTP 200";
     if (isRedirected) {
@@ -323,7 +331,9 @@ class DestinationResult {
                   current.resolve(redirect.url))
           .toString();
     }
-    primaryType = response.headers.contentType.primaryType;
-    subType = response.headers.contentType.subType;
+    if (response.headers.contentType != null) {
+      primaryType = response.headers.contentType.primaryType;
+      subType = response.headers.contentType.subType;
+    }
   }
 }

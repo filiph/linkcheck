@@ -53,7 +53,7 @@ class Link {
 
   bool get hasInfo => destination.wasDeniedByRobotsTxt;
 
-  bool get hasWarning => breaksAnchor;
+  bool get hasWarning => breaksAnchor || destination.hasNoMimeType;
 
   Map<String, Object> toMap() => {
         "origin": origin.toMap(),
