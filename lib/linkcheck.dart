@@ -26,7 +26,7 @@ const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const skipFlag = "skip-file";
-const version = "2.0.10";
+const version = "2.0.11";
 const versionFlag = "version";
 final _portOnlyRegExp = RegExp(r"^:\d+$");
 

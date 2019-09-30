@@ -1,3 +1,7 @@
+## 2.0.11
+
+- Resolve a bug with unicode character counting in HTML.
+
 ## 2.0.10
 
 - Guard against servers that do not provide `Content-Type`. No guarantees about
