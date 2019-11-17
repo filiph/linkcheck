@@ -72,10 +72,11 @@ Future<ServerInfoUpdate> checkServer(
   String content;
   try {
     Converter<List<int>, String> decoder;
-    if (response.headers.contentType.charset == latin1.name) {
+    if (response.headers.contentType?.charset == latin1.name) {
       // Some sites still use LATIN-1 for performance reasons.
       decoder = latin1.decoder;
     } else {
+      // But if content type is not set or is not LATIN-1, we assume UTF-8.
       decoder = utf8.decoder;
     }
     content = await response.cast<List<int>>().transform(decoder).join();
