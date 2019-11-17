@@ -1,3 +1,7 @@
+## 2.0.12
+
+- Don’t assume contentType in HTTP headers is set
+
 ## 2.0.11
 
 - Resolve a bug with unicode character counting in HTML.
