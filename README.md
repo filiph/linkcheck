@@ -101,6 +101,25 @@ when accessing websites.
 
 ## Installation
 
+### Direct download
+
+* Download the latest executable from the 
+[Releases](https://github.com/filiph/linkcheck/releases) page on GitHub.
+Pick the executable for your system (for example, `linkcheck-win-x64.exe` for
+a 64-bit machine running Microsoft Windows).
+
+You should be able to immediately run this executable -- it has no external
+dependencies. For example, assuming you are on MacOS and downloaded the file
+to the default downloads directory, you can go to your Terminal 
+(or iTerm, or SSH) and run `./Downloads/linkcheck-mac-x64`.
+
+You can rename the file and move it to any directory. For example, 
+on a Linux box, you might want to rename the executable to simply
+`linkcheck`, and move it to `/usr/local/bin`, `$HOME/bin` or another
+directory in your `$PATH`.
+
+### From Source
+
 #### Step 1. Install Dart
 
 Full installation guides per platform:
