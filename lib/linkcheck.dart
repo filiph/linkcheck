@@ -25,13 +25,14 @@ const externalFlag = "external";
 const helpFlag = "help";
 const hostsFlag = "hosts";
 const inputFlag = "input-file";
+const redirectFlag = "show-redirects";
 const skipFlag = "skip-file";
 const version = "2.0.12";
 const versionFlag = "version";
 final _portOnlyRegExp = RegExp(r"^:\d+$");
 
 void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
-    bool ansiTerm, Stdout stdout) {
+    int withRedirect, bool showRedirects, bool ansiTerm, Stdout stdout) {
   // Redirect printing for better testing.
   void print(Object object) => stdout.writeln(object);
 
@@ -74,6 +75,11 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .lightGray()
           .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
+          .text(showRedirects && withRedirect > 0
+              ? withRedirect == 1
+                  ? ', 1 has redirect(s)'
+                  : ', $withRedirect have redirect(s)'
+              : '')
           .text(".")
           .print();
     } else if (broken == 0 && withWarning == 0) {
@@ -86,6 +92,11 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(", ")
+          .text(showRedirects && withRedirect > 0
+              ? withRedirect == 1
+                  ? '1 has redirect(s), '
+                  : '$withRedirect have redirect(s), '
+              : '')
           .text("0 have warnings or errors")
           .text(withInfo > 0 ? ', $withInfo have info' : '')
           .text(".")
@@ -100,6 +111,11 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(", ")
+          .text(showRedirects && withRedirect > 0
+              ? withRedirect == 1
+                  ? '1 has redirect(s), '
+                  : '$withRedirect have redirect(s), '
+              : '')
           .text(withWarning == 1
               ? "1 has a warning"
               : "$withWarning have warnings")
@@ -116,6 +132,11 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
           .text(ignored > 0 ? ' ($ignored ignored)' : '')
           .normal()
           .text(", ")
+          .text(showRedirects && withRedirect > 0
+              ? withRedirect == 1
+                  ? '1 has redirect(s), '
+                  : '$withRedirect have redirect(s), '
+              : '')
           .text(broken == 1 ? "1 has error(s), " : "$broken have errors, ")
           .text(withWarning == 1
               ? "1 has warning(s)"
@@ -127,6 +148,9 @@ void printStats(CrawlResult result, int broken, int withWarning, int withInfo,
   } else {
     print("\nStats:");
     print("${links.length.toString().padLeft(8)} links");
+    if (showRedirects) {
+      print("${withRedirect.toString().padLeft(8)} redirects");
+    }
     print("${checked.toString().padLeft(8)} destination URLs");
     print("${ignored.toString().padLeft(8)} URLs ignored");
     print("${withWarning.toString().padLeft(8)} warnings");
@@ -151,6 +175,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
         negatable: false,
         help: "Check external (remote) links, too. By "
             "default, the tool only checks internal links.")
+    ..addFlag(redirectFlag,
+        help: "Also report all links that point at a redirected URL.")
     ..addSeparator("Advanced")
     ..addOption(inputFlag,
         abbr: 'i',
@@ -193,6 +219,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
       argResults[connectionFailuresAsWarnings];
   bool verbose = argResults[debugFlag];
   bool shouldCheckExternal = argResults[externalFlag];
+  bool showRedirects = argResults[redirectFlag];
   String inputFile = argResults[inputFlag];
   String skipFile = argResults[skipFlag];
 
@@ -264,8 +291,12 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
 
   var withInfo = result.links.where((link) => link.hasInfo).length;
 
+  var withRedirects =
+      result.links.where((link) => link.destination.isRedirected).length;
+
   if (broken == 0 && withWarning == 0 && withInfo == 0) {
-    printStats(result, broken, withWarning, withInfo, ansiTerm, stdout);
+    printStats(result, broken, withWarning, withInfo, withRedirects,
+        showRedirects, ansiTerm, stdout);
   } else {
     if (ansiTerm) {
       Console.write("\r");
@@ -273,9 +304,10 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
       print("Done crawling.                   ");
     }
 
-    reportForWriters(result, ansiTerm, stdout);
+    reportForWriters(result, ansiTerm, showRedirects, stdout);
 
-    printStats(result, broken, withWarning, withInfo, ansiTerm, stdout);
+    printStats(result, broken, withWarning, withInfo, withRedirects,
+        showRedirects, ansiTerm, stdout);
   }
   print("");
 

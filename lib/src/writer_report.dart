@@ -11,7 +11,8 @@ import 'destination.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
-void reportForWriters(CrawlResult result, bool ansiTerm, Stdout stdout) {
+void reportForWriters(
+    CrawlResult result, bool ansiTerm, bool showRedirects, Stdout stdout) {
   void print(Object message) => stdout.writeln(message);
 
   print("");
@@ -23,7 +24,9 @@ void reportForWriters(CrawlResult result, bool ansiTerm, Stdout stdout) {
           !link.wasSkipped &&
           (link.destination.isInvalid ||
               link.destination.wasTried &&
-                  (link.destination.isBroken || link.hasWarning)))
+                  (link.destination.isBroken ||
+                      link.hasWarning ||
+                      link.destination.isRedirected)))
       .toList(growable: false);
 
   List<Destination> deniedByRobots = result.destinations
