@@ -6,7 +6,6 @@ description: >
   both in HTML and in CSS.
 
 homepage: https://github.com/filiph/linkcheck
-author: 'Filip Hracek <filip.hracek@gmail.com>'
 
 environment:
   sdk: '>=2.2.0 <3.0.0'
