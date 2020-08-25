@@ -114,7 +114,8 @@ class ServerInfoUpdate {
 
   ServerInfoUpdate(this.host);
   ServerInfoUpdate.fromMap(Map<String, Object> map)
-      : this._(map["host"], map["robots"], map["didNotConnect"]);
+      : this._(map["host"] as String, map["robots"] as String,
+            map["didNotConnect"] as bool);
 
   ServerInfoUpdate._(this.host, this.robotsTxtContents, this.didNotConnect);
 

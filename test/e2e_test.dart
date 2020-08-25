@@ -223,20 +223,25 @@ class _MockStdout implements Stdout {
 
   StringBuffer buf = StringBuffer();
 
+  @override
   final Encoding encoding = Encoding.getByName("utf-8");
 
   _MockStdout() {
 //    _sink = _controller.sink;
   }
 
+  @override
   Future get done => throw UnimplementedError();
 
+  @override
   set encoding(Encoding encoding) {
     throw UnimplementedError();
   }
 
+  @override
   bool get hasTerminal => false;
 
+  @override
   IOSink get nonBlocking {
     throw UnimplementedError();
   }
@@ -246,38 +251,47 @@ class _MockStdout implements Stdout {
   @override
   bool get supportsAnsiEscapes => false;
 
+  @override
   int get terminalColumns => 80;
 
+  @override
   int get terminalLines => 40;
 
+  @override
   void add(List<int> data) {
     throw UnimplementedError();
 //    _sink.add(data);
   }
 
+  @override
   void addError(error, [StackTrace stackTrace]) {
     throw error;
 //    _sink.addError(error, stackTrace);
   }
 
+  @override
   Future addStream(Stream<List<int>> stream) => throw UnimplementedError();
 
   void clearOutput() {
     buf.clear();
   }
 
+  @override
   Future close() async {
 //    await _sink.close();
 //    await _controller.close();
   }
 
+  @override
   Future flush() => throw UnimplementedError();
 
+  @override
   void write(Object object) {
     String string = '$object';
     buf.write(string);
   }
 
+  @override
   void writeAll(Iterable objects, [String sep = ""]) {
     Iterator iterator = objects.iterator;
     if (!iterator.moveNext()) return;
@@ -294,10 +308,12 @@ class _MockStdout implements Stdout {
     }
   }
 
+  @override
   void writeCharCode(int charCode) {
     write(String.fromCharCode(charCode));
   }
 
+  @override
   void writeln([Object object = ""]) {
     write(object);
     write("\n");

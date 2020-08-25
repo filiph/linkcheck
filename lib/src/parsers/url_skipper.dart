@@ -20,6 +20,7 @@ class UrlSkipper {
 
   bool skips(String url) => _records.any((record) => record.skips(url));
 
+  @override
   String toString() {
     var patterns = _records.map((rec) => rec.pattern.pattern).join(", ");
     return "UrlSkipper<$patterns>";
@@ -62,7 +63,7 @@ class _UrlSkipperRecord {
 
   final RegExp pattern;
 
-  _UrlSkipperRecord(this.line, String pattern) : this.pattern = RegExp(pattern);
+  _UrlSkipperRecord(this.line, String pattern) : pattern = RegExp(pattern);
 
   bool skips(String url) => pattern.hasMatch(url);
 }

@@ -106,9 +106,7 @@ Future<FetchResults> checkPage(
       }
     }
 
-    if (response == null) {
-      response = await _fetch(client, uri);
-    }
+    response ??= await _fetch(client, uri);
   } on TimeoutException {
     // Leave response == null.
   } on HttpException {
@@ -171,7 +169,7 @@ Future<FetchResults> checkPage(
 
 /// The entrypoint for the worker isolate.
 void worker(SendPort port) {
-  var channel = IsolateChannel<Map>.connectSend(port);
+  var channel = IsolateChannel<Map<String, Object>>.connectSend(port);
   var sink = channel.sink;
   var stream = channel.stream;
 
@@ -181,7 +179,7 @@ void worker(SendPort port) {
   bool alive = true;
 
   stream.listen((Map message) async {
-    switch (message[verbKey]) {
+    switch (message[verbKey] as String) {
       case dieVerb:
         client.close(force: true);
         alive = false;
@@ -196,7 +194,7 @@ void worker(SendPort port) {
         }
         return null;
       case checkServerVerb:
-        String host = message[dataKey];
+        String host = message[dataKey] as String;
         ServerInfoUpdate results = await checkServer(host, client, options);
         if (alive) {
           sink.add({verbKey: checkServerDoneVerb, dataKey: results.toMap()});
@@ -240,16 +238,16 @@ Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
 
 /// Spawns a worker isolate and returns a [StreamChannel] for communicating with
 /// it.
-Future<StreamChannel<Map>> _spawnWorker() async {
+Future<StreamChannel<Map<String, Object>>> _spawnWorker() async {
   var port = ReceivePort();
   await Isolate.spawn(worker, port.sendPort);
-  return IsolateChannel<Map>.connectReceive(port);
+  return IsolateChannel<Map<String, Object>>.connectReceive(port);
 }
 
 class Worker {
-  StreamChannel<Map> _channel;
-  StreamSink<Map> _sink;
-  Stream<Map> _stream;
+  StreamChannel<Map<String, Object>> _channel;
+  StreamSink<Map<String, Object>> _sink;
+  Stream<Map<String, Object>> _stream;
 
   String name;
 
@@ -268,7 +266,7 @@ class Worker {
 
   bool get isKilled => _isKilled;
 
-  StreamSink<Map> get sink => _sink;
+  StreamSink<Map<String, Object>> get sink => _sink;
   bool get spawned => _spawned;
 
   Stream<Map> get stream => _stream;
@@ -288,5 +286,6 @@ class Worker {
     _spawned = true;
   }
 
+  @override
   String toString() => "Worker<$name>";
 }

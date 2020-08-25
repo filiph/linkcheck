@@ -36,8 +36,8 @@ class BasicRedirectInfo {
   }
 
   BasicRedirectInfo.fromMap(Map<String, Object> map)
-      : url = map["url"],
-        statusCode = map["statusCode"];
+      : url = map["url"] as String,
+        statusCode = map["statusCode"] as int;
 
   Map<String, Object> toMap() => {"url": url, "statusCode": statusCode};
 }
@@ -109,24 +109,24 @@ class Destination {
   }
 
   factory Destination.fromMap(Map<String, Object> map) {
-    var destination = Destination.fromString(map["url"]);
+    var destination = Destination.fromString(map["url"] as String);
     var contentType = map["primaryType"] == null
         ? null
-        : ContentType(map["primaryType"], map["subType"]);
+        : ContentType(map["primaryType"] as String, map["subType"] as String);
     destination
-      ..statusCode = map["statusCode"]
+      ..statusCode = map["statusCode"] as int
       ..contentType = contentType
       ..redirects = (map["redirects"] as List<Map<String, Object>>)
           ?.map((obj) => BasicRedirectInfo.fromMap(obj))
           ?.toList()
-      ..finalUrl = map["finalUrl"]
-      ..isExternal = map["isExternal"]
-      ..isSource = map["isSource"]
+      ..finalUrl = map["finalUrl"] as String
+      ..isExternal = map["isExternal"] as bool
+      ..isSource = map["isSource"] as bool
       ..anchors = map["anchors"] as List<String>
-      ..isInvalid = map["isInvalid"]
-      ..didNotConnect = map["didNotConnect"]
-      ..wasParsed = map["wasParsed"]
-      ..hasUnsupportedEncoding = map["hasUnsupportedEncoding"];
+      ..isInvalid = map["isInvalid"] as bool
+      ..didNotConnect = map["didNotConnect"] as bool
+      ..wasParsed = map["wasParsed"] as bool
+      ..hasUnsupportedEncoding = map["hasUnsupportedEncoding"] as bool;
     return destination;
   }
 
@@ -151,6 +151,7 @@ class Destination {
   /// Parsed [finalUrl].
   Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
 
+  @override
   int get hashCode => _hashCode;
 
   /// A bad or busted server didn't give us any content type. This is a warning.
@@ -224,7 +225,9 @@ class Destination {
 
   bool get wasTried => didNotConnect || statusCode != null;
 
-  bool operator ==(other) => other is Destination && other.hashCode == hashCode;
+  @override
+  bool operator ==(Object other) =>
+      other is Destination && other.hashCode == hashCode;
 
   /// Returns `true` if the [fragment] (such as #something) will find it's mark
   /// on this [Destination]. If the fragment is `null` or empty, it will
@@ -251,6 +254,7 @@ class Destination {
         "hasUnsupportedEncoding": hasUnsupportedEncoding
       };
 
+  @override
   String toString() => url;
 
   void updateFromResult(DestinationResult result) {
@@ -289,19 +293,19 @@ class DestinationResult {
         redirects = [];
 
   DestinationResult.fromMap(Map<String, Object> map)
-      : url = map["url"],
-        finalUrl = map["finalUrl"],
-        statusCode = map["statusCode"],
-        primaryType = map["primaryType"],
-        subType = map["subType"],
+      : url = map["url"] as String,
+        finalUrl = map["finalUrl"] as String,
+        statusCode = map["statusCode"] as int,
+        primaryType = map["primaryType"] as String,
+        subType = map["subType"] as String,
         redirects = (map["redirects"] as List<Map<String, Object>>)
             .map((obj) => BasicRedirectInfo.fromMap(obj))
             .toList(),
-        isSource = map["isSource"],
+        isSource = map["isSource"] as bool,
         anchors = map["anchors"] as List<String>,
-        didNotConnect = map["didNotConnect"],
-        wasParsed = map["wasParsed"],
-        hasUnsupportedEncoding = map["hasUnsupportedEncoding"];
+        didNotConnect = map["didNotConnect"] as bool,
+        wasParsed = map["wasParsed"] as bool,
+        hasUnsupportedEncoding = map["hasUnsupportedEncoding"] as bool;
 
   Map<String, Object> toMap() => {
         "url": url,

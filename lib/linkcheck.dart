@@ -176,25 +176,25 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
 
   final argResults = parser.parse(arguments);
 
-  if (argResults[helpFlag]) {
+  if (argResults[helpFlag] == true) {
     print("Linkcheck will crawl given site and check links.\n");
     print("usage: linkcheck [switches] [url]\n");
     print(parser.usage);
     return 0;
   }
 
-  if (argResults[versionFlag]) {
+  if (argResults[versionFlag] == true) {
     print("linkcheck version $version");
     return 0;
   }
 
-  bool ansiTerm = argResults[ansiFlag] && stdout.hasTerminal;
+  bool ansiTerm = argResults[ansiFlag] == true && stdout.hasTerminal;
   bool reportConnectionFailuresAsWarnings =
-      argResults[connectionFailuresAsWarnings];
-  bool verbose = argResults[debugFlag];
-  bool shouldCheckExternal = argResults[externalFlag];
-  String inputFile = argResults[inputFlag];
-  String skipFile = argResults[skipFlag];
+      argResults[connectionFailuresAsWarnings] == true;
+  bool verbose = argResults[debugFlag] == true;
+  bool shouldCheckExternal = argResults[externalFlag] == true;
+  String inputFile = argResults[inputFlag] as String;
+  String skipFile = argResults[skipFlag] as String;
 
   List<String> urls = argResults.rest.toList();
   UrlSkipper skipper = UrlSkipper.empty();

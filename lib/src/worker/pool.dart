@@ -23,19 +23,19 @@ class Pool {
 
   Timer _healthCheckTimer;
 
-  Map<Worker, DateTime> _lastJobPosted = Map<Worker, DateTime>();
+  final Map<Worker, DateTime> _lastJobPosted = <Worker, DateTime>{};
   final Set<String> _hostGlobs;
 
-  StreamController<FetchResults> _fetchResultsSink =
+  final StreamController<FetchResults> _fetchResultsSink =
       StreamController<FetchResults>();
 
   Stream<FetchResults> fetchResults;
 
-  StreamController<String> _messagesSink = StreamController<String>();
+  final StreamController<String> _messagesSink = StreamController<String>();
 
   Stream<String> messages;
 
-  StreamController<ServerInfoUpdate> _serverCheckSink =
+  final StreamController<ServerInfoUpdate> _serverCheckSink =
       StreamController<ServerInfoUpdate>();
 
   Stream<ServerInfoUpdate> serverCheckResults;
@@ -106,7 +106,7 @@ class Pool {
     _workers = List<Worker>.generate(count, (i) => Worker()..name = '$i');
     await Future.wait(_workers.map((worker) => worker.spawn()));
     _workers.forEach((worker) => worker.stream.listen((Map message) {
-          switch (message[verbKey]) {
+          switch (message[verbKey] as String) {
             case checkPageDoneVerb:
               var result =
                   FetchResults.fromMap(message[dataKey] as Map<String, Object>);
@@ -120,7 +120,7 @@ class Pool {
               worker.serverToCheck = null;
               return;
             case infoFromWorkerVerb:
-              _messagesSink.add(message[dataKey]);
+              _messagesSink.add(message[dataKey] as String);
               return;
             default:
               throw StateError("Unrecognized verb from Worker: "

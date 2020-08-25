@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:linkcheck/linkcheck.dart';
 import 'package:linkcheck/src/parsers/url_skipper.dart';
 
-main() async {
+void main() async {
   // This package is mostly meant to be used as an executable. For that,
   // just follow installation instructions:
   // https://github.com/filiph/linkcheck#installation.
@@ -24,7 +24,7 @@ main() async {
     // Ansi terminal available?
     false,
     // A stream of Ctrl-C signals. Useful for quitting the crawl from outside.
-    Stream.empty(),
+    Stream<void>.empty(),
     // Standard output for linkcheck to use as progress indicator.
     stdout,
   );
