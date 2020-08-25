@@ -27,7 +27,7 @@ const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const redirectFlag = "show-redirects";
 const skipFlag = "skip-file";
-const version = "2.0.12";
+const version = "2.0.13";
 const versionFlag = "version";
 final _portOnlyRegExp = RegExp(r"^:\d+$");
 
@@ -202,26 +202,26 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
 
   final argResults = parser.parse(arguments);
 
-  if (argResults[helpFlag]) {
+  if (argResults[helpFlag] == true) {
     print("Linkcheck will crawl given site and check links.\n");
     print("usage: linkcheck [switches] [url]\n");
     print(parser.usage);
     return 0;
   }
 
-  if (argResults[versionFlag]) {
+  if (argResults[versionFlag] == true) {
     print("linkcheck version $version");
     return 0;
   }
 
-  bool ansiTerm = argResults[ansiFlag] && stdout.hasTerminal;
+  bool ansiTerm = argResults[ansiFlag] == true && stdout.hasTerminal;
   bool reportConnectionFailuresAsWarnings =
-      argResults[connectionFailuresAsWarnings];
-  bool verbose = argResults[debugFlag];
-  bool shouldCheckExternal = argResults[externalFlag];
-  bool showRedirects = argResults[redirectFlag];
-  String inputFile = argResults[inputFlag];
-  String skipFile = argResults[skipFlag];
+      argResults[connectionFailuresAsWarnings] == true;
+  bool verbose = argResults[debugFlag] == true;
+  bool shouldCheckExternal = argResults[externalFlag] == true;
+  bool showRedirects = argResults[redirectFlag] == true;
+  String inputFile = argResults[inputFlag] as String;
+  String skipFile = argResults[skipFlag] as String;
 
   List<String> urls = argResults.rest.toList();
   UrlSkipper skipper = UrlSkipper.empty();

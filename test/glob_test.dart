@@ -5,7 +5,7 @@ import 'package:linkcheck/src/worker/fetch_options.dart';
 
 void main() {
   test("parses simple example", () {
-    var sink = StreamController<Map>();
+    var sink = StreamController<Map<String, Object>>();
     var options = FetchOptions(sink);
     Uri uri = Uri.parse("http://localhost:4000/");
     options.addHostGlobs([uri.toString() + "**"]);
@@ -14,7 +14,7 @@ void main() {
   });
 
   test("parses localhost:4000/guides", () {
-    var sink = StreamController<Map>();
+    var sink = StreamController<Map<String, Object>>();
     var options = FetchOptions(sink);
     Uri uri = Uri.parse("http://localhost:4000/guides");
     options.addHostGlobs([uri.toString() + "**"]);
@@ -23,7 +23,7 @@ void main() {
   });
 
   test("parses localhost:4000/guides/", () {
-    var sink = StreamController<Map>();
+    var sink = StreamController<Map<String, Object>>();
     var options = FetchOptions(sink);
     Uri uri = Uri.parse("http://localhost:4000/guides/");
     options.addHostGlobs(["http://localhost:4000/guides**"]);

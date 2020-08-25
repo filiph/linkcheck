@@ -1,3 +1,9 @@
+## 2.0.13
+
+- Make everything more type-safe by disallowing Dart features "implicit-casts"
+  and "implicit-dynamic".
+- Turn on `pedantic` linter.
+
 ## 2.0.12
 
 - Don’t assume contentType in HTTP headers is set

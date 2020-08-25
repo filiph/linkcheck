@@ -23,7 +23,7 @@ FetchResults parseCss(
     // parse the rest of the document. Otherwise we'd be ignoring URLs
     // just because CSS isn't valid.
     foundError = false;
-    List<Message> errors = List();
+    List<Message> errors = [];
     if (start > 0) {
       start = content.indexOf("}", start);
       if (start < content.length - 1) start += 1;
@@ -49,8 +49,8 @@ FetchResults parseCss(
     start += offset;
   } while (foundError);
 
-  var links = List<Link>();
-  var currentDestinations = List<Destination>();
+  var links = <Link>[];
+  var currentDestinations = <Destination>[];
   for (var reference in urlHarvester.references) {
     var origin = Origin(current.finalUri, reference.span, "url", reference.url,
         "url(\"${reference.url}\")");
@@ -106,7 +106,7 @@ class CssReference {
 }
 
 class CssUrlHarvester extends Visitor {
-  List<CssReference> references = List<CssReference>();
+  List<CssReference> references = <CssReference>[];
 
   @override
   void visitUriTerm(UriTerm node) {

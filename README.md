@@ -128,7 +128,7 @@ Full installation guides per platform:
 * [Install Dart on Linux](https://www.dartlang.org/install/linux)
 * [Install Dart on Mac](https://www.dartlang.org/install/mac)
 
-**For example,** on a Mac, assuming you have [homebrew](http://brew.sh/), 
+**For example,** on a Mac, assuming you have [homebrew](https://brew.sh/), 
 you just run:
 
 ```

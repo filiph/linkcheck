@@ -15,12 +15,13 @@ class Origin {
 
   Origin.fromMap(Map<String, Object> map)
       : this(
-            Uri.parse(map["uri"]),
+            Uri.parse(map["uri"] as String),
             _deserializeSpan(map["span"] as Map<String, Object>),
-            map["tagName"],
-            map["text"],
-            map["outerHtml"]);
+            map["tagName"] as String,
+            map["text"] as String,
+            map["outerHtml"] as String);
 
+  @override
   String toString() => "$uri (${span.start.line + 1}:${span.start.column})";
 
   Map<String, Object> toMap() => {
@@ -41,7 +42,7 @@ Map<String, Object> _serializeSpan(SourceSpan span) => {
 SourceSpan _deserializeSpan(Map<String, Object> map) => SourceSpan(
     _deserializeSourceLocation(map["start"] as Map<String, Object>),
     _deserializeSourceLocation(map["end"] as Map<String, Object>),
-    map["text"]);
+    map["text"] as String);
 
 Map<String, Object> _serializeSourceLocation(SourceLocation location) =>
     <String, Object>{
@@ -52,7 +53,7 @@ Map<String, Object> _serializeSourceLocation(SourceLocation location) =>
     };
 
 SourceLocation _deserializeSourceLocation(Map<String, Object> map) =>
-    SourceLocation(map["offset"],
-        sourceUrl: Uri.parse(map["sourceUrl"]),
-        line: map["line"],
-        column: map["column"]);
+    SourceLocation(map["offset"] as int,
+        sourceUrl: Uri.parse(map["sourceUrl"] as String),
+        line: map["line"] as int,
+        column: map["column"] as int);

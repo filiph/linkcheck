@@ -6,7 +6,7 @@ class RobotsBouncer {
   /// So, for example for Googlebot it would be "Googlebot", although
   /// the user agent string is usually longer.
   final String robotName;
-  final List<_Rule> _rules = List<_Rule>();
+  final List<_Rule> _rules = <_Rule>[];
 
   RobotsBouncer(Iterable<String> lines, {String forRobot = _asterisk})
       : robotName = forRobot {
@@ -15,21 +15,21 @@ class RobotsBouncer {
 
     assert(robotName != null);
 
-    Set<String> currentUserAgents = Set();
-    Set<String> currentPaths = Set();
+    Set<String> currentUserAgents = {};
+    Set<String> currentPaths = {};
     for (var line in lines) {
       line = line.trim();
       if (line.startsWith('#')) continue;
       if (line.isEmpty) {
         if (currentUserAgents.isEmpty || currentPaths.isEmpty) {
           // Invalid rule, discard.
-          currentUserAgents = Set();
-          currentPaths = Set();
+          currentUserAgents = {};
+          currentPaths = {};
           continue;
         }
         _rules.add(_Rule(currentUserAgents, currentPaths));
-        currentUserAgents = Set();
-        currentPaths = Set();
+        currentUserAgents = {};
+        currentPaths = {};
         continue;
       }
       if (line.startsWith(userAgentString)) {

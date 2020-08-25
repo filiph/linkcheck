@@ -54,7 +54,7 @@ Future<CrawlResult> crawl(
 
   // Maps from URLs (without fragment) to where their corresponding destination
   // lives.
-  Map<String, Bin> bin = Map<String, Bin>();
+  Map<String, Bin> bin = <String, Bin>{};
 
   // The queue of destinations that haven't been tried yet. Destinations in
   // the front of the queue take precedence.
@@ -69,15 +69,15 @@ Future<CrawlResult> crawl(
   // Queue for the external destinations.
   Queue<Destination> openExternal = Queue<Destination>();
 
-  Set<Destination> inProgress = Set<Destination>();
+  Set<Destination> inProgress = <Destination>{};
 
   // The set of destinations that have been tried.
-  Set<Destination> closed = Set<Destination>();
+  Set<Destination> closed = <Destination>{};
 
   // Servers we are connecting to.
-  Map<String, ServerInfo> servers = Map<String, ServerInfo>();
+  Map<String, ServerInfo> servers = <String, ServerInfo>{};
   Queue<String> unknownServers = Queue<String>();
-  Set<String> serversInProgress = Set<String>();
+  Set<String> serversInProgress = <String>{};
   seeds.map((uri) => uri.authority).toSet().forEach((String host) {
     servers[host] = ServerInfo(host);
     unknownServers.add(host);
@@ -89,7 +89,7 @@ Future<CrawlResult> crawl(
   }
 
   // Crate the links Set.
-  Set<Link> links = Set<Link>();
+  Set<Link> links = <Link>{};
 
   int threads;
   if (shouldCheckExternal ||
@@ -120,7 +120,7 @@ Future<CrawlResult> crawl(
 
   // Respond to Ctrl-C
   StreamSubscription stopSignalSubscription;
-  stopSignalSubscription = stopSignal.listen((_) async {
+  stopSignalSubscription = stopSignal.listen((dynamic _) async {
     if (ansiTerm) {
       pen
           .text("\n")
@@ -156,7 +156,7 @@ Future<CrawlResult> crawl(
 
     // In order not to touch the underlying iterables, we keep track
     // of the destinations we want to remove.
-    List<Destination> destinationsToRemove = List<Destination>();
+    List<Destination> destinationsToRemove = <Destination>[];
 
     for (var destination in availableDestinations) {
       if (pool.allBusy) break;
@@ -276,7 +276,7 @@ Future<CrawlResult> crawl(
     closed.add(checked);
     bin[checked.url] = Bin.closed;
 
-    var newDestinations = Set<Destination>();
+    var newDestinations = <Destination>{};
 
     // Add links' destinations to [newDestinations] if they haven't been
     // seen before.
@@ -408,8 +408,8 @@ Future<CrawlResult> crawl(
   }
 
   // Fix links (dedupe destinations).
-  var urlMap =
-      Map<String, Destination>.fromIterable(closed, key: (dest) => dest.url);
+  var urlMap = Map<String, Destination>.fromIterable(closed,
+      key: (Object dest) => (dest as Destination).url);
   for (var link in links) {
     var canonical = urlMap[link.destination.url];
     // Note: If it wasn't for the posibility to SIGINT the process, we could

@@ -11,11 +11,12 @@ class FetchResults {
   FetchResults.fromMap(Map<String, Object> map)
       : this(
             DestinationResult.fromMap(map["checked"] as Map<String, Object>),
-            List<Link>.from((map["links"] as List<Map>).map((serialization) =>
-                Link.fromMap(serialization as Map<String, Object>))));
+            List<Link>.from((map["links"] as List<Map>).map<Link>(
+                (serialization) =>
+                    Link.fromMap(serialization as Map<String, Object>))));
 
   Map<String, Object> toMap() => {
         "checked": checked.toMap(),
-        "links": links?.map((link) => link.toMap())?.toList() ?? []
+        "links": links?.map((link) => link.toMap())?.toList() ?? <Object>[]
       };
 }

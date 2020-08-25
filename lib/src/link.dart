@@ -22,8 +22,8 @@ class Link {
       : this(
             Origin.fromMap(map["origin"] as Map<String, Object>),
             Destination.fromMap(map["destination"] as Map<String, Object>),
-            map["destinationAnchor"],
-            map["wasSkipped"]);
+            map["destinationAnchor"] as String,
+            map["wasSkipped"] as bool);
 
   bool get breaksAnchor =>
       !wasSkipped &&
@@ -62,6 +62,7 @@ class Link {
         "wasSkipped": wasSkipped
       };
 
+  @override
   String toString() => "$origin => $destination"
       "${fragment == null ? '' : '#' + fragment} "
       "(${destination.statusDescription})";

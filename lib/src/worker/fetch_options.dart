@@ -7,11 +7,11 @@ import 'worker.dart';
 
 /// The set of known facts and options for the Worker to use when fetching.
 class FetchOptions {
-  final _compiledHostGlobs = List<UriGlob>();
-  final headIncompatible = Set<String>(); // TODO: send to main
+  final _compiledHostGlobs = <UriGlob>[];
+  final headIncompatible = <String>{}; // TODO: send to main
   // TODO: hashmap of known problematic servers etc. = List<String,ServerInfo>
 
-  final StreamSink<Map> _sink;
+  final StreamSink<Map<String, Object>> _sink;
 
   FetchOptions(this._sink);
 
@@ -22,7 +22,7 @@ class FetchOptions {
   }
 
   void info(String message) {
-    _sink.add({verbKey: infoFromWorkerVerb, dataKey: message});
+    _sink.add(<String, Object>{verbKey: infoFromWorkerVerb, dataKey: message});
   }
 
   /// Returns true if the provided [uri] should be considered internal. This
