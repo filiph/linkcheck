@@ -1,5 +1,11 @@
 ## 2.0.13
 
+- Add the `--show-redirects` flag, which reports redirected links.
+  This is handy if you want to minimize the number of hoops the browser needs
+  to jump through to get to linked pages. Ideally, all your site's links
+  are direct, with zero redirects.
+  [Thanks @emielbeinema](https://github.com/filiph/linkcheck/pull/54)
+  for this contribution!
 - Make everything more type-safe by disallowing Dart features "implicit-casts"
   and "implicit-dynamic".
 - Turn on `pedantic` linter.
