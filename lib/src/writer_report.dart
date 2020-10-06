@@ -11,8 +11,8 @@ import 'destination.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
-void reportForWriters(
-    CrawlResult result, bool ansiTerm, bool showRedirects, Stdout stdout) {
+void reportForWriters(CrawlResult result, bool ansiTerm,
+    bool shouldCheckAnchors, bool showRedirects, Stdout stdout) {
   void print(Object message) => stdout.writeln(message);
 
   print("");
@@ -25,7 +25,7 @@ void reportForWriters(
           (link.destination.isInvalid ||
               link.destination.wasTried &&
                   (link.destination.isBroken ||
-                      link.hasWarning ||
+                      link.hasWarning(shouldCheckAnchors) ||
                       link.destination.isRedirected)))
       .toList(growable: false);
 
