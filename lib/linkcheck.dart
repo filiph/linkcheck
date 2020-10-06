@@ -17,6 +17,7 @@ export 'src/link.dart' show Link;
 export 'src/origin.dart' show Origin;
 export 'src/writer_report.dart' show reportForWriters;
 
+const anchorFlag = "check-anchors";
 const ansiFlag = "nice";
 const connectionFailuresAsWarnings = "connection-failures-as-warnings";
 const debugFlag = "debug";
@@ -177,6 +178,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
             "default, the tool only checks internal links.")
     ..addFlag(redirectFlag,
         help: "Also report all links that point at a redirected URL.")
+    ..addFlag(anchorFlag,
+        help: "Report links that point at a missing anchor.", defaultsTo: true)
     ..addSeparator("Advanced")
     ..addOption(inputFlag,
         abbr: 'i',
@@ -220,6 +223,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   bool verbose = argResults[debugFlag] == true;
   bool shouldCheckExternal = argResults[externalFlag] == true;
   bool showRedirects = argResults[redirectFlag] == true;
+  bool shouldCheckAnchors = argResults[anchorFlag] == true;
   String inputFile = argResults[inputFlag] as String;
   String skipFile = argResults[skipFlag] as String;
 
@@ -285,7 +289,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
 
   var withWarning = result.links
       .where((link) =>
-          link.hasWarning ||
+          link.hasWarning(shouldCheckAnchors) ||
           reportConnectionFailuresAsWarnings && link.destination.didNotConnect)
       .length;
 
@@ -304,7 +308,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
       print("Done crawling.                   ");
     }
 
-    reportForWriters(result, ansiTerm, showRedirects, stdout);
+    reportForWriters(
+        result, ansiTerm, shouldCheckAnchors, showRedirects, stdout);
 
     printStats(result, broken, withWarning, withInfo, withRedirects,
         showRedirects, ansiTerm, stdout);
