@@ -1,3 +1,12 @@
+## 2.0.14
+
+- Add the `--no-check-anchors` flag, which prevents reporting missing anchors
+  as problems. This is useful when the link-checked website uses anchors 
+  (like `#play` or `#user=bob`) for dynamic content (i.e. they are handled
+  by JavaScript and don't exist in the static HTML).
+  [Thanks @emielbeinema](https://github.com/filiph/linkcheck/pull/56)
+  for this contribution!
+
 ## 2.0.13
 
 - Add the `--show-redirects` flag, which reports redirected links.
