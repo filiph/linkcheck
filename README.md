@@ -176,7 +176,15 @@ docker run filiph/linkcheck <URL>
 
 All bellow usage are valid running on container too.
 
+#### Usage (github action)
 
+```
+uses: filiph/linkcheck-action@v1
+  with:
+    arguments: <URL>
+```
+
+All bellow usage are valid running as github action too.
 ## Usage
 
 If in doubt, run `linkcheck -h`. Here are some examples to get you started.
