@@ -1,4 +1,4 @@
-name: 'linkcheck'
+name: 'Linkcheck'
 description: >
   Check links with linkcheck,
   a tool focused on blazing fast localhost crawling.
