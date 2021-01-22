@@ -298,7 +298,10 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   var withRedirects =
       result.links.where((link) => link.destination.isRedirected).length;
 
-  if (broken == 0 && withWarning == 0 && withInfo == 0) {
+  if (broken == 0 &&
+      withWarning == 0 &&
+      withInfo == 0 &&
+      (!showRedirects || withRedirects == 0)) {
     printStats(result, broken, withWarning, withInfo, withRedirects,
         showRedirects, ansiTerm, stdout);
   } else {
