@@ -1,7 +1,6 @@
-name: 'Linkcheck'
+name: 'Check links with linkcheck'
 description: >
-  Check links with linkcheck,
-  a tool focused on blazing fast localhost crawling.
+  Blazing fast localhost crawling via the linkcheck tool.
 branding:
   icon: 'link'
   color: 'green'
