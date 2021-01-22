@@ -1,0 +1,12 @@
+name: 'linkcheck'
+description: 'Check links with filiph/linkcheck'
+inputs:
+  arguments:
+    description: 'Pass the linkchek arguments'
+    required: true
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.arguments }}
