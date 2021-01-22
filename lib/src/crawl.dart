@@ -251,8 +251,36 @@ Future<CrawlResult> crawl(
   // Respond to fetch results from a Worker
   pool.fetchResults.listen((FetchResults result) {
     assert(bin[result.checked.url] == Bin.inProgress);
-    var checked =
-        inProgress.singleWhere((dest) => dest.url == result.checked.url);
+
+    // Find the destination this result is referring to.
+    var destinations = inProgress
+        .where((dest) => dest.url == result.checked.url)
+        .toList(growable: false);
+    if (destinations.isEmpty) {
+      if (verbose) {
+        print("WARNING: Received result for a destination that isn't in "
+            "the inProgress set: ${result.toMap()}");
+        var isInOpen =
+            open.where((dest) => dest.url == result.checked.url).isNotEmpty;
+        var isInOpenExternal = openExternal
+            .where((dest) => dest.url == result.checked.url)
+            .isNotEmpty;
+        var isInClosed =
+            closed.where((dest) => dest.url == result.checked.url).isNotEmpty;
+        print("- the url is in open: $isInOpen; "
+            "in open external: $isInOpenExternal, in closed: $isInClosed");
+      }
+      return;
+    } else if (destinations.length > 1) {
+      if (verbose) {
+        print("WARNING: Received result for a url (${result.checked.url} "
+            "that matches several objects in the inProgress set: "
+            "$destinations");
+      }
+      return;
+    }
+    var checked = destinations.single;
+
     inProgress.remove(checked);
     checked.updateFromResult(result.checked);
 
