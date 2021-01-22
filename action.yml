@@ -1,8 +1,13 @@
 name: 'linkcheck'
-description: 'Check links with filiph/linkcheck'
+description: >
+  Check links with linkcheck,
+  a tool focused on blazing fast localhost crawling.
+branding:
+  icon: 'link'
+  color: 'green'
 inputs:
   arguments:
-    description: 'Pass the linkchek arguments'
+    description: 'The arguments you would pass to the linkcheck tool'
     required: true
 
 runs:
