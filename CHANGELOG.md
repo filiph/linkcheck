@@ -1,3 +1,11 @@
+## 2.0.15
+
+- Improve stability by handling several failures more gracefully
+  ([#57](https://github.com/filiph/linkcheck/issues/57),
+  [#63](https://github.com/filiph/linkcheck/issues/63),
+  [#51](https://github.com/filiph/linkcheck/issues/51),
+  [#40](https://github.com/filiph/linkcheck/issues/40))
+
 ## 2.0.14
 
 - Add the `--no-check-anchors` flag, which prevents reporting missing anchors
