@@ -320,7 +320,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   print("");
 
   if (broken > 0) return 2;
-  if (withWarning > 0) return 1;
+  if (withWarning > 0 || (showRedirects && withRedirects > 0)) return 1;
   return 0;
 }
 
