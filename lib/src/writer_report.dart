@@ -26,7 +26,7 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
               link.destination.wasTried &&
                   (link.destination.isBroken ||
                       link.hasWarning(shouldCheckAnchors) ||
-                      link.destination.isRedirected)))
+                      (showRedirects && link.destination.isRedirected))))
       .toList(growable: false);
 
   List<Destination> deniedByRobots = result.destinations
