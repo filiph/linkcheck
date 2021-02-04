@@ -96,8 +96,8 @@ but none of them seems to be striving for the following set of goals.
   * `linkcheck` returns status code `1` if there are warnings, and
     status code `2` if there are errors.
 
-It goes without saying that `linkcheck` honors robots.txt and throttles itself
-when accessing websites.
+It goes without saying that `linkcheck` fully respects definitions 
+in `robots.txt` and throttles itself when accessing websites.
 
 ## Installation
 
