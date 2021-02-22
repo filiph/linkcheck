@@ -1,3 +1,13 @@
+## 2.0.16
+
+- Add a summary of the most broken links (as opposed to just warnings) 
+  at the end of the listing. This only happens when most of the normal listing
+  above is mostly (50%+) warnings. This should help when a big site has
+  thousands of small warnings because of, say, missing anchors, but the author
+  is currently trying to catch the failing errors.
+- Fix `--show-redirects` functionality.
+  [Thanks @nfagerlund!](https://github.com/filiph/linkcheck/pull/64)!
+
 ## 2.0.15
 
 - Improve stability by handling several failures more gracefully
