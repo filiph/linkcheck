@@ -18,7 +18,9 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
   print("");
 
   Set<Link> links = result.links;
-  List<Link> broken = links
+
+  /// Links that were found broken or had a warning or were redirected.
+  List<Link> problematic = links
       .where((link) =>
           !link.destination.isUnsupportedScheme &&
           !link.wasSkipped &&
@@ -34,8 +36,10 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
       .toList(growable: false);
   deniedByRobots.sort((a, b) => a.url.compareTo(b.url));
 
-  List<Uri> sourceUris =
-      broken.map((link) => link.origin.uri).toSet().toList(growable: false);
+  List<Uri> sourceUris = problematic
+      .map((link) => link.origin.uri)
+      .toSet()
+      .toList(growable: false);
   sourceUris.sort((a, b) => a.toString().compareTo(b.toString()));
 
   TextPen pen;
@@ -98,9 +102,31 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
 
   for (var uri in sourceUris) {
     if (ansiTerm) {
-      printWithAnsi(uri, broken, pen);
+      printWithAnsi(uri, problematic, pen);
     } else {
-      printWithoutAnsi(uri, broken, stdout);
+      printWithoutAnsi(uri, problematic, stdout);
+    }
+  }
+
+  List<Link> broken =
+      problematic.where((link) => link.hasError).toList(growable: false);
+  if (broken.isNotEmpty && broken.length < problematic.length / 2) {
+    // Reiterate really broken links if the listing above is mostly warnings
+    // with only a minority of errors. The user cares about errors first.
+    print("");
+    print("Summary of most serious issues:");
+    print("");
+
+    List<Uri> brokenUris =
+        broken.map((link) => link.origin.uri).toSet().toList(growable: false);
+    brokenUris.sort((a, b) => a.toString().compareTo(b.toString()));
+
+    for (var uri in brokenUris) {
+      if (ansiTerm) {
+        printWithAnsi(uri, broken, pen);
+      } else {
+        printWithoutAnsi(uri, broken, stdout);
+      }
     }
   }
 }
