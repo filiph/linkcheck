@@ -1,3 +1,8 @@
+## 2.0.17
+
+- Update to latest dependencies.
+- Require Dart 2.12.
+
 ## 2.0.16
 
 - Add a summary of the most broken links (as opposed to just warnings) 

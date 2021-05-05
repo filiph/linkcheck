@@ -1,22 +1,22 @@
 name: linkcheck
-version: 2.0.16  # Don't forget to update in lib/linkcheck.dart, too.
+version: 2.0.17 # Don't forget to update in lib/linkcheck.dart, too.
 
-description: >
+description: >-
   A very fast link-checker. Crawls sites and checks integrity of links
   both in HTML and in CSS.
 
 homepage: https://github.com/filiph/linkcheck
 
 environment:
-  sdk: '>=2.2.0 <3.0.0'
+  sdk: '>=2.11.99 <3.0.0'
 
 dependencies:
   args: ^1.5.1
-  console: ^3.1.0
-  csslib: ^0.16.0
-  glob: ^1.1.7
-  html: ^0.14.0+3
-  logging: ^0.11.3+2
+  console: ^4.1.0
+  csslib: ^0.17.0
+  glob: ^2.0.1
+  html: ^0.15.0
+  logging: ^1.0.1
   path: ^1.6.2
   source_span: ^1.5.5
   stream_channel: ^2.0.0
