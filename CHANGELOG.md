@@ -1,3 +1,7 @@
+## 2.0.18
+
+- Allow the latest `pkg:args`;
+
 ## 2.0.17
 
 - Update to latest dependencies.
