@@ -74,9 +74,9 @@ class ServerInfo {
   }
 
   void updateFromServerCheck(ServerInfoUpdate result) {
-    connectionAttempts += 1;
+    connectionAttempts++;
     if (result.didNotConnect) {
-      didNotConnectCount += 1;
+      didNotConnectCount++;
       return;
     }
     bouncer = RobotsBouncer(result.robotsTxtContents.split("\n"),
@@ -84,9 +84,9 @@ class ServerInfo {
   }
 
   void updateFromStatusCode(int statusCode) {
-    connectionAttempts += 1;
+    connectionAttempts++;
     if (statusCode == null) {
-      didNotConnectCount += 1;
+      didNotConnectCount++;
       return;
     }
     switch (statusCode) {
@@ -94,13 +94,13 @@ class ServerInfo {
         break;
       case 401:
       case 403:
-        unauthorizedCount += 1;
+        unauthorizedCount++;
         break;
       case 503:
-        serviceUnavailableCount += 1;
+        serviceUnavailableCount++;
         break;
       default:
-        otherErrorCount += 1;
+        otherErrorCount++;
         break;
     }
   }

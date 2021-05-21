@@ -26,7 +26,7 @@ FetchResults parseCss(
     List<Message> errors = [];
     if (start > 0) {
       start = content.indexOf("}", start);
-      if (start < content.length - 1) start += 1;
+      if (start < content.length - 1) start++;
     }
     StyleSheet style;
     try {

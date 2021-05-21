@@ -45,7 +45,7 @@ class UrlSkipper {
       line = line.trim();
 
       if (line.startsWith(_commentStart) || line.isEmpty) {
-        lineNumber += 1;
+        lineNumber++;
         continue;
       }
       if (line.startsWith(_commentStartEscape)) {
@@ -53,7 +53,7 @@ class UrlSkipper {
       }
 
       yield _UrlSkipperRecord(lineNumber, line);
-      lineNumber += 1;
+      lineNumber++;
     }
   }
 }

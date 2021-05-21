@@ -231,17 +231,17 @@ Future<CrawlResult> crawl(
     }
 
     if (verbose) {
-      count += 1;
+      count++;
       print("Server check for ${result.host} complete: "
           "${result.didNotConnect ? 'didn\'t connect' : 'connected'}, "
           "${result.robotsTxtContents.isEmpty ? 'no robots.txt' : 'robots.txt found'}.");
     } else {
       if (ansiTerm) {
         cursor.moveLeft(count.toString().length);
-        count += 1;
+        count++;
         cursor.write(count.toString());
       } else {
-        count += 1;
+        count++;
       }
     }
 
@@ -285,7 +285,7 @@ Future<CrawlResult> crawl(
     checked.updateFromResult(result.checked);
 
     if (verbose) {
-      count += 1;
+      count++;
       print("Done checking: $checked (${checked.statusDescription}) "
           "=> ${result?.links?.length ?? 0} links");
       if (checked.isBroken) {
@@ -294,10 +294,10 @@ Future<CrawlResult> crawl(
     } else {
       if (ansiTerm) {
         cursor.moveLeft(count.toString().length);
-        count += 1;
+        count++;
         cursor.write(count.toString());
       } else {
-        count += 1;
+        count++;
       }
     }
 
