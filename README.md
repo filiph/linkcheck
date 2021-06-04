@@ -1,6 +1,6 @@
 # linkcheck
 
-[![Build Status](https://travis-ci.org/filiph/linkcheck.svg?branch=master)](https://travis-ci.org/filiph/linkcheck)
+[![Build Status](https://github.com/filiph/linkcheck/actions/workflows/ci.yml/badge.svg?branch=master](https://github.com/filiph/linkcheck/actions/workflows/ci.yml)
 
 Very fast link-checking.
 
