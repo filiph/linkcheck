@@ -1,0 +1,17 @@
+name: CI
+on:
+  push: {branches: [master]}
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1
+      - run: dart --version
+      - run: pub get
+      - run: dartanalyzer --fatal-warnings .
+      - run: dartfmt -n --set-exit-if-changed .
+      - run: pub run test -x integration
+      - run: dart test/e2e_test.dart
