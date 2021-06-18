@@ -1,6 +1,13 @@
+## 2.0.19
+
+- Update to latest dependencies
+- Use `pkg:cli_pkg` for creating binaries in CI.
+  Thanks
+  [Guillaume](https://github.com/filiph/linkcheck/commits?author=Mogztter)!
+
 ## 2.0.18
 
-- Allow the latest `pkg:args`;
+- Allow the latest `pkg:args`
 
 ## 2.0.17
 
