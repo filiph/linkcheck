@@ -301,3 +301,17 @@ linkcheck tool (https://github.com/filiph/linkcheck)
 ```
 
 [user agent string]: https://en.wikipedia.org/wiki/User_agent#User_agent_identification
+
+### Releasing a new version
+
+1. Commit all your changes, including updates to `CHANGELOG`,
+   and including updating the version number in `pubspec.yaml`
+   and `lib/linkcheck.dart`. Let's say your new version number is `3.4.56`.
+   That number should be reflected in all three files.
+2. Tag the last commit with the same version number.
+   In our case, it would be `3.4.56`.
+3. Push to `master`.
+
+This will run the GitHub Actions script in `.github/workflows/release.yml`,
+building binaries and placing a new release into
+[github.com/filiph/linkcheck/releases](https://github.com/filiph/linkcheck/releases).
