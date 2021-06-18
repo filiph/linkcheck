@@ -5,6 +5,8 @@ void main(List<String> args) {
   pkg.name.value = "linkcheck";
   pkg.humanName.value = "linkcheck";
   pkg.githubRepo.value = "filiph/linkcheck";
+  pkg.githubUser.value = 'filiph';
+  pkg.homebrewRepo.value = 'filiph/homebrew-linkcheck';
   pkg.addAllTasks();
   grind(args);
 }
