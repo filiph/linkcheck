@@ -2,19 +2,80 @@ name: Release
 
 on:
   push:
-    tags: '[0-9]+.[0-9]+.[0-9]+'
+    tags: "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: "${{ matrix.sdk-version }} / ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        sdk-version: [stable] #, dev]
+        include:
+          - os: macOS-latest
+            TARGET: macos
+          - os: ubuntu-latest
+            TARGET: linux
+          - os: windows-latest
+            TARGET: windows
+
     steps:
       - uses: actions/checkout@v2
       - uses: dart-lang/setup-dart@v1
+        with:
+          channel: ${{ matrix.sdk-version }}
       - run: dart --version
       - run: pub get
-      - run: pub global activate grinder
+      - run: dartanalyzer --fatal-warnings .
+      - run: dartfmt -n --set-exit-if-changed .
+      - run: pub run test -x integration
+      - run: dart test/e2e_test.dart
+  release:
+    name: Release
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      PUB_CREDENTIALS: ${{ secrets.PUB_CREDENTIALS }}
+      GITHUB_BEARER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    container:
+      image: google/dart:latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 0
+      - run: pub get
       - run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
       - name: Package and publish
-        run: grind pkg-github-all
-        env:
-          GITHUB_BEARER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pub run grinder pkg-github-all
+      - run: pub run grinder pkg-pub-deploy
+
+  homebrew:
+    name: Deploy Homebrew
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.HOMEBREW_GH_TOKEN }}
+    container:
+      image: google/dart:latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: pub get
+      - name: Deploy to Homebrew
+        run: pub run grinder pkg-homebrew-update
+
+  chocolatey:
+    name: Cholatey Deploy (Windows)
+    needs: release
+    runs-on: windows-latest
+    env:
+      CHOCOLATEY_TOKEN: ${{ secrets.CHOCOLATEY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup Dart
+        uses: DanTup/gh-actions/setup-dart@master
+        with:
+          channel: stable
+      - run: pub get
+      - name: Deploy Chocolatey (Windows)
+        run: pub run grinder pkg-chocolatey-deploy
