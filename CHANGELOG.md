@@ -1,3 +1,8 @@
+## 2.0.20
+
+- Fix passing multiple arguments to github action.
+  Thanks [Manuel](https://github.com/filiph/linkcheck/pull/82)!
+
 ## 2.0.19
 
 - Update to latest dependencies
