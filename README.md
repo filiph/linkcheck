@@ -58,7 +58,7 @@ but none of them seems to be striving for the following set of goals.
   checked in their natural habitat, and as close to the production environment
   as possible. You can (and should) run `linkcheck` on your localhost server,
   of course.
-    
+  
 ### Good <abbr title="User Experience">UX</abbr>
 
 * Yes, a command line utility can have good or bad UX. It has mostly to do with
@@ -81,7 +81,7 @@ but none of them seems to be striving for the following set of goals.
 
   * In this scenario, `linkcheck` just outputs 'Perfect' and some stats on
     a single line.
-    
+  
 * When things are broken, you want to see where exactly is the problem
   and you want to have it sorted in a sane way.
   
@@ -162,10 +162,16 @@ avoiding local Dart installation.
 
 #### Build
 
-In the project directory, run
+In the project directory, for x86 and x64 architectures, run
 
 ```
 docker build -t filiph/linkcheck .
+```
+
+On ARM architectures (Raspberry, M1 Mac), run
+
+```
+docker build --platform linux/arm64 -t filiph/linkcheck .
 ```
 
 #### Usage (container mode)

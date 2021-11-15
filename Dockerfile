@@ -1,4 +1,4 @@
-FROM google/dart
+FROM dart
 
 RUN pub global activate linkcheck
 
