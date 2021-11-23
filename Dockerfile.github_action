@@ -1,0 +1,6 @@
+FROM google/dart
+
+RUN pub global activate linkcheck
+COPY github_action_entrypoint.sh /entrypoint.sh 
+
+ENTRYPOINT ["/entrypoint.sh"]

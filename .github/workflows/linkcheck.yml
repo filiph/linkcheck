@@ -1,0 +1,15 @@
+name: Test action
+
+on: push
+
+jobs:
+  linkcheck:
+    runs-on: ubuntu-latest
+    name: check links
+    steps:
+      - uses: actions/checkout@v2
+      - name: Linkcheck
+        id: linkcheck
+        uses: ./
+        with:
+          arguments: https://wunderundfitzig.de/skills -e --skip-file linkcheck-skip-file.txt
