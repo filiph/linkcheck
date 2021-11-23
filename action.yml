@@ -11,4 +11,4 @@ inputs:
 
 runs:
   using: "docker"
-  image: "Dockerfile.github_action"
+  image: "GithubActionDockerfile"
