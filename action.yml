@@ -1,14 +1,14 @@
-name: "Check links with linkcheck"
+name: 'Check links with linkcheck'
 description: >
   Blazing fast localhost crawling via the linkcheck tool.
 branding:
-  icon: "link"
-  color: "green"
+  icon: 'link'
+  color: 'green'
 inputs:
   arguments:
-    description: "The arguments you would pass to the linkcheck tool"
+    description: 'The arguments you would pass to the linkcheck tool'
     required: true
 
 runs:
-  using: "docker"
-  image: "GithubActionDockerfile"
+  using: 'docker'
+  image: 'GithubActionDockerfile'
