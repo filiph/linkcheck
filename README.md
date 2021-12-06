@@ -118,6 +118,13 @@ on a Linux box, you might want to rename the executable to simply
 `linkcheck`, and move it to `/usr/local/bin`, `$HOME/bin` or another
 directory in your `$PATH`.
 
+### Docker image
+Latest executable in a [docker image](https://hub.docker.com/r/tennox/linkcheck):
+```
+docker run --rm tennox/linkcheck --help
+```
+(built from a [repo mirror](https://gitlab.com/txlab/docker-linkcheck) by @tennox)
+
 ### From Source
 
 #### Step 1. Install Dart
