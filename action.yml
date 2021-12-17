@@ -11,6 +11,4 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'Dockerfile'
-  entrypoint:
-    ['sh', '-c', '/root/.pub-cache/bin/linkcheck ${{ inputs.arguments }}']
+  image: 'GithubActionDockerfile'
