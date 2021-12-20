@@ -12,6 +12,6 @@ jobs:
       - run: dart --version
       - run: pub get
       - run: dart analyze --fatal-warnings .
-      - run: dart format -n --set-exit-if-changed .
+      - run: dart format --set-exit-if-changed .
       - run: dart run test -x integration
       - run: dart test/e2e_test.dart
