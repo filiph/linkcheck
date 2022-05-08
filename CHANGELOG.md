@@ -1,3 +1,10 @@
+## 2.0.21
+
+- Update ci.yml to latest Dart executables ([#92](https://github.com/filiph/linkcheck/pull/92))
+- Add docker hub image to Readme ([#91](https://github.com/filiph/linkcheck/pull/91)), Thanks Manuel ([@tennox](https://github.com/tennox))
+- Fix invalid syntax of github action file ([#90](https://github.com/filiph/linkcheck/pull/90)), Thanks Manuel ([@errnesto](https://github.com/errnesto))
+- Changed Dockerfile for cross-platform image building ([#88](https://github.com/filiph/linkcheck/pull/88)), Thanks Patrick ([@kastnerp](https://github.com/kastnerp))
+  
 ## 2.0.20
 
 - Fix passing multiple arguments to github action.
