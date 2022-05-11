@@ -1,3 +1,11 @@
+## 2.0.23
+
+- Fix another issue with building artifacts through `grindr`/`cli_pkg`
+
+## 2.0.22
+
+- Fix issue with building artifacts through `grindr`/`cli_pkg`
+
 ## 2.0.21
 
 - Update ci.yml to latest Dart executables ([#92](https://github.com/filiph/linkcheck/pull/92))
