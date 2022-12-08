@@ -245,7 +245,7 @@ class Worker {
   StreamSink<Map<String, Object>> _sink;
   Stream<Map<String, Object>> _stream;
 
-  String name;
+  final String name;
 
   Destination? destinationToCheck;
 
@@ -254,6 +254,9 @@ class Worker {
   bool _spawned = false;
 
   bool _isKilled = false;
+
+  Worker(this.name);
+
   bool get idle =>
       destinationToCheck == null &&
       serverToCheck == null &&

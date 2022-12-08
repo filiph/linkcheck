@@ -17,9 +17,9 @@ class Pool {
   final int count;
 
   bool _isShuttingDown = false;
-  List<Worker> _workers;
+  final List<Worker> _workers;
 
-  Timer _healthCheckTimer;
+  late Timer _healthCheckTimer;
 
   final Map<Worker, DateTime> _lastJobPosted = <Worker, DateTime>{};
   final Set<String> _hostGlobs;
@@ -27,24 +27,23 @@ class Pool {
   final StreamController<FetchResults> _fetchResultsSink =
       StreamController<FetchResults>();
 
-  late final Stream<FetchResults> fetchResults;
+  late final Stream<FetchResults> fetchResults = _fetchResultsSink.stream;
 
   final StreamController<String> _messagesSink = StreamController<String>();
 
-  late final Stream<String> messages;
+  late final Stream<String> messages = _messagesSink.stream;
 
   final StreamController<ServerInfoUpdate> _serverCheckSink =
       StreamController<ServerInfoUpdate>();
 
-  late final Stream<ServerInfoUpdate> serverCheckResults;
+  late final Stream<ServerInfoUpdate> serverCheckResults =
+      _serverCheckSink.stream;
 
   bool _finished = false;
 
-  Pool(this.count, this._hostGlobs) {
-    fetchResults = _fetchResultsSink.stream;
-    messages = _messagesSink.stream;
-    serverCheckResults = _serverCheckSink.stream;
-  }
+  Pool(this.count, this._hostGlobs)
+      : _workers =
+            List<Worker>.generate(count, (i) => Worker('$i'), growable: false);
 
   /// Returns true if all workers are either waiting for a job or not really
   /// alive (not spawned yet, or already killed).
@@ -101,7 +100,6 @@ class Pool {
   }
 
   Future<void> spawn() async {
-    _workers = List<Worker>.generate(count, (i) => Worker()..name = '$i');
     await Future.wait(_workers.map((worker) => worker.spawn()));
     for (var worker in _workers) {
       worker.stream.listen((Map<dynamic, dynamic> message) {
@@ -144,7 +142,7 @@ class Pool {
           var server = worker.serverToCheck;
 
           _lastJobPosted.remove(worker);
-          var newWorker = Worker()..name = '$i';
+          var newWorker = Worker('$i');
           _workers[i] = newWorker;
 
           if (destination != null) {
@@ -158,8 +156,7 @@ class Pool {
           }
 
           if (server != null) {
-            var result = ServerInfoUpdate(server);
-            result.didNotConnect = true;
+            var result = ServerInfoUpdate.didNotConnect(server);
             _serverCheckSink.add(result);
           }
 
@@ -178,7 +175,10 @@ class Pool {
   /// Sends host globs (e.g. http://example.com/**) to all the workers.
   void _addHostGlobs() {
     for (var worker in _workers) {
-      worker.sink.add({verbKey: addHostGlobVerb, dataKey: _hostGlobs.toList()});
+      worker.sink.add({
+        verbKey: addHostGlobVerb,
+        dataKey: _hostGlobs.toList(growable: false)
+      });
     }
   }
 }
