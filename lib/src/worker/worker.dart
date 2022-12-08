@@ -1,12 +1,10 @@
-library linkcheck.worker;
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' hide Link;
 import 'dart:isolate';
 
-import 'package:stream_channel/stream_channel.dart';
 import 'package:stream_channel/isolate_channel.dart';
+import 'package:stream_channel/stream_channel.dart';
 
 import '../destination.dart';
 import '../parsers/css.dart';
@@ -32,9 +30,9 @@ const verbKey = "message";
 
 Future<ServerInfoUpdate> checkServer(
     String host, HttpClient client, FetchOptions options) async {
-  ServerInfoUpdate result = ServerInfoUpdate(host);
+  var originalHost = host;
 
-  int port;
+  int? port;
   if (host.contains(':')) {
     var parts = host.split(':');
     assert(parts.length == 2);
@@ -45,7 +43,7 @@ Future<ServerInfoUpdate> checkServer(
   Uri uri = Uri(scheme: "http", host: host, port: port, path: "/robots.txt");
 
   // Fetch the HTTP response
-  HttpClientResponse response;
+  HttpClientResponse? response;
   try {
     response = await _fetch(client, uri);
   } on TimeoutException {
@@ -58,15 +56,14 @@ Future<ServerInfoUpdate> checkServer(
     // Leave response == null.
   }
 
+  // Request failed completely.
   if (response == null) {
-    // Request failed completely.
-    result.didNotConnect = true;
-    return result;
+    return ServerInfoUpdate.didNotConnect(originalHost);
   }
 
   // No robots.txt.
   if (response.statusCode != 200) {
-    return result;
+    return ServerInfoUpdate(originalHost);
   }
 
   String content;
@@ -85,8 +82,7 @@ Future<ServerInfoUpdate> checkServer(
     content = "";
   }
 
-  result.robotsTxtContents = content;
-  return result;
+  return ServerInfoUpdate(originalHost, robotsTxtContents: content);
 }
 
 Future<FetchResults> checkPage(
@@ -95,7 +91,7 @@ Future<FetchResults> checkPage(
   var uri = current.uri;
 
   // Fetch the HTTP response
-  HttpClientResponse response;
+  HttpClientResponse? response;
   try {
     if (!current.isSource &&
         !options.headIncompatible.contains(current.uri.host)) {
@@ -178,13 +174,13 @@ void worker(SendPort port) {
 
   bool alive = true;
 
-  stream.listen((Map message) async {
+  stream.listen((Map<String, Object> message) async {
     switch (message[verbKey] as String) {
       case dieVerb:
         client.close(force: true);
         alive = false;
         await sink.close();
-        return null;
+        return;
       case checkPageVerb:
         Destination destination =
             Destination.fromMap(message[dataKey] as Map<String, Object>);
@@ -192,17 +188,17 @@ void worker(SendPort port) {
         if (alive) {
           sink.add({verbKey: checkPageDoneVerb, dataKey: results.toMap()});
         }
-        return null;
+        return;
       case checkServerVerb:
         String host = message[dataKey] as String;
         ServerInfoUpdate results = await checkServer(host, client, options);
         if (alive) {
           sink.add({verbKey: checkServerDoneVerb, dataKey: results.toMap()});
         }
-        return null;
+        return;
       case addHostGlobVerb:
         options.addHostGlobs(message[dataKey] as List<String>);
-        return null;
+        return;
       // TODO: add to server info from main isolate
       default:
         sink.add(unrecognizedMessage);
@@ -226,7 +222,7 @@ Future<HttpClientResponse> _fetch(HttpClient client, Uri uri) async {
 ///
 /// Some servers don't support this request, in which case they return HTTP
 /// status code 405. If that's the case, this function returns `null`.
-Future<HttpClientResponse> _fetchHead(HttpClient client, Uri uri) async {
+Future<HttpClientResponse?> _fetchHead(HttpClient client, Uri uri) async {
   var request = await client.headUrl(uri).timeout(connectionTimeout);
   var response = await request.close().timeout(responseTimeout);
 
@@ -251,9 +247,9 @@ class Worker {
 
   String name;
 
-  Destination destinationToCheck;
+  Destination? destinationToCheck;
 
-  String serverToCheck;
+  String? serverToCheck;
 
   bool _spawned = false;
 
@@ -269,16 +265,16 @@ class Worker {
   StreamSink<Map<String, Object>> get sink => _sink;
   bool get spawned => _spawned;
 
-  Stream<Map> get stream => _stream;
+  Stream<Map<String, Object>> get stream => _stream;
 
-  Future<Null> kill() async {
+  Future<void> kill() async {
     if (!_spawned) return;
     _isKilled = true;
     sink.add(dieMessage);
     await sink.close();
   }
 
-  Future<Null> spawn() async {
+  Future<void> spawn() async {
     assert(_channel == null);
     _channel = await _spawnWorker();
     _sink = _channel.sink;
@@ -288,4 +284,8 @@ class Worker {
 
   @override
   String toString() => "Worker<$name>";
+}
+
+class _SpawnedWorker {
+
 }

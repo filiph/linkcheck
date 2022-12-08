@@ -1,5 +1,3 @@
-library linkcheck.destination;
-
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
 import 'package:linkcheck/src/parsers/html.dart';
@@ -49,18 +47,18 @@ class Destination {
   final String url;
 
   /// The uri as specified by source file, without the fragment.
-  Uri _uri;
+  Uri? _uri;
 
   /// The HTTP status code returned.
-  int statusCode;
+  int? statusCode;
 
   /// MimeType of the response.
-  ContentType contentType;
+  ContentType? contentType;
 
-  List<BasicRedirectInfo> redirects;
+  final List<BasicRedirectInfo> redirects;
 
   /// Url after all redirects.
-  String finalUrl;
+  String? finalUrl;
 
   bool isExternal;
 
@@ -72,7 +70,7 @@ class Destination {
   /// Set of anchors on the page.
   ///
   /// Only for [isSource] == `true`.
-  List<String> anchors;
+  final List<String> anchors;
 
   /// If the URL is unparseable (malformed), this will be `true`.
   bool isInvalid = false;
@@ -90,7 +88,7 @@ class Destination {
 
   int _hashCode;
 
-  Uri _finalUri;
+  Uri? _finalUri;
 
   /// The encoding is not UTF-8 or LATIN-1.
   bool hasUnsupportedEncoding = false;
@@ -100,7 +98,7 @@ class Destination {
 
   bool wasParsed = false;
 
-  bool _isUnsupportedScheme;
+  bool? _isUnsupportedScheme;
 
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),
@@ -116,13 +114,14 @@ class Destination {
     destination
       ..statusCode = map["statusCode"] as int
       ..contentType = contentType
-      ..redirects = (map["redirects"] as List<Map<String, Object>>)
-          ?.map((obj) => BasicRedirectInfo.fromMap(obj))
-          ?.toList()
+      ..redirects = (map["redirects"] as List<Map<String, Object>>?)
+              ?.map(BasicRedirectInfo.fromMap)
+              .toList(growable: false) ??
+          const []
       ..finalUrl = map["finalUrl"] as String
       ..isExternal = map["isExternal"] as bool
       ..isSource = map["isSource"] as bool
-      ..anchors = map["anchors"] as List<String>
+      ..anchors = map["anchors"] as List<String>? ?? const []
       ..isInvalid = map["isInvalid"] as bool
       ..didNotConnect = map["didNotConnect"] as bool
       ..wasParsed = map["wasParsed"] as bool
@@ -135,13 +134,11 @@ class Destination {
     _hashCode = this.url.hashCode;
   }
 
-  Destination.invalid(String url)
-      : url = url,
-        isInvalid = true {
+  Destination.invalid(this.url) : isInvalid = true {
     _hashCode = url.hashCode;
   }
 
-  Destination.unsupported(String url) : url = url {
+  Destination.unsupported(this.url) {
     _isUnsupportedScheme = true;
     _hashCode = url.hashCode;
   }
@@ -176,15 +173,14 @@ class Destination {
   bool get isParseableMimeType => isHtmlMimeType || isCssMimeType;
 
   bool get isPermanentlyRedirected =>
-      redirects != null &&
-      redirects.isNotEmpty &&
-      redirects.first.statusCode == 301;
+      redirects.isNotEmpty && redirects.first.statusCode == 301;
 
-  bool get isRedirected => redirects != null && redirects.isNotEmpty;
+  bool get isRedirected => redirects.isNotEmpty;
 
   /// True if the destination URI isn't one of the [supportedSchemes].
-  bool get isUnsupportedScheme {
-    if (_isUnsupportedScheme != null) return _isUnsupportedScheme;
+  late final bool isUnsupportedScheme = () {
+    var specifiedUnsupported = _isUnsupportedScheme;
+    if (specifiedUnsupported != null) return specifiedUnsupported;
     bool result = true;
     try {
       // This can throw a FormatException when the URI cannot be parsed.
@@ -192,9 +188,8 @@ class Destination {
     } on FormatException {
       // Pass.
     }
-    _isUnsupportedScheme = result;
     return result;
-  }
+  }();
 
   String get statusDescription {
     if (isUnsupportedScheme) return "scheme unsupported";
@@ -212,15 +207,15 @@ class Destination {
   }
 
   Uri get uri {
-    if (_uri != null) return _uri;
+    var specifiedUri = _uri;
+    if (specifiedUri != null) return specifiedUri;
     try {
-      _uri = Uri.parse(url);
+      return _uri = Uri.parse(url);
     } on FormatException catch (e, s) {
       print("Stack trace: $s");
       throw StateError("Tried parsing '$url' as URI:\n"
           "$e");
     }
-    return _uri;
   }
 
   bool get wasTried => didNotConnect || statusCode != null;
@@ -232,9 +227,8 @@ class Destination {
   /// Returns `true` if the [fragment] (such as #something) will find it's mark
   /// on this [Destination]. If the fragment is `null` or empty, it will
   /// automatically succeed.
-  bool satisfiesFragment(String fragment) {
+  bool satisfiesFragment(String? fragment) {
     if (fragment == null || fragment == '') return true;
-    if (anchors == null) return false;
     return anchors.contains(normalizeAnchor(fragment));
   }
 
@@ -335,9 +329,10 @@ class DestinationResult {
                   current.resolve(redirect.url))
           .toString();
     }
-    if (response.headers.contentType != null) {
-      primaryType = response.headers.contentType.primaryType;
-      subType = response.headers.contentType.subType;
+    var contentType = response.headers.contentType;
+    if (contentType != null) {
+      primaryType = contentType.primaryType;
+      subType = contentType.subType;
     }
   }
 }

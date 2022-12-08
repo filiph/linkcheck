@@ -1,12 +1,10 @@
-library linkcheck.link;
-
 import 'package:linkcheck/src/destination.dart';
 import 'package:linkcheck/src/origin.dart';
 
 class Link {
-  Origin origin;
+  final Origin origin;
   Destination destination;
-  String fragment;
+  final String? fragment;
 
   /// Whether or not this link was marked as skipped.
   ///
@@ -14,7 +12,7 @@ class Link {
   /// has a match, [wasSkipped] will be `true`.
   bool wasSkipped = false;
 
-  Link(this.origin, this.destination, String fragment,
+  Link(this.origin, this.destination, String? fragment,
       [this.wasSkipped = false])
       : fragment = fragment == null || fragment.isEmpty ? null : fragment;
 
@@ -56,7 +54,7 @@ class Link {
   bool hasWarning(bool shouldCheckAnchors) =>
       (shouldCheckAnchors && breaksAnchor) || destination.hasNoMimeType;
 
-  Map<String, Object> toMap() => {
+  Map<String, Object?> toMap() => {
         "origin": origin.toMap(),
         "destination": destination.toMap(),
         "destinationAnchor": fragment,
@@ -65,6 +63,6 @@ class Link {
 
   @override
   String toString() => "$origin => $destination"
-      "${fragment == null ? '' : '#' + fragment} "
+      "${fragment == null ? '' : '#$fragment'} "
       "(${destination.statusDescription})";
 }

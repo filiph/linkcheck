@@ -1,4 +1,4 @@
-library linkcheck.parsers.html;
+import 'dart:html';
 
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
@@ -18,16 +18,20 @@ import '../worker/fetch_results.dart';
 /// Setting [parseable] to true will create a link to a destination with
 /// [Destination.isSource] set to `true`. For example, links in <a href> are
 /// often parseable (they are HTML), links in <img src> often aren't.
-Link extractLink(
-    Uri originUri,
-    Uri baseUri,
-    Element element,
-    final List<String> attributes,
-    final List<Destination> destinations,
-    bool parseable) {
-  var origin = Origin(originUri, element.sourceSpan, element.localName,
-      element.text, element.outerHtml);
-  String reference;
+Link extractLink(Uri originUri, Uri baseUri, Element element,
+    final List<String> attributes, final List<Destination> destinations,
+    {bool parseable = false}) {
+  var sourceSpan = element.sourceSpan;
+  var localName = element.localName;
+
+  if (sourceSpan == null || localName == null) {
+    throw StateError(
+        'Element $element is missing a ${#sourceSpan} or ${#localName}.');
+  }
+
+  var origin =
+      Origin(originUri, sourceSpan, localName, element.text, element.outerHtml);
+  String? reference;
   for (var attributeName in attributes) {
     reference = element.attributes[attributeName];
     if (reference != null) break;
@@ -98,8 +102,9 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   var anchors = doc
       .querySelectorAll("body [id], body [name]")
       .map((element) => element.attributes["id"] ?? element.attributes["name"])
+      .whereType<String>()
       .map(normalizeAnchor)
-      .toList();
+      .toList(growable: false);
   checked.anchors = anchors;
 
   if (ignoreLinks) {
@@ -110,9 +115,13 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   Uri baseUri = current.finalUri;
   var baseElements = doc.querySelectorAll("base[href]");
   if (baseElements.isNotEmpty) {
-    // More than one base element per page is not according to HTML specs.
-    // At the moment, we just ignore that. But TODO: solve for pages with more
-    baseUri = baseUri.resolve(baseElements.first.attributes["href"]);
+    var firstBaseHref = (baseElements.first as BaseElement?)?.href;
+
+    if (firstBaseHref != null) {
+      // More than one base element per page is not according to HTML specs.
+      // At the moment, we just ignore that. But TODO: solve for pages with more
+      baseUri = baseUri.resolve(firstBaseHref);
+    }
   }
 
   var linkElements = doc.querySelectorAll(
@@ -123,15 +132,16 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
   List<Link> links = linkElements
       .map((element) => extractLink(current.finalUri, baseUri, element,
-          const ["href", "src"], currentDestinations, true))
-      .toList();
+          const ["href", "src"], currentDestinations,
+          parseable: true))
+      .toList(growable: false);
 
   // Find resources
   var resourceElements =
       doc.querySelectorAll("link[href], [src], object[data]");
   Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
       extractLink(current.finalUri, baseUri, element,
-          const ["src", "href", "data"], currentDestinations, false));
+          const ["src", "href", "data"], currentDestinations));
 
   links.addAll(currentResourceLinks);
 

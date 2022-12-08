@@ -1,5 +1,3 @@
-library linkcheck.source;
-
 import 'package:source_span/source_span.dart';
 
 /// Origin of a link. Contains information about the exact place in a file

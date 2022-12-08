@@ -1,5 +1,3 @@
-library linkcheck.fetch_options;
-
 import 'dart:async';
 
 import '../uri_glob.dart';

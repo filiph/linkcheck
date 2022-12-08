@@ -1,5 +1,3 @@
-library linkcheck.pool;
-
 import 'dart:async';
 
 import '../destination.dart';
@@ -29,16 +27,16 @@ class Pool {
   final StreamController<FetchResults> _fetchResultsSink =
       StreamController<FetchResults>();
 
-  Stream<FetchResults> fetchResults;
+  late final Stream<FetchResults> fetchResults;
 
   final StreamController<String> _messagesSink = StreamController<String>();
 
-  Stream<String> messages;
+  late final Stream<String> messages;
 
   final StreamController<ServerInfoUpdate> _serverCheckSink =
       StreamController<ServerInfoUpdate>();
 
-  Stream<ServerInfoUpdate> serverCheckResults;
+  late final Stream<ServerInfoUpdate> serverCheckResults;
 
   bool _finished = false;
 
@@ -83,7 +81,7 @@ class Pool {
     return worker;
   }
 
-  Future<Null> close() async {
+  Future<void> close() async {
     _isShuttingDown = true;
     _healthCheckTimer.cancel();
     await Future.wait(_workers.map((worker) async {
@@ -102,42 +100,45 @@ class Pool {
         "Please make sure to wait until Pool.allWorking is false.");
   }
 
-  Future<Null> spawn() async {
+  Future<void> spawn() async {
     _workers = List<Worker>.generate(count, (i) => Worker()..name = '$i');
     await Future.wait(_workers.map((worker) => worker.spawn()));
-    _workers.forEach((worker) => worker.stream.listen((Map message) {
-          switch (message[verbKey] as String) {
-            case checkPageDoneVerb:
-              var result =
-                  FetchResults.fromMap(message[dataKey] as Map<String, Object>);
-              _fetchResultsSink.add(result);
-              worker.destinationToCheck = null;
-              return;
-            case checkServerDoneVerb:
-              var result = ServerInfoUpdate.fromMap(
-                  message[dataKey] as Map<String, Object>);
-              _serverCheckSink.add(result);
-              worker.serverToCheck = null;
-              return;
-            case infoFromWorkerVerb:
-              _messagesSink.add(message[dataKey] as String);
-              return;
-            default:
-              throw StateError("Unrecognized verb from Worker: "
-                  "${message[verbKey]}");
-          }
-        }));
+    for (var worker in _workers) {
+      worker.stream.listen((Map<dynamic, dynamic> message) {
+        switch (message[verbKey] as String) {
+          case checkPageDoneVerb:
+            var result =
+                FetchResults.fromMap(message[dataKey] as Map<String, Object>);
+            _fetchResultsSink.add(result);
+            worker.destinationToCheck = null;
+            break;
+          case checkServerDoneVerb:
+            var result = ServerInfoUpdate.fromMap(
+                message[dataKey] as Map<String, Object>);
+            _serverCheckSink.add(result);
+            worker.serverToCheck = null;
+            break;
+          case infoFromWorkerVerb:
+            _messagesSink.add(message[dataKey] as String);
+            break;
+          default:
+            throw StateError("Unrecognized verb from Worker: "
+                "${message[verbKey]}");
+        }
+      });
+    }
     _addHostGlobs();
 
     _healthCheckTimer = Timer.periodic(healthCheckFrequency, (_) async {
-      if (_isShuttingDown) return null;
+      if (_isShuttingDown) return;
       var now = DateTime.now();
       for (int i = 0; i < _workers.length; i++) {
         var worker = _workers[i];
+        var lastJobPostedWorker = _lastJobPosted[worker];
         if (!worker.idle &&
             !worker.isKilled &&
-            _lastJobPosted[worker] != null &&
-            now.difference(_lastJobPosted[worker]) > workerTimeout) {
+            lastJobPostedWorker != null &&
+            now.difference(lastJobPostedWorker) > workerTimeout) {
           _messagesSink.add("Killing unresponsive $worker");
           var destination = worker.destinationToCheck;
           var server = worker.serverToCheck;

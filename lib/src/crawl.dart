@@ -1,5 +1,3 @@
-library linkcheck.crawl;
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:io' show Stdout;
@@ -8,11 +6,11 @@ import 'package:console/console.dart';
 
 import 'destination.dart';
 import 'link.dart';
-import 'package:linkcheck/src/parsers/url_skipper.dart';
-import 'uri_glob.dart';
+import 'parsers/url_skipper.dart';
 import 'server_info.dart';
-import 'worker/pool.dart';
+import 'uri_glob.dart';
 import 'worker/fetch_results.dart';
+import 'worker/pool.dart';
 
 /// Number of isolates to create by default.
 const defaultThreads = 8;
@@ -36,8 +34,8 @@ Future<CrawlResult> crawl(
   // Redirect output to injected [stdout] for better testing.
   void print(Object message) => stdout.writeln(message);
 
-  Cursor cursor;
-  TextPen pen;
+  Cursor? cursor;
+  TextPen? pen;
   if (ansiTerm) {
     Console.init();
     cursor = Cursor();
@@ -64,7 +62,9 @@ Future<CrawlResult> crawl(
         ..isSource = true
         ..isExternal = false)
       .toSet());
-  open.forEach((destination) => bin[destination.url] = Bin.open);
+  for (var destination in open) {
+    bin[destination.url] = Bin.open;
+  }
 
   // Queue for the external destinations.
   Queue<Destination> openExternal = Queue<Destination>();
@@ -106,7 +106,7 @@ Future<CrawlResult> crawl(
 
   int count = 0;
   if (!verbose) {
-    if (ansiTerm) {
+    if (cursor != null) {
       cursor.write("Crawling: $count");
     } else {
       print("Crawling...");
@@ -116,12 +116,12 @@ Future<CrawlResult> crawl(
   // TODO:
   // - --cache for creating a .linkcheck.cache file
 
-  var allDone = Completer<Null>();
+  var allDone = Completer<void>();
 
   // Respond to Ctrl-C
-  StreamSubscription stopSignalSubscription;
+  late final StreamSubscription<void> stopSignalSubscription;
   stopSignalSubscription = stopSignal.listen((dynamic _) async {
-    if (ansiTerm) {
+    if (pen != null) {
       pen
           .text("\n")
           .red()
@@ -148,11 +148,11 @@ Future<CrawlResult> crawl(
       }
     }
 
-    bool _serverIsKnown(Destination destination) =>
+    bool serverIsKnown(Destination destination) =>
         servers.keys.contains(destination.uri.authority);
 
     Iterable<Destination> availableDestinations =
-        _zip(open.where(_serverIsKnown), openExternal.where(_serverIsKnown));
+        _zip(open.where(serverIsKnown), openExternal.where(serverIsKnown));
 
     // In order not to touch the underlying iterables, we keep track
     // of the destinations we want to remove.
@@ -164,8 +164,8 @@ Future<CrawlResult> crawl(
       destinationsToRemove.add(destination);
 
       String host = destination.uri.authority;
-      ServerInfo server = servers[host];
-      if (server.hasNotConnected) {
+      ServerInfo? server = servers[host];
+      if (server == null || server.hasNotConnected) {
         destination.didNotConnect = true;
         closed.add(destination);
         bin[destination.url] = Bin.closed;
@@ -176,8 +176,9 @@ Future<CrawlResult> crawl(
         continue;
       }
 
-      if (server.bouncer != null &&
-          !server.bouncer.allows(destination.uri.path)) {
+      var serverBouncer = server.bouncer;
+      if (serverBouncer != null &&
+          !serverBouncer.allows(destination.uri.path)) {
         destination.wasDeniedByRobotsTxt = true;
         closed.add(destination);
         bin[destination.url] = Bin.closed;
@@ -236,7 +237,7 @@ Future<CrawlResult> crawl(
           "${result.didNotConnect ? 'didn\'t connect' : 'connected'}, "
           "${result.robotsTxtContents.isEmpty ? 'no robots.txt' : 'robots.txt found'}.");
     } else {
-      if (ansiTerm) {
+      if (cursor != null) {
         cursor.moveLeft(count.toString().length);
         count += 1;
         cursor.write(count.toString());
@@ -292,7 +293,7 @@ Future<CrawlResult> crawl(
         print("- BROKEN");
       }
     } else {
-      if (ansiTerm) {
+      if (cursor != null) {
         cursor.moveLeft(count.toString().length);
         count += 1;
         cursor.write(count.toString());
@@ -436,11 +437,13 @@ Future<CrawlResult> crawl(
   }
 
   // Fix links (dedupe destinations).
-  var urlMap = Map<String, Destination>.fromIterable(closed,
-      key: (Object dest) => (dest as Destination).url);
+  var urlMap = {
+    for (final destination in closed)
+      destination.url : destination
+  };
   for (var link in links) {
     var canonical = urlMap[link.destination.url];
-    // Note: If it wasn't for the posibility to SIGINT the process, we could
+    // Note: If it wasn't for the possibility to SIGINT the process, we could
     // assert there is exactly one Destination per URL. There might not be,
     // though.
     if (canonical != null) {

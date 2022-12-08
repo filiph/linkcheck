@@ -3,7 +3,6 @@
 # Files and directories created by pub
 .buildlog
 .dart_tool/
-.packages
 .project
 .pub/
 build/

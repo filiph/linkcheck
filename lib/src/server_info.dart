@@ -1,5 +1,3 @@
-library linkcheck.server_info;
-
 import 'parsers/robots_txt.dart';
 
 const robotName = "linkcheck";
@@ -11,11 +9,11 @@ class ServerInfo {
   /// No duration.
   static const immediate = Duration();
 
-  String host;
+  final String host;
 
-  int port;
+  final int? port;
 
-  RobotsBouncer bouncer;
+  RobotsBouncer? bouncer;
 
   /// The total count of connection attempts, both successful and failed.
   int connectionAttempts = 0;
@@ -39,7 +37,7 @@ class ServerInfo {
   /// or 405).
   bool hasFailedHeadRequest = false;
 
-  DateTime _lastRequest;
+  DateTime? _lastRequest;
 
   ServerInfo(String authority)
       : host = authority.split(':').first,
@@ -57,9 +55,10 @@ class ServerInfo {
   /// Creates the minimum duration to wait before the server should be bothered
   /// again.
   Duration getThrottlingDuration() {
-    if (_lastRequest == null) return immediate;
+    var lastRequest = _lastRequest;
+    if (lastRequest == null) return immediate;
     if (isLocalhost) return immediate;
-    var sinceLastRequest = DateTime.now().difference(_lastRequest);
+    var sinceLastRequest = DateTime.now().difference(lastRequest);
     if (sinceLastRequest.isNegative) {
       // There's a request scheduled in the future.
       return -sinceLastRequest + minimumDelay;
@@ -83,7 +82,7 @@ class ServerInfo {
         forRobot: robotName);
   }
 
-  void updateFromStatusCode(int statusCode) {
+  void updateFromStatusCode(int? statusCode) {
     connectionAttempts += 1;
     if (statusCode == null) {
       didNotConnectCount += 1;
@@ -108,16 +107,19 @@ class ServerInfo {
 
 /// To be sent from Worker to main thread.
 class ServerInfoUpdate {
-  String host;
-  bool didNotConnect = false;
-  String robotsTxtContents = "";
+  final String host;
+  final bool didNotConnect;
+  final String robotsTxtContents;
 
-  ServerInfoUpdate(this.host);
+  ServerInfoUpdate(this.host,
+      {this.robotsTxtContents = '', this.didNotConnect = false});
+
+  ServerInfoUpdate.didNotConnect(String host) : this(host, didNotConnect: true);
+
   ServerInfoUpdate.fromMap(Map<String, Object> map)
-      : this._(map["host"] as String, map["robots"] as String,
-            map["didNotConnect"] as bool);
-
-  ServerInfoUpdate._(this.host, this.robotsTxtContents, this.didNotConnect);
+      : this(map["host"] as String,
+            robotsTxtContents: ["robots"] as String,
+            didNotConnect: map["didNotConnect"] as bool);
 
   Map<String, Object> toMap() => {
         "host": host,

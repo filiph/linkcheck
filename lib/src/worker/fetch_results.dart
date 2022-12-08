@@ -1,5 +1,3 @@
-library linkcheck.fetch_results;
-
 import '../destination.dart';
 import '../link.dart';
 

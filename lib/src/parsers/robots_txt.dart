@@ -1,5 +1,3 @@
-library linkcheck.parsers.robots_txt;
-
 class RobotsBouncer {
   /// The shortest possible identifying part of the user agent.
   ///
@@ -12,8 +10,6 @@ class RobotsBouncer {
       : robotName = forRobot {
     const userAgentString = "User-agent:";
     const disallowString = "Disallow:";
-
-    assert(robotName != null);
 
     Set<String> currentUserAgents = {};
     Set<String> currentPaths = {};

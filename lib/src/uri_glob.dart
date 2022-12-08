@@ -1,5 +1,3 @@
-library linkcheck.uri_glob;
-
 import 'package:glob/glob.dart';
 import 'package:path/path.dart';
 

@@ -1,3 +1,8 @@
+## 3.0.0
+
+- Require Dart 2.18 and support Dart 3
+- Rename library to `linkcheck` instead of `linkcheck.run`
+
 ## 2.0.23
 
 - Fix another issue with building artifacts through `grindr`/`cli_pkg`
