@@ -13,7 +13,7 @@ final _scheme = RegExp(r"$(\w[\w\-]*\w):");
 /// component.
 bool checkSchemeSupported(String url, Uri source) {
   var match = _scheme.firstMatch(url);
-  String scheme;
+  String? scheme;
   if (match == null) {
     // No scheme provided, so the source's scheme is used.
     scheme = source.scheme;
@@ -25,13 +25,12 @@ bool checkSchemeSupported(String url, Uri source) {
 }
 
 class BasicRedirectInfo {
-  String url;
-  int statusCode;
+  final String url;
+  final int statusCode;
 
-  BasicRedirectInfo.from(RedirectInfo info) {
-    url = info.location.toString();
-    statusCode = info.statusCode;
-  }
+  BasicRedirectInfo.from(RedirectInfo info)
+      : url = info.location.toString(),
+        statusCode = info.statusCode;
 
   BasicRedirectInfo.fromMap(Map<String, Object> map)
       : url = map["url"] as String,
@@ -55,12 +54,12 @@ class Destination {
   /// MimeType of the response.
   ContentType? contentType;
 
-  final List<BasicRedirectInfo> redirects;
+  List<BasicRedirectInfo> redirects = [];
 
   /// Url after all redirects.
   String? finalUrl;
 
-  bool isExternal;
+  bool isExternal = true;
 
   /// True if this [Destination] is parseable and could contain links to
   /// other destinations. For example, HTML and CSS files are sources. JPEGs
@@ -70,7 +69,7 @@ class Destination {
   /// Set of anchors on the page.
   ///
   /// Only for [isSource] == `true`.
-  final List<String> anchors;
+  List<String> anchors = [];
 
   /// If the URL is unparseable (malformed), this will be `true`.
   bool isInvalid = false;
@@ -86,8 +85,6 @@ class Destination {
   //     them via toMap?
   bool wasDeniedByRobotsTxt = false;
 
-  int _hashCode;
-
   Uri? _finalUri;
 
   /// The encoding is not UTF-8 or LATIN-1.
@@ -102,45 +99,41 @@ class Destination {
 
   Destination(Uri uri)
       : url = uri.removeFragment().toString(),
-        _uri = uri.removeFragment() {
-    _hashCode = url.hashCode;
-  }
+        _uri = uri.removeFragment();
 
-  factory Destination.fromMap(Map<String, Object> map) {
+  factory Destination.fromMap(Map<String, Object?> map) {
     var destination = Destination.fromString(map["url"] as String);
-    var contentType = map["primaryType"] == null
+    var primaryType = map['primaryType'] as String?;
+    var subType = map['subType'] as String?;
+    var contentType = primaryType == null || subType == null
         ? null
-        : ContentType(map["primaryType"] as String, map["subType"] as String);
+        : ContentType(primaryType, subType);
     destination
-      ..statusCode = map["statusCode"] as int
+      ..statusCode = map["statusCode"] as int?
       ..contentType = contentType
       ..redirects = (map["redirects"] as List<Map<String, Object>>?)
               ?.map(BasicRedirectInfo.fromMap)
               .toList(growable: false) ??
           const []
-      ..finalUrl = map["finalUrl"] as String
-      ..isExternal = map["isExternal"] as bool
-      ..isSource = map["isSource"] as bool
+      ..finalUrl = map["finalUrl"] as String?
+      ..isExternal = map["isExternal"] as bool? ?? true
+      ..isSource = map["isSource"] as bool? ?? false
       ..anchors = map["anchors"] as List<String>? ?? const []
-      ..isInvalid = map["isInvalid"] as bool
-      ..didNotConnect = map["didNotConnect"] as bool
-      ..wasParsed = map["wasParsed"] as bool
-      ..hasUnsupportedEncoding = map["hasUnsupportedEncoding"] as bool;
+      ..isInvalid = map["isInvalid"] as bool? ?? false
+      ..didNotConnect = map["didNotConnect"] as bool? ?? false
+      ..wasParsed = map["wasParsed"] as bool? ?? false
+      ..hasUnsupportedEncoding =
+          map["hasUnsupportedEncoding"] as bool? ?? false;
     return destination;
   }
 
   Destination.fromString(String url)
-      : url = url.contains("#") ? url.split("#").first : url {
-    _hashCode = this.url.hashCode;
-  }
+      : url = url.contains("#") ? url.split("#").first : url;
 
-  Destination.invalid(this.url) : isInvalid = true {
-    _hashCode = url.hashCode;
-  }
+  Destination.invalid(this.url) : isInvalid = true;
 
   Destination.unsupported(this.url) {
     _isUnsupportedScheme = true;
-    _hashCode = url.hashCode;
   }
 
   // TODO: make sure we don't assign the same hashcode to two destinations like
@@ -149,7 +142,7 @@ class Destination {
   Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
 
   @override
-  int get hashCode => _hashCode;
+  int get hashCode => url.hashCode;
 
   /// A bad or busted server didn't give us any content type. This is a warning.
   bool get hasNoMimeType => wasTried && contentType == null;
@@ -232,12 +225,13 @@ class Destination {
     return anchors.contains(normalizeAnchor(fragment));
   }
 
-  Map<String, Object> toMap() => {
+  Map<String, Object?> toMap() => {
         "url": url,
         "statusCode": statusCode,
         "primaryType": contentType?.primaryType,
         "subType": contentType?.subType,
-        "redirects": redirects?.map((info) => info.toMap())?.toList(),
+        "redirects":
+            redirects.map((info) => info.toMap()).toList(growable: false),
         "finalUrl": finalUrl,
         "isExternal": isExternal,
         "isSource": isSource,
@@ -255,9 +249,11 @@ class Destination {
     assert(url == result.url);
     finalUrl = result.finalUrl;
     statusCode = result.statusCode;
-    contentType = result.primaryType == null
+    var primaryType = result.primaryType;
+    var subType = result.subType;
+    contentType = primaryType == null || subType == null
         ? null
-        : ContentType(result.primaryType, result.subType);
+        : ContentType(primaryType, subType);
     redirects = result.redirects;
     isSource = result.isSource;
     anchors = result.anchors;
@@ -270,10 +266,10 @@ class Destination {
 /// Data about destination coming from a fetch.
 class DestinationResult {
   String url;
-  String finalUrl;
-  int statusCode;
-  String primaryType;
-  String subType;
+  String? finalUrl;
+  int? statusCode;
+  String? primaryType;
+  String? subType;
   List<BasicRedirectInfo> redirects;
   bool isSource = false;
   List<String> anchors;
@@ -284,24 +280,26 @@ class DestinationResult {
   DestinationResult.fromDestination(Destination destination)
       : url = destination.url,
         isSource = destination.isSource,
-        redirects = [];
+        redirects = [],
+        anchors = [];
 
-  DestinationResult.fromMap(Map<String, Object> map)
+  DestinationResult.fromMap(Map<String, Object?> map)
       : url = map["url"] as String,
-        finalUrl = map["finalUrl"] as String,
-        statusCode = map["statusCode"] as int,
-        primaryType = map["primaryType"] as String,
-        subType = map["subType"] as String,
+        finalUrl = map["finalUrl"] as String?,
+        statusCode = map["statusCode"] as int?,
+        primaryType = map["primaryType"] as String?,
+        subType = map["subType"] as String?,
         redirects = (map["redirects"] as List<Map<String, Object>>)
             .map((obj) => BasicRedirectInfo.fromMap(obj))
             .toList(),
-        isSource = map["isSource"] as bool,
-        anchors = map["anchors"] as List<String>,
-        didNotConnect = map["didNotConnect"] as bool,
-        wasParsed = map["wasParsed"] as bool,
-        hasUnsupportedEncoding = map["hasUnsupportedEncoding"] as bool;
+        isSource = map["isSource"] as bool? ?? false,
+        anchors = map["anchors"] as List<String>? ?? const [],
+        didNotConnect = map["didNotConnect"] as bool? ?? false,
+        wasParsed = map["wasParsed"] as bool? ?? false,
+        hasUnsupportedEncoding =
+            map["hasUnsupportedEncoding"] as bool? ?? false;
 
-  Map<String, Object> toMap() => {
+  Map<String, Object?> toMap() => {
         "url": url,
         "finalUrl": finalUrl,
         "statusCode": statusCode,

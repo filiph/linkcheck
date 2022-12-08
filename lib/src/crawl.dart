@@ -288,7 +288,7 @@ Future<CrawlResult> crawl(
     if (verbose) {
       count += 1;
       print("Done checking: $checked (${checked.statusDescription}) "
-          "=> ${result?.links?.length ?? 0} links");
+          "=> ${result.links.length} links");
       if (checked.isBroken) {
         print("- BROKEN");
       }
@@ -437,10 +437,7 @@ Future<CrawlResult> crawl(
   }
 
   // Fix links (dedupe destinations).
-  var urlMap = {
-    for (final destination in closed)
-      destination.url : destination
-  };
+  var urlMap = {for (final destination in closed) destination.url: destination};
   for (var link in links) {
     var canonical = urlMap[link.destination.url];
     // Note: If it wasn't for the possibility to SIGINT the process, we could
