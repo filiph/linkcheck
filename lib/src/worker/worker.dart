@@ -241,9 +241,7 @@ Future<StreamChannel<Map<String, Object>>> _spawnWorker() async {
 }
 
 class Worker {
-  StreamChannel<Map<String, Object>> _channel;
-  StreamSink<Map<String, Object>> _sink;
-  Stream<Map<String, Object>> _stream;
+  StreamChannel<Map<String, Object>>? _channel;
 
   final String name;
 
@@ -265,26 +263,27 @@ class Worker {
 
   bool get isKilled => _isKilled;
 
-  StreamSink<Map<String, Object>> get sink => _sink;
+  StreamSink<Map<String, Object>> get sink => _channel!.sink;
   bool get spawned => _spawned;
 
-  Stream<Map<String, Object>> get stream => _stream;
+  Stream<Map<String, Object>> get stream => _channel!.stream;
 
   Future<void> kill() async {
     if (!_spawned) return;
     _isKilled = true;
-    sink.add(dieMessage);
-    await sink.close();
+    var sinkToClose = sink;
+    sinkToClose.add(dieMessage);
+    await sinkToClose.close();
   }
 
   Future<void> spawn() async {
     assert(_channel == null);
     _channel = await _spawnWorker();
-    _sink = _channel.sink;
-    _stream = _channel.stream;
     _spawned = true;
   }
 
   @override
-  String toString() => "Worker<$name>";
+  String toString() => 'Worker<$name>';
 }
+
+class SpawnedWorker {}
