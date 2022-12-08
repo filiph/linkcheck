@@ -183,7 +183,7 @@ void worker(SendPort port) {
         return;
       case checkPageVerb:
         Destination destination =
-            Destination.fromMap(message[dataKey] as Map<String, Object>);
+            Destination.fromMap(message[dataKey] as Map<String, Object?>);
         var results = await checkPage(destination, client, options);
         if (alive) {
           sink.add({verbKey: checkPageDoneVerb, dataKey: results.toMap()});

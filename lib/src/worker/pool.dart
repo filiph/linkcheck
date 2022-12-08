@@ -88,7 +88,6 @@ class Pool {
       await worker.kill();
     }));
     _finished = true;
-    _workers.clear();
   }
 
   /// Finds the worker with the least amount of jobs.

@@ -6,13 +6,13 @@ class FetchResults {
   final List<Link> links;
   FetchResults(this.checked, this.links);
 
-  FetchResults.fromMap(Map<String, Object> map)
+  FetchResults.fromMap(Map<String, Object?> map)
       : this(
             DestinationResult.fromMap(
-                map["checked"] as Map<String, Object>? ?? const {}),
+                map["checked"] as Map<String, Object?>? ?? {}),
             List<Link>.from((map["links"] as List<Map>? ?? const []).map<Link>(
-                (serialization) =>
-                    Link.fromMap(serialization as Map<String, Object>))));
+                (serialization) => Link.fromMap(
+                    serialization as Map<String, Object?> ?? {}))));
 
   Map<String, Object> toMap() => {
         "checked": checked.toMap(),

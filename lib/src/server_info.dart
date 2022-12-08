@@ -116,9 +116,9 @@ class ServerInfoUpdate {
 
   ServerInfoUpdate.didNotConnect(String host) : this(host, didNotConnect: true);
 
-  ServerInfoUpdate.fromMap(Map<String, Object> map)
+  ServerInfoUpdate.fromMap(Map<String, Object?> map)
       : this(map["host"] as String,
-            robotsTxtContents: ["robots"] as String,
+            robotsTxtContents: map["robots"] as String,
             didNotConnect: map["didNotConnect"] as bool);
 
   Map<String, Object> toMap() => {

@@ -16,11 +16,11 @@ class Link {
       [this.wasSkipped = false])
       : fragment = fragment == null || fragment.isEmpty ? null : fragment;
 
-  Link.fromMap(Map<String, Object> map)
+  Link.fromMap(Map<String, Object?> map)
       : this(
-            Origin.fromMap(map["origin"] as Map<String, Object>),
-            Destination.fromMap(map["destination"] as Map<String, Object>),
-            map["destinationAnchor"] as String,
+            Origin.fromMap(map["origin"] as Map<String, Object?>),
+            Destination.fromMap(map["destination"] as Map<String, Object?>),
+            map["destinationAnchor"] as String?,
             map["wasSkipped"] as bool);
 
   bool get breaksAnchor =>

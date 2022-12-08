@@ -11,7 +11,7 @@ class Origin {
 
   Origin(this.uri, this.span, this.tagName, this.text, this.outerHtml);
 
-  Origin.fromMap(Map<String, Object> map)
+  Origin.fromMap(Map<String, Object?> map)
       : this(
             Uri.parse(map["uri"] as String),
             _deserializeSpan(map["span"] as Map<String, Object>),

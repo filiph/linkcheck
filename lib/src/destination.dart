@@ -32,7 +32,7 @@ class BasicRedirectInfo {
       : url = info.location.toString(),
         statusCode = info.statusCode;
 
-  BasicRedirectInfo.fromMap(Map<String, Object> map)
+  BasicRedirectInfo.fromMap(Map<String, Object?> map)
       : url = map["url"] as String,
         statusCode = map["statusCode"] as int;
 

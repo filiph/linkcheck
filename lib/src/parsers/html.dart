@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 
@@ -115,7 +113,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
   Uri baseUri = current.finalUri;
   var baseElements = doc.querySelectorAll("base[href]");
   if (baseElements.isNotEmpty) {
-    var firstBaseHref = (baseElements.first as BaseElement?)?.href;
+    var firstBaseHref = baseElements.first.attributes["href"];
 
     if (firstBaseHref != null) {
       // More than one base element per page is not according to HTML specs.
@@ -134,7 +132,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
       .map((element) => extractLink(current.finalUri, baseUri, element,
           const ["href", "src"], currentDestinations,
           parseable: true))
-      .toList(growable: false);
+      .toList();
 
   // Find resources
   var resourceElements =
