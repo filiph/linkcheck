@@ -11,8 +11,8 @@ class FetchResults {
             DestinationResult.fromMap(
                 map["checked"] as Map<String, Object?>? ?? {}),
             List<Link>.from((map["links"] as List<Map>? ?? const []).map<Link>(
-                (serialization) => Link.fromMap(
-                    serialization as Map<String, Object?> ?? {}))));
+                (serialization) =>
+                    Link.fromMap(serialization as Map<String, Object?>))));
 
   Map<String, Object> toMap() => {
         "checked": checked.toMap(),

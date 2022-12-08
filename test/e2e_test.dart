@@ -1,5 +1,3 @@
-library linkcheck.e2e_test;
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
