@@ -209,10 +209,10 @@ void main() {
   }, tags: ["integration"]);
 }
 
-var directory = path.absolute(path.dirname(scriptPath));
-var scriptPath = scriptUri.toFilePath();
+String directory = path.absolute(path.dirname(scriptPath));
+String scriptPath = scriptUri.toFilePath();
 
-var scriptUri = Platform.script;
+Uri scriptUri = Platform.script;
 
 String getServingPath(int caseNumber) =>
     path.join(directory, "case$caseNumber");
@@ -264,7 +264,7 @@ class _MockStdout implements Stdout {
   }
 
   @override
-  void addError(error, [StackTrace? stackTrace]) {
+  Never addError(Object error, [StackTrace? stackTrace]) {
     throw error;
 //    _sink.addError(error, stackTrace);
   }

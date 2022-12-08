@@ -1,6 +1,6 @@
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
-import 'package:linkcheck/src/parsers/html.dart';
+import 'parsers/html.dart';
 
 /// RegExp for detecting URI scheme, such as `http:`, `mailto:`, etc.
 final _scheme = RegExp(r"$(\w[\w\-]*\w):");

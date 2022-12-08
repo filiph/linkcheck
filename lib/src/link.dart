@@ -1,5 +1,5 @@
-import 'package:linkcheck/src/destination.dart';
-import 'package:linkcheck/src/origin.dart';
+import 'destination.dart';
+import 'origin.dart';
 
 class Link {
   final Origin origin;
