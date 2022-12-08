@@ -8,7 +8,7 @@ void main() {
     var sink = StreamController<Map<String, Object>>();
     var options = FetchOptions(sink);
     Uri uri = Uri.parse("http://localhost:4000/");
-    options.addHostGlobs([uri.toString() + "**"]);
+    options.addHostGlobs(["$uri**"]);
     expect(options.matchesAsInternal(uri), isTrue);
     sink.close();
   });
@@ -17,7 +17,7 @@ void main() {
     var sink = StreamController<Map<String, Object>>();
     var options = FetchOptions(sink);
     Uri uri = Uri.parse("http://localhost:4000/guides");
-    options.addHostGlobs([uri.toString() + "**"]);
+    options.addHostGlobs(["$uri**"]);
     expect(options.matchesAsInternal(uri), isTrue);
     sink.close();
   });

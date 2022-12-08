@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 // Get the directory of the script being run.
 void main() {
   group("linkcheck e2e", () {
-    _MockStdout out;
+    late _MockStdout out;
     int port = 4321;
 
     setUp(() {
@@ -224,14 +224,14 @@ class _MockStdout implements Stdout {
   StringBuffer buf = StringBuffer();
 
   @override
-  final Encoding encoding = Encoding.getByName("utf-8");
+  final Encoding encoding = const Utf8Codec();
 
   _MockStdout() {
 //    _sink = _controller.sink;
   }
 
   @override
-  Future get done => throw UnimplementedError();
+  Never get done => throw UnimplementedError();
 
   @override
   set encoding(Encoding encoding) {
@@ -264,36 +264,36 @@ class _MockStdout implements Stdout {
   }
 
   @override
-  void addError(error, [StackTrace stackTrace]) {
+  void addError(error, [StackTrace? stackTrace]) {
     throw error;
 //    _sink.addError(error, stackTrace);
   }
 
   @override
-  Future addStream(Stream<List<int>> stream) => throw UnimplementedError();
+  Never addStream(Stream<List<int>> stream) => throw UnimplementedError();
 
   void clearOutput() {
     buf.clear();
   }
 
   @override
-  Future close() async {
+  Future<void> close() async {
 //    await _sink.close();
 //    await _controller.close();
   }
 
   @override
-  Future flush() => throw UnimplementedError();
+  Never flush() => throw UnimplementedError();
 
   @override
-  void write(Object object) {
+  void write(Object? object) {
     String string = '$object';
     buf.write(string);
   }
 
   @override
-  void writeAll(Iterable objects, [String sep = ""]) {
-    Iterator iterator = objects.iterator;
+  void writeAll(Iterable<dynamic> objects, [String sep = ""]) {
+    var iterator = objects.iterator;
     if (!iterator.moveNext()) return;
     if (sep.isEmpty) {
       do {
@@ -314,7 +314,8 @@ class _MockStdout implements Stdout {
   }
 
   @override
-  void writeln([Object object = ""]) {
+  void writeln([Object? object]) {
+    object ??= '';
     write(object);
     write("\n");
   }

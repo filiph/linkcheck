@@ -285,7 +285,3 @@ class Worker {
   @override
   String toString() => "Worker<$name>";
 }
-
-class _SpawnedWorker {
-
-}
