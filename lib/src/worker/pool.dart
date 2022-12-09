@@ -66,7 +66,8 @@ class Pool {
     worker.destinationToCheck = destination;
     Timer(delay, () {
       if (_isShuttingDown) return;
-      worker.sink.add({verbKey: checkPageVerb, dataKey: destination.toMap()});
+      worker.sink
+          .add(WorkerTask(verb: WorkerVerb.checkPage, data: destination));
     });
     return worker;
   }
@@ -74,7 +75,7 @@ class Pool {
   /// Starts a job to send request for /robots.txt on the server.
   Worker checkServer(String host) {
     var worker = pickWorker();
-    worker.sink.add({verbKey: checkServerVerb, dataKey: host});
+    worker.sink.add(WorkerTask(verb: WorkerVerb.checkServer, data: host));
     worker.serverToCheck = host;
     _lastJobPosted[worker] = DateTime.now();
     return worker;
@@ -102,26 +103,24 @@ class Pool {
   Future<void> spawn() async {
     await Future.wait(_workers.map((worker) => worker.spawn()));
     for (var worker in _workers) {
-      worker.stream.listen((Map<dynamic, dynamic> message) {
-        switch (message[verbKey] as String) {
-          case checkPageDoneVerb:
-            var result =
-                FetchResults.fromMap(message[dataKey] as Map<String, Object>);
+      worker.stream.listen((WorkerTask message) {
+        switch (message.verb) {
+          case WorkerVerb.checkPageDone:
+            var result = message.data as FetchResults;
             _fetchResultsSink.add(result);
             worker.destinationToCheck = null;
             break;
-          case checkServerDoneVerb:
-            var result = ServerInfoUpdate.fromMap(
-                message[dataKey] as Map<String, Object>);
+          case WorkerVerb.checkServerDone:
+            var result = message.data as ServerInfoUpdate;
             _serverCheckSink.add(result);
             worker.serverToCheck = null;
             break;
-          case infoFromWorkerVerb:
-            _messagesSink.add(message[dataKey] as String);
+          case WorkerVerb.infoFromWorker:
+            _messagesSink.add(message.data as String);
             break;
           default:
             throw StateError("Unrecognized verb from Worker: "
-                "${message[verbKey]}");
+                "${message.verb}");
         }
       });
     }
@@ -175,10 +174,9 @@ class Pool {
   /// Sends host globs (e.g. http://example.com/**) to all the workers.
   void _addHostGlobs() {
     for (var worker in _workers) {
-      worker.sink.add({
-        verbKey: addHostGlobVerb,
-        dataKey: _hostGlobs.toList(growable: false)
-      });
+      worker.sink.add(WorkerTask(
+          verb: WorkerVerb.addHostGlob,
+          data: _hostGlobs.toList(growable: false)));
     }
   }
 }

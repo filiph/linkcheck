@@ -9,7 +9,7 @@ class FetchOptions {
   final headIncompatible = <String>{}; // TODO: send to main
   // TODO: hashmap of known problematic servers etc. = List<String,ServerInfo>
 
-  final StreamSink<Map<String, Object>> _sink;
+  final StreamSink<WorkerTask> _sink;
 
   FetchOptions(this._sink);
 
@@ -20,7 +20,7 @@ class FetchOptions {
   }
 
   void info(String message) {
-    _sink.add(<String, Object>{verbKey: infoFromWorkerVerb, dataKey: message});
+    _sink.add(WorkerTask(verb: WorkerVerb.infoFromWorker, data: message));
   }
 
   /// Returns true if the provided [uri] should be considered internal. This

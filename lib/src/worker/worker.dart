@@ -13,20 +13,9 @@ import '../server_info.dart';
 import 'fetch_options.dart';
 import 'fetch_results.dart';
 
-const addHostGlobVerb = "ADD_HOST";
-const checkPageDoneVerb = "CHECK_DONE";
-const checkPageVerb = "CHECK";
-const checkServerDoneVerb = "SERVER_CHECK_DONE";
-const checkServerVerb = "CHECK_SERVER";
-const dataKey = "data";
-final dieMessage = {verbKey: dieVerb};
-const dieVerb = "DIE";
-const infoFromWorkerVerb = "INFO_FROM_WORKER";
-final unrecognizedMessage = {verbKey: unrecognizedVerb};
-const unrecognizedVerb = "UNRECOGNIZED";
+const dieMessage = WorkerTask(verb: WorkerVerb.die);
+const unrecognizedMessage = WorkerTask(verb: WorkerVerb.unrecognized);
 const userAgent = "linkcheck tool (https://github.com/filiph/linkcheck)";
-
-const verbKey = "message";
 
 Future<ServerInfoUpdate> checkServer(
     String host, HttpClient client, FetchOptions options) async {
@@ -165,7 +154,7 @@ Future<FetchResults> checkPage(
 
 /// The entrypoint for the worker isolate.
 void worker(SendPort port) {
-  var channel = IsolateChannel<Map<String, Object>>.connectSend(port);
+  var channel = IsolateChannel<WorkerTask>.connectSend(port);
   var sink = channel.sink;
   var stream = channel.stream;
 
@@ -174,30 +163,29 @@ void worker(SendPort port) {
 
   bool alive = true;
 
-  stream.listen((Map<String, Object> message) async {
-    switch (message[verbKey] as String) {
-      case dieVerb:
+  stream.listen((WorkerTask message) async {
+    switch (message.verb) {
+      case WorkerVerb.die:
         client.close(force: true);
         alive = false;
         await sink.close();
         return;
-      case checkPageVerb:
-        Destination destination =
-            Destination.fromMap(message[dataKey] as Map<String, Object?>);
+      case WorkerVerb.checkPage:
+        var destination = message.data as Destination;
         var results = await checkPage(destination, client, options);
         if (alive) {
-          sink.add({verbKey: checkPageDoneVerb, dataKey: results.toMap()});
+          sink.add(WorkerTask(verb: WorkerVerb.checkPageDone, data: results));
         }
         return;
-      case checkServerVerb:
-        String host = message[dataKey] as String;
+      case WorkerVerb.checkServer:
+        String host = message.data as String;
         ServerInfoUpdate results = await checkServer(host, client, options);
         if (alive) {
-          sink.add({verbKey: checkServerDoneVerb, dataKey: results.toMap()});
+          sink.add(WorkerTask(verb: WorkerVerb.checkServerDone, data: results));
         }
         return;
-      case addHostGlobVerb:
-        options.addHostGlobs(message[dataKey] as List<String>);
+      case WorkerVerb.addHostGlob:
+        options.addHostGlobs(message.data as List<String>);
         return;
       // TODO: add to server info from main isolate
       default:
@@ -234,14 +222,14 @@ Future<HttpClientResponse?> _fetchHead(HttpClient client, Uri uri) async {
 
 /// Spawns a worker isolate and returns a [StreamChannel] for communicating with
 /// it.
-Future<StreamChannel<Map<String, Object>>> _spawnWorker() async {
+Future<StreamChannel<WorkerTask>> _spawnWorker() async {
   var port = ReceivePort();
   await Isolate.spawn(worker, port.sendPort);
-  return IsolateChannel<Map<String, Object>>.connectReceive(port);
+  return IsolateChannel<WorkerTask>.connectReceive(port);
 }
 
 class Worker {
-  StreamChannel<Map<String, Object>>? _channel;
+  StreamChannel<WorkerTask>? _channel;
 
   final String name;
 
@@ -263,10 +251,10 @@ class Worker {
 
   bool get isKilled => _isKilled;
 
-  StreamSink<Map<String, Object>> get sink => _channel!.sink;
+  StreamSink<WorkerTask> get sink => _channel!.sink;
   bool get spawned => _spawned;
 
-  Stream<Map<String, Object>> get stream => _channel!.stream;
+  Stream<WorkerTask> get stream => _channel!.stream;
 
   Future<void> kill() async {
     if (!_spawned) return;
@@ -286,4 +274,20 @@ class Worker {
   String toString() => 'Worker<$name>';
 }
 
-class SpawnedWorker {}
+class WorkerTask {
+  final WorkerVerb verb;
+  final Object? data;
+
+  const WorkerTask({required this.verb, this.data});
+}
+
+enum WorkerVerb {
+  addHostGlob,
+  checkPage,
+  checkPageDone,
+  checkServer,
+  checkServerDone,
+  die,
+  infoFromWorker,
+  unrecognized
+}

@@ -10,6 +10,7 @@ linter:
   rules:
     - always_declare_return_types
     - comment_references
+    - prefer_final_fields
     - type_annotate_public_apis
     - unawaited_futures
     - use_enums

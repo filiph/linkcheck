@@ -16,13 +16,6 @@ class Link {
       [this.wasSkipped = false])
       : fragment = fragment == null || fragment.isEmpty ? null : fragment;
 
-  Link.fromMap(Map<String, Object?> map)
-      : this(
-            Origin.fromMap(map["origin"] as Map<String, Object?>),
-            Destination.fromMap(map["destination"] as Map<String, Object?>),
-            map["destinationAnchor"] as String?,
-            map["wasSkipped"] as bool);
-
   bool get breaksAnchor =>
       !wasSkipped &&
       destination.wasParsed &&
@@ -53,13 +46,6 @@ class Link {
 
   bool hasWarning(bool shouldCheckAnchors) =>
       (shouldCheckAnchors && breaksAnchor) || destination.hasNoMimeType;
-
-  Map<String, Object?> toMap() => {
-        "origin": origin.toMap(),
-        "destination": destination.toMap(),
-        "destinationAnchor": fragment,
-        "wasSkipped": wasSkipped
-      };
 
   @override
   String toString() => "$origin => $destination"

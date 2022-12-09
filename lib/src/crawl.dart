@@ -260,7 +260,7 @@ Future<CrawlResult> crawl(
     if (destinations.isEmpty) {
       if (verbose) {
         print("WARNING: Received result for a destination that isn't in "
-            "the inProgress set: ${result.toMap()}");
+            "the inProgress set: $result");
         var isInOpen =
             open.where((dest) => dest.url == result.checked.url).isNotEmpty;
         var isInOpenExternal = openExternal
