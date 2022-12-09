@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io' hide Link;
 import 'dart:isolate';
 
+import 'package:meta/meta.dart';
 import 'package:stream_channel/isolate_channel.dart';
 import 'package:stream_channel/stream_channel.dart';
 
@@ -76,17 +77,15 @@ Future<ServerInfoUpdate> checkServer(
 
 Future<FetchResults> checkPage(
     Destination current, HttpClient client, FetchOptions options) async {
-  DestinationResult checked = DestinationResult.fromDestination(current);
   var uri = current.uri;
 
   // Fetch the HTTP response
   HttpClientResponse? response;
   try {
-    if (!current.isSource &&
-        !options.headIncompatible.contains(current.uri.host)) {
+    if (!current.isSource && !options.headIncompatible.contains(uri.host)) {
       response = await _fetchHead(client, uri);
       if (response == null) {
-        options.headIncompatible.add(current.uri.host);
+        options.headIncompatible.add(uri.host);
         // TODO: let main isolate know (options.addHeadIncompatible)
       }
     }
@@ -104,26 +103,28 @@ Future<FetchResults> checkPage(
 
   if (response == null) {
     // Request failed completely.
-    checked.didNotConnect = true;
-    return FetchResults(checked, const []);
+    var checked =
+        DestinationResult.fromDestination(current, didNotConnect: true);
+    return FetchResults(checked);
   }
 
-  checked.updateFromResponse(response);
+  DestinationResult checked = DestinationResult.fromResponse(current, response);
+
   current.updateFromResult(checked);
 
   if (current.statusCode != 200) {
-    return FetchResults(checked, const []);
+    return FetchResults(checked);
   }
 
   if (!current.isParseableMimeType /* TODO: add SVG/XML */) {
-    return FetchResults(checked, const []);
+    return FetchResults(checked);
   }
 
   bool isExternal = !options.matchesAsInternal(current.finalUri);
 
   if (isExternal && !current.isHtmlMimeType) {
     // We only parse external HTML (to get anchors), not other mime types.
-    return FetchResults(checked, const []);
+    return FetchResults(checked);
   }
 
   String content;
@@ -139,7 +140,7 @@ Future<FetchResults> checkPage(
   } on FormatException {
     // TODO: report as a warning
     checked.hasUnsupportedEncoding = true;
-    return FetchResults(checked, const []);
+    return FetchResults(checked);
   }
 
   if (current.isCssMimeType) {
@@ -274,6 +275,7 @@ class Worker {
   String toString() => 'Worker<$name>';
 }
 
+@immutable
 class WorkerTask {
   final WorkerVerb verb;
   final Object? data;
@@ -281,6 +283,7 @@ class WorkerTask {
   const WorkerTask({required this.verb, this.data});
 }
 
+/// Different types of tasks which can be communicated to and from workers
 enum WorkerVerb {
   addHostGlob,
   checkPage,

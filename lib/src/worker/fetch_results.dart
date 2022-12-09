@@ -5,7 +5,7 @@ class FetchResults {
   final DestinationResult checked;
   final List<Link> links;
 
-  FetchResults(this.checked, this.links);
+  FetchResults(this.checked, [this.links = const []]);
 
   @override
   String toString() {

@@ -148,9 +148,9 @@ class Pool {
             // Only notify about the failed destination when the old
             // worker is gone. Otherwise, crawl could fail to wrap up, thinking
             // that one Worker is still working.
-            var checked = DestinationResult.fromDestination(destination);
-            checked.didNotConnect = true;
-            var result = FetchResults(checked, const []);
+            var checked = DestinationResult.fromDestination(destination,
+                didNotConnect: true);
+            var result = FetchResults(checked);
             _fetchResultsSink.add(result);
           }
 

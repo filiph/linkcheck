@@ -1,6 +1,8 @@
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
+@immutable
 class UriGlob {
   static final _urlContext = Context(style: Style.url);
 

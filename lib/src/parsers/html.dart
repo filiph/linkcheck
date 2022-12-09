@@ -107,7 +107,7 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
 
   if (ignoreLinks) {
     checked.wasParsed = true;
-    return FetchResults(checked, const []);
+    return FetchResults(checked);
   }
 
   Uri baseUri = current.finalUri;

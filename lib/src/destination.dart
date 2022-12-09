@@ -1,5 +1,7 @@
 import 'dart:io' show ContentType, HttpClientResponse, RedirectInfo;
 
+import 'package:meta/meta.dart';
+
 import 'parsers/html.dart';
 
 /// RegExp for detecting URI scheme, such as `http:`, `mailto:`, etc.
@@ -24,6 +26,7 @@ bool checkSchemeSupported(String url, Uri source) {
   return Destination.supportedSchemes.contains(scheme);
 }
 
+@immutable
 class BasicRedirectInfo {
   final String url;
   final int statusCode;
@@ -216,28 +219,35 @@ class Destination {
 
 /// Data about destination coming from a fetch.
 class DestinationResult {
-  String url;
+  final String url;
   String? finalUrl;
   int? statusCode;
   String? primaryType;
   String? subType;
   List<BasicRedirectInfo> redirects;
-  bool isSource = false;
+  final bool isSource;
   List<String> anchors;
-  bool didNotConnect = false;
+  final bool didNotConnect;
   bool wasParsed = false;
   bool hasUnsupportedEncoding = false;
 
-  DestinationResult.fromDestination(Destination destination)
+  DestinationResult.fromDestination(Destination destination,
+      {this.didNotConnect = false,
+      this.redirects = const [],
+      this.anchors = const []})
+      : url = destination.url,
+        isSource = destination.isSource;
+
+  DestinationResult.fromResponse(
+      Destination destination, HttpClientResponse response)
       : url = destination.url,
         isSource = destination.isSource,
-        redirects = [],
-        anchors = [];
-
-  void updateFromResponse(HttpClientResponse response) {
-    statusCode = response.statusCode;
-    redirects =
-        response.redirects.map((info) => BasicRedirectInfo.from(info)).toList();
+        redirects = response.redirects
+            .map((info) => BasicRedirectInfo.from(info))
+            .toList(growable: false),
+        statusCode = response.statusCode,
+        anchors = const [],
+        didNotConnect = false {
     if (redirects.isEmpty) {
       finalUrl = url;
     } else {

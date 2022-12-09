@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:io' show Stdout;
 
 import 'package:console/console.dart';
+import 'package:meta/meta.dart';
 
 import 'destination.dart';
 import 'link.dart';
@@ -472,9 +473,11 @@ Future<CrawlResult> crawl(
   return CrawlResult(links, closed);
 }
 
+@immutable
 class CrawlResult {
   final Set<Link> links;
   final Set<Destination> destinations;
+
   const CrawlResult(this.links, this.destinations);
 }
 

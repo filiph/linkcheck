@@ -1,3 +1,5 @@
+import 'package:meta/meta.dart';
+
 import 'parsers/robots_txt.dart';
 
 const robotName = "linkcheck";
@@ -106,6 +108,7 @@ class ServerInfo {
 }
 
 /// To be sent from Worker to main thread.
+@immutable
 class ServerInfoUpdate {
   final String host;
   final bool didNotConnect;
