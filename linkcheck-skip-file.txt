@@ -1,0 +1,4 @@
+journals(?!\/msl\/).*articles
+journals(?!\/msl\/).*issues
+books(?!\/esiam\/).*
+content/serial-article-files/.*
