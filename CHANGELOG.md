@@ -4,6 +4,7 @@
 - Rename library to `linkcheck` instead of `linkcheck.run`
 - Update to the latest dependencies supporting sound null safety
 - Switch to Dart recommended lints (`package:lints/recommended.yaml`)
+- Use objects instead of maps to communicate between isolates
 
 ## 2.0.23
 
