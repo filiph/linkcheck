@@ -147,7 +147,7 @@ $ brew install dart
 Once Dart is installed, run:
 
 ```
-$ pub global activate linkcheck
+$ dart pub global activate linkcheck
 ```
 
 Pub installs executables into `~/.pub-cache/bin`, which may not be on your path.
