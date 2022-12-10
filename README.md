@@ -131,9 +131,8 @@ docker run --rm tennox/linkcheck --help
 
 Full installation guides per platform:
 
-* [Install Dart on Windows](https://www.dartlang.org/install/windows)
-* [Install Dart on Linux](https://www.dartlang.org/install/linux)
-* [Install Dart on Mac](https://www.dartlang.org/install/mac)
+Follow the installation instructions for your platform
+from the [Get the Dart SDK](https://dart.dev/get-dart) documentation.
 
 **For example,** on a Mac, assuming you have [homebrew](https://brew.sh/), 
 you just run:
@@ -246,9 +245,9 @@ There's another use for this, and that is when you have a list of inbound links,
 like this:
 
 ```
-http://www.dartlang.org/
-http://www.dartlang.org/tools/
-http://www.dartlang.org/downloads/
+https://www.dart.dev/
+https://www.dart.dev/tools/
+https://www.dart.dev/guides/
 ```
 
 You probably want to make sure you never break your inbound links. For example,

@@ -1,4 +1,4 @@
-# See https://www.dartlang.org/tools/private-files.html
+# See https://dart.dev/guides/libraries/private-files
 
 # Files and directories created by pub
 .buildlog
