@@ -1,5 +1,3 @@
-library linkcheck.pool;
-
 import 'dart:async';
 
 import '../destination.dart';
@@ -19,9 +17,9 @@ class Pool {
   final int count;
 
   bool _isShuttingDown = false;
-  List<Worker> _workers;
+  final List<Worker> _workers;
 
-  Timer _healthCheckTimer;
+  late Timer _healthCheckTimer;
 
   final Map<Worker, DateTime> _lastJobPosted = <Worker, DateTime>{};
   final Set<String> _hostGlobs;
@@ -29,24 +27,23 @@ class Pool {
   final StreamController<FetchResults> _fetchResultsSink =
       StreamController<FetchResults>();
 
-  Stream<FetchResults> fetchResults;
+  late final Stream<FetchResults> fetchResults = _fetchResultsSink.stream;
 
   final StreamController<String> _messagesSink = StreamController<String>();
 
-  Stream<String> messages;
+  late final Stream<String> messages = _messagesSink.stream;
 
   final StreamController<ServerInfoUpdate> _serverCheckSink =
       StreamController<ServerInfoUpdate>();
 
-  Stream<ServerInfoUpdate> serverCheckResults;
+  late final Stream<ServerInfoUpdate> serverCheckResults =
+      _serverCheckSink.stream;
 
   bool _finished = false;
 
-  Pool(this.count, this._hostGlobs) {
-    fetchResults = _fetchResultsSink.stream;
-    messages = _messagesSink.stream;
-    serverCheckResults = _serverCheckSink.stream;
-  }
+  Pool(this.count, this._hostGlobs)
+      : _workers =
+            List<Worker>.generate(count, (i) => Worker('$i'), growable: false);
 
   /// Returns true if all workers are either waiting for a job or not really
   /// alive (not spawned yet, or already killed).
@@ -69,7 +66,8 @@ class Pool {
     worker.destinationToCheck = destination;
     Timer(delay, () {
       if (_isShuttingDown) return;
-      worker.sink.add({verbKey: checkPageVerb, dataKey: destination.toMap()});
+      worker.sink
+          .add(WorkerTask(verb: WorkerVerb.checkPage, data: destination));
     });
     return worker;
   }
@@ -77,13 +75,13 @@ class Pool {
   /// Starts a job to send request for /robots.txt on the server.
   Worker checkServer(String host) {
     var worker = pickWorker();
-    worker.sink.add({verbKey: checkServerVerb, dataKey: host});
+    worker.sink.add(WorkerTask(verb: WorkerVerb.checkServer, data: host));
     worker.serverToCheck = host;
     _lastJobPosted[worker] = DateTime.now();
     return worker;
   }
 
-  Future<Null> close() async {
+  Future<void> close() async {
     _isShuttingDown = true;
     _healthCheckTimer.cancel();
     await Future.wait(_workers.map((worker) async {
@@ -102,63 +100,62 @@ class Pool {
         "Please make sure to wait until Pool.allWorking is false.");
   }
 
-  Future<Null> spawn() async {
-    _workers = List<Worker>.generate(count, (i) => Worker()..name = '$i');
+  Future<void> spawn() async {
     await Future.wait(_workers.map((worker) => worker.spawn()));
-    _workers.forEach((worker) => worker.stream.listen((Map message) {
-          switch (message[verbKey] as String) {
-            case checkPageDoneVerb:
-              var result =
-                  FetchResults.fromMap(message[dataKey] as Map<String, Object>);
-              _fetchResultsSink.add(result);
-              worker.destinationToCheck = null;
-              return;
-            case checkServerDoneVerb:
-              var result = ServerInfoUpdate.fromMap(
-                  message[dataKey] as Map<String, Object>);
-              _serverCheckSink.add(result);
-              worker.serverToCheck = null;
-              return;
-            case infoFromWorkerVerb:
-              _messagesSink.add(message[dataKey] as String);
-              return;
-            default:
-              throw StateError("Unrecognized verb from Worker: "
-                  "${message[verbKey]}");
-          }
-        }));
+    for (var worker in _workers) {
+      worker.stream.listen((WorkerTask message) {
+        switch (message.verb) {
+          case WorkerVerb.checkPageDone:
+            var result = message.data as FetchResults;
+            _fetchResultsSink.add(result);
+            worker.destinationToCheck = null;
+            break;
+          case WorkerVerb.checkServerDone:
+            var result = message.data as ServerInfoUpdate;
+            _serverCheckSink.add(result);
+            worker.serverToCheck = null;
+            break;
+          case WorkerVerb.infoFromWorker:
+            _messagesSink.add(message.data as String);
+            break;
+          default:
+            throw StateError("Unrecognized verb from Worker: "
+                "${message.verb}");
+        }
+      });
+    }
     _addHostGlobs();
 
     _healthCheckTimer = Timer.periodic(healthCheckFrequency, (_) async {
-      if (_isShuttingDown) return null;
+      if (_isShuttingDown) return;
       var now = DateTime.now();
       for (int i = 0; i < _workers.length; i++) {
         var worker = _workers[i];
+        var lastJobPostedWorker = _lastJobPosted[worker];
         if (!worker.idle &&
             !worker.isKilled &&
-            _lastJobPosted[worker] != null &&
-            now.difference(_lastJobPosted[worker]) > workerTimeout) {
+            lastJobPostedWorker != null &&
+            now.difference(lastJobPostedWorker) > workerTimeout) {
           _messagesSink.add("Killing unresponsive $worker");
           var destination = worker.destinationToCheck;
           var server = worker.serverToCheck;
 
           _lastJobPosted.remove(worker);
-          var newWorker = Worker()..name = '$i';
+          var newWorker = Worker('$i');
           _workers[i] = newWorker;
 
           if (destination != null) {
             // Only notify about the failed destination when the old
             // worker is gone. Otherwise, crawl could fail to wrap up, thinking
             // that one Worker is still working.
-            var checked = DestinationResult.fromDestination(destination);
-            checked.didNotConnect = true;
-            var result = FetchResults(checked, const []);
+            var checked = DestinationResult.fromDestination(destination,
+                didNotConnect: true);
+            var result = FetchResults(checked);
             _fetchResultsSink.add(result);
           }
 
           if (server != null) {
-            var result = ServerInfoUpdate(server);
-            result.didNotConnect = true;
+            var result = ServerInfoUpdate.didNotConnect(server);
             _serverCheckSink.add(result);
           }
 
@@ -177,7 +174,9 @@ class Pool {
   /// Sends host globs (e.g. http://example.com/**) to all the workers.
   void _addHostGlobs() {
     for (var worker in _workers) {
-      worker.sink.add({verbKey: addHostGlobVerb, dataKey: _hostGlobs.toList()});
+      worker.sink.add(WorkerTask(
+          verb: WorkerVerb.addHostGlob,
+          data: _hostGlobs.toList(growable: false)));
     }
   }
 }

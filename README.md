@@ -329,6 +329,6 @@ building binaries and placing a new release into
 [github.com/filiph/linkcheck/releases](https://github.com/filiph/linkcheck/releases).
 
 In order to populate it to the [GitHub Actions Marketplace](https://github.com/marketplace/actions/check-links-with-linkcheck)
-as well, it's currently requiered to manually <kbd>Edit</kbd> and hit 
+as well, it's currently required to manually <kbd>Edit</kbd> and hit 
 <kbd>Update release</kbd> on the release page once. No changes needed. 
 (Source: [GiHub Community](https://github.community/t/automatically-publish-action-to-marketplace-on-release/17978))

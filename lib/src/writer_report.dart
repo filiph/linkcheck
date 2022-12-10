@@ -1,13 +1,11 @@
-library linkcheck.writer_report;
-
 import 'dart:io' show Stdout;
 import 'dart:math' show min;
 
 import 'package:console/console.dart';
 
 import 'crawl.dart' show CrawlResult;
-import 'link.dart';
 import 'destination.dart';
+import 'link.dart';
 
 /// Writes the reports from the perspective of a website writer - which pages
 /// reference broken links.
@@ -42,9 +40,9 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
       .toList(growable: false);
   sourceUris.sort((a, b) => a.toString().compareTo(b.toString()));
 
-  TextPen pen;
+  TextPen? ansiPen;
   if (ansiTerm) {
-    pen = TextPen();
+    ansiPen = TextPen();
   }
 
   List<Destination> brokenSeeds = result.destinations
@@ -55,8 +53,8 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
   if (brokenSeeds.isNotEmpty) {
     print("Provided URLs failing:");
     for (var destination in brokenSeeds) {
-      if (ansiTerm) {
-        pen
+      if (ansiPen != null) {
+        ansiPen
             .reset()
             .yellow()
             .text(destination.url)
@@ -80,8 +78,8 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
     print("Access to these URLs denied by robots.txt, "
         "so we couldn't check them:");
     for (var destination in deniedByRobots) {
-      if (ansiTerm) {
-        pen
+      if (ansiPen != null) {
+        ansiPen
             .reset()
             .normal()
             .text("- ")
@@ -101,8 +99,8 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
   // TODO: report invalid links
 
   for (var uri in sourceUris) {
-    if (ansiTerm) {
-      printWithAnsi(uri, problematic, pen);
+    if (ansiPen != null) {
+      printWithAnsi(uri, problematic, ansiPen);
     } else {
       printWithoutAnsi(uri, problematic, stdout);
     }
@@ -122,8 +120,8 @@ void reportForWriters(CrawlResult result, bool ansiTerm,
     brokenUris.sort((a, b) => a.toString().compareTo(b.toString()));
 
     for (var uri in brokenUris) {
-      if (ansiTerm) {
-        printWithAnsi(uri, broken, pen);
+      if (ansiPen != null) {
+        printWithAnsi(uri, broken, ansiPen);
       } else {
         printWithoutAnsi(uri, broken, stdout);
       }
@@ -192,11 +190,12 @@ void printWithoutAnsi(Uri uri, List<Link> broken, Stdout stdout) {
   var links = broken.where((link) => link.origin.uri == uri);
   for (var link in links) {
     String tag = _buildTagSummary(link);
+    var linkFragment = link.fragment;
     print("- (${link.origin.span.start.line + 1}"
         ":${link.origin.span.start.column}) "
         "$tag"
         "=> ${link.destination.url}"
-        "${link.fragment == null ? '' : '#' + link.fragment} "
+        "${linkFragment == null ? '' : '#$linkFragment'} "
         "(${link.destination.statusDescription}"
         "${!link.destination.isBroken && link.breaksAnchor ? ' but missing anchor' : ''}"
         ")");

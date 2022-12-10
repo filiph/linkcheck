@@ -1,5 +1,3 @@
-library linkcheck.parsers.url_skipper;
-
 const _commentStart = "#";
 
 const _commentStartEscape = r"\#";
@@ -7,7 +5,7 @@ const _commentStartEscape = r"\#";
 /// Parses and keeps record of the URL patterns to skip.
 class UrlSkipper {
   /// Path of the provided file with regexps to skip.
-  final String path;
+  final String? path;
 
   final List<_UrlSkipperRecord> _records;
 
@@ -40,7 +38,7 @@ class UrlSkipper {
   }
 
   static Iterable<_UrlSkipperRecord> _parse(Iterable<String> lines) sync* {
-    int lineNumber = 1;
+    var lineNumber = 1;
     for (var line in lines) {
       line = line.trim();
 

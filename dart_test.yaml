@@ -2,5 +2,5 @@ tags:
   integration:
     skip: >
       The integration tests depend on serving the case folders, and for that
-      we need to know the path to those (which pub run test doesn't support).
-      Use `dart test/e2e_test.dart` to run these.
+      we need to know the path to those (which dart test doesn't support).
+      Use `dart run test/e2e_test.dart` to run these.

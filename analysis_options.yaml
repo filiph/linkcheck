@@ -1,11 +1,17 @@
-include: package:pedantic/analysis_options.yaml
+include: package:lints/recommended.yaml
 
 analyzer:
-  strong-mode:
-    implicit-casts: false
-    implicit-dynamic: false
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
 
 linter:
   rules:
-    omit_local_variable_types: false # TODO: remove and fix
-    prefer_single_quotes: false
+    - always_declare_return_types
+    - comment_references
+    - prefer_final_fields
+    - type_annotate_public_apis
+    - unawaited_futures
+    - use_enums
+    - use_super_parameters

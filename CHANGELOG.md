@@ -1,3 +1,11 @@
+## 3.0.0-dev
+
+- Require Dart 2.18 and support Dart 3
+- Rename library to `linkcheck` instead of `linkcheck.run`
+- Update to the latest dependencies supporting sound null safety
+- Switch to Dart recommended lints (`package:lints/recommended.yaml`)
+- Use objects instead of maps to communicate between isolates
+
 ## 2.0.23
 
 - Fix another issue with building artifacts through `grindr`/`cli_pkg`

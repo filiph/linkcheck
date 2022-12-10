@@ -1,14 +1,12 @@
-library linkcheck.run;
-
 import 'dart:async';
 import 'dart:io' hide Link;
 
 import 'package:args/args.dart';
 import 'package:console/console.dart';
 
-import 'package:linkcheck/src/parsers/url_skipper.dart';
 import 'src/crawl.dart' show crawl, CrawlResult;
 import 'src/link.dart' show Link;
+import 'src/parsers/url_skipper.dart';
 import 'src/writer_report.dart' show reportForWriters;
 
 export 'src/crawl.dart' show crawl, CrawlResult;
@@ -28,7 +26,7 @@ const hostsFlag = "hosts";
 const inputFlag = "input-file";
 const redirectFlag = "show-redirects";
 const skipFlag = "skip-file";
-const version = "2.0.23";
+const version = "3.0.0-dev";
 const versionFlag = "version";
 final _portOnlyRegExp = RegExp(r"^:\d+$");
 
@@ -224,8 +222,8 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   bool shouldCheckExternal = argResults[externalFlag] == true;
   bool showRedirects = argResults[redirectFlag] == true;
   bool shouldCheckAnchors = argResults[anchorFlag] == true;
-  String inputFile = argResults[inputFlag] as String;
-  String skipFile = argResults[skipFlag] as String;
+  String? inputFile = argResults[inputFlag] as String?;
+  String? skipFile = argResults[skipFlag] as String?;
 
   List<String> urls = argResults.rest.toList();
   UrlSkipper skipper = UrlSkipper.empty();
@@ -261,7 +259,7 @@ Future<int> run(List<String> arguments, Stdout stdout) async {
   }
 
   // TODO: exit gracefully if provided URL isn't a parseable URI
-  List<Uri> uris = urls.map((url) => Uri.parse(url)).toList();
+  List<Uri> uris = urls.map((url) => Uri.parse(url)).toList(growable: false);
   Set<String> hosts;
   if ((argResults[hostsFlag] as Iterable<String>).isNotEmpty) {
     hosts = Set<String>.from(argResults[hostsFlag] as Iterable<String>);

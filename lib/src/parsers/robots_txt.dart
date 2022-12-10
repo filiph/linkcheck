@@ -1,5 +1,6 @@
-library linkcheck.parsers.robots_txt;
+import 'package:meta/meta.dart';
 
+@immutable
 class RobotsBouncer {
   /// The shortest possible identifying part of the user agent.
   ///
@@ -12,8 +13,6 @@ class RobotsBouncer {
       : robotName = forRobot {
     const userAgentString = "User-agent:";
     const disallowString = "Disallow:";
-
-    assert(robotName != null);
 
     Set<String> currentUserAgents = {};
     Set<String> currentPaths = {};
@@ -64,9 +63,11 @@ class RobotsBouncer {
   }
 }
 
+@immutable
 class _Rule {
   final Set<String> userAgents;
   final Set<String> paths;
+
   _Rule(this.userAgents, this.paths);
 
   // 'Disallow:' (with empty rulepath) means something like 'allow all'

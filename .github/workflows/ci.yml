@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: dart-lang/setup-dart@v1
       - run: dart --version
-      - run: pub get
+      - run: dart pub get
       - run: dart analyze --fatal-warnings .
       - run: dart format --set-exit-if-changed .
       - run: dart run test -x integration

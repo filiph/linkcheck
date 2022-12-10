@@ -11,7 +11,7 @@ void main(List<String> args) {
 
 @DefaultTask()
 @Task()
-Future test() => TestRunner().testAsync();
+Future<dynamic> test() => TestRunner().testAsync();
 
 @Task()
 void clean() => defaultClean();

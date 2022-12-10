@@ -1,17 +1,12 @@
-library linkcheck.parsers.css;
-
 import 'package:csslib/parser.dart' as css;
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
 import 'package:source_span/source_span.dart';
 
-import '../worker/fetch_results.dart';
 import '../destination.dart';
 import '../link.dart';
 import '../origin.dart';
-import 'package:logging/logging.dart';
-
-Logger _log = Logger('parseCSS');
+import '../worker/fetch_results.dart';
 
 FetchResults parseCss(
     String content, Destination current, DestinationResult checked) {
@@ -28,24 +23,18 @@ FetchResults parseCss(
       start = content.indexOf("}", start);
       if (start < content.length - 1) start += 1;
     }
-    StyleSheet style;
-    try {
-      style = css.parse(content.substring(start), errors: errors);
-    } catch (e) {
-      // csslib itself crashes when trying to parse this.
-      // TODO: remove when https://github.com/dart-lang/csslib/issues/92
-      //       is fixed.
-      _log.severe('Parsing ${current.url} crashed csslib');
-      break;
-    }
+    var style = css.parse(content.substring(start), errors: errors);
     style.visit(urlHarvester);
-    int offset = 0;
-    errors.forEach((error) {
+    var offset = 0;
+    for (var error in errors) {
       if (error.level == MessageLevel.severe) {
-        offset = error.span.end.offset;
-        foundError = true;
+        var errorSpan = error.span;
+        if (errorSpan != null) {
+          offset = errorSpan.end.offset;
+          foundError = true;
+        }
       }
-    });
+    }
     start += offset;
   } while (foundError);
 
@@ -57,7 +46,7 @@ FetchResults parseCss(
 
     // Valid URLs can be surrounded by spaces.
     var url = reference.url.trim();
-    Link link;
+    Link? link;
 
     // Deal with unsupported schemes such as `telnet:` or `mailto:`.
     if (!checkSchemeSupported(url, current.finalUri)) {
@@ -89,7 +78,7 @@ FetchResults parseCss(
       continue;
     }
 
-    Destination destination = Destination(destinationUri);
+    var destination = Destination(destinationUri);
     currentDestinations.add(destination);
     link = Link(origin, destination, null);
     links.add(link);
@@ -100,16 +89,20 @@ FetchResults parseCss(
 }
 
 class CssReference {
-  SourceSpan span;
-  String url;
+  final SourceSpan span;
+  final String url;
+
   CssReference(this.span, this.url);
 }
 
 class CssUrlHarvester extends Visitor {
-  List<CssReference> references = <CssReference>[];
+  final List<CssReference> references = <CssReference>[];
 
   @override
   void visitUriTerm(UriTerm node) {
-    references.add(CssReference(node.span, node.text));
+    var span = node.span;
+    if (span != null) {
+      references.add(CssReference(span, node.text));
+    }
   }
 }
