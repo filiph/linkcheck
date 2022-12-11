@@ -109,7 +109,7 @@ Pick the executable for your system (for example, `linkcheck-win-x64.exe` for
 a 64-bit machine running Microsoft Windows).
 
 You should be able to immediately run this executable -- it has no external
-dependencies. For example, assuming you are on MacOS and downloaded the file
+dependencies. For example, assuming you are on macOS and downloaded the file
 to the default downloads directory, you can go to your Terminal 
 (or iTerm, or SSH) and run `./Downloads/linkcheck-mac-x64`.
 
@@ -119,7 +119,9 @@ on a Linux box, you might want to rename the executable to simply
 directory in your `$PATH`.
 
 ### Docker image
+
 Latest executable in a [docker image](https://hub.docker.com/r/tennox/linkcheck):
+
 ```
 docker run --rm tennox/linkcheck --help
 ```
@@ -128,8 +130,6 @@ docker run --rm tennox/linkcheck --help
 ### From Source
 
 #### Step 1. Install Dart
-
-Full installation guides per platform:
 
 Follow the installation instructions for your platform
 from the [Get the Dart SDK](https://dart.dev/get-dart) documentation.
@@ -191,12 +191,13 @@ All bellow usage are valid running on container too.
 #### Usage (github action)
 
 ```
-uses: filiph/linkcheck@v2.0.15+1
+uses: filiph/linkcheck@v2.0.23
   with:
     arguments: <URL>
 ```
 
-All bellow usage are valid running as github action too.
+All bellow usage guidelines are valid running as a GitHub action too.
+
 ## Usage
 
 If in doubt, run `linkcheck -h`. Here are some examples to get you started.
@@ -298,7 +299,7 @@ your skip file is ignoring, exactly.
 
 To use a skipfile while running linkchecker through docker create a directory 
 to use as a volume in docker and put your skip file in it. Then use a command 
-simliar to the following (assuming the folder was named skipfiles):
+similar to the following (assuming the folder was named skipfiles):
 
 ```
 docker run -v "$(pwd)/skipfiles/:/skipfiles/" filiph/linkcheck http://example.com/ --skip-file /skipfiles/skipfile.txt
@@ -331,4 +332,4 @@ building binaries and placing a new release into
 In order to populate it to the [GitHub Actions Marketplace](https://github.com/marketplace/actions/check-links-with-linkcheck)
 as well, it's currently required to manually <kbd>Edit</kbd> and hit 
 <kbd>Update release</kbd> on the release page once. No changes needed. 
-(Source: [GiHub Community](https://github.community/t/automatically-publish-action-to-marketplace-on-release/17978))
+(Source: [GitHub Community](https://github.community/t/automatically-publish-action-to-marketplace-on-release/17978))
