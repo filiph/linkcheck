@@ -82,8 +82,6 @@ class Destination {
   //     them via toMap?
   bool wasDeniedByRobotsTxt = false;
 
-  Uri? _finalUri;
-
   /// The encoding is not UTF-8 or LATIN-1.
   bool hasUnsupportedEncoding = false;
 
@@ -110,7 +108,7 @@ class Destination {
   // TODO: make sure we don't assign the same hashcode to two destinations like
   //       '../' from different subdirectory levels.
   /// Parsed [finalUrl].
-  Uri get finalUri => _finalUri ??= Uri.parse(finalUrl ?? url);
+  Uri get finalUri => Uri.parse(finalUrl ?? url);
 
   @override
   int get hashCode => url.hashCode;
@@ -142,7 +140,7 @@ class Destination {
   bool get isRedirected => redirects.isNotEmpty;
 
   /// True if the destination URI isn't one of the [supportedSchemes].
-  late final bool isUnsupportedScheme = () {
+  bool get isUnsupportedScheme {
     var specifiedUnsupported = _isUnsupportedScheme;
     if (specifiedUnsupported != null) return specifiedUnsupported;
     bool result = true;
@@ -153,7 +151,7 @@ class Destination {
       // Pass.
     }
     return result;
-  }();
+  }
 
   String get statusDescription {
     if (isUnsupportedScheme) return "scheme unsupported";
