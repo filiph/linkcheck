@@ -16,21 +16,21 @@ import 'fetch_results.dart';
 
 const dieMessage = WorkerTask(verb: WorkerVerb.die);
 const unrecognizedMessage = WorkerTask(verb: WorkerVerb.unrecognized);
-const userAgent = "linkcheck tool (https://github.com/filiph/linkcheck)";
+const userAgent = 'linkcheck tool (https://github.com/filiph/linkcheck)';
 
 Future<ServerInfoUpdate> checkServer(
     String host, HttpClient client, FetchOptions options) async {
-  var originalHost = host;
+  final originalHost = host;
 
   int? port;
   if (host.contains(':')) {
-    var parts = host.split(':');
+    final parts = host.split(':');
     assert(parts.length == 2);
     host = parts.first;
     port = int.parse(parts.last);
   }
 
-  Uri uri = Uri(scheme: "http", host: host, port: port, path: "/robots.txt");
+  final uri = Uri(scheme: 'http', host: host, port: port, path: '/robots.txt');
 
   // Fetch the HTTP response
   HttpClientResponse? response;
@@ -69,7 +69,7 @@ Future<ServerInfoUpdate> checkServer(
     content = await response.cast<List<int>>().transform(decoder).join();
   } on FormatException {
     // TODO: report as a warning
-    content = "";
+    content = '';
   }
 
   return ServerInfoUpdate(originalHost, robotsTxtContents: content);
@@ -77,7 +77,7 @@ Future<ServerInfoUpdate> checkServer(
 
 Future<FetchResults> checkPage(
     Destination current, HttpClient client, FetchOptions options) async {
-  var uri = current.uri;
+  final uri = current.uri;
 
   // Fetch the HTTP response
   HttpClientResponse? response;
@@ -103,12 +103,12 @@ Future<FetchResults> checkPage(
 
   if (response == null) {
     // Request failed completely.
-    var checked =
+    final checked =
         DestinationResult.fromDestination(current, didNotConnect: true);
     return FetchResults(checked);
   }
 
-  DestinationResult checked = DestinationResult.fromResponse(current, response);
+  final checked = DestinationResult.fromResponse(current, response);
 
   current.updateFromResult(checked);
 
@@ -120,7 +120,7 @@ Future<FetchResults> checkPage(
     return FetchResults(checked);
   }
 
-  bool isExternal = !options.matchesAsInternal(current.finalUri);
+  final isExternal = !options.matchesAsInternal(current.finalUri);
 
   if (isExternal && !current.isHtmlMimeType) {
     // We only parse external HTML (to get anchors), not other mime types.
@@ -155,14 +155,14 @@ Future<FetchResults> checkPage(
 
 /// The entrypoint for the worker isolate.
 void worker(SendPort port) {
-  var channel = IsolateChannel<WorkerTask>.connectSend(port);
-  var sink = channel.sink;
-  var stream = channel.stream;
+  final channel = IsolateChannel<WorkerTask>.connectSend(port);
+  final sink = channel.sink;
+  final stream = channel.stream;
 
-  var client = HttpClient()..userAgent = userAgent;
-  var options = FetchOptions(sink);
+  final client = HttpClient()..userAgent = userAgent;
+  final options = FetchOptions(sink);
 
-  bool alive = true;
+  var alive = true;
 
   stream.listen((WorkerTask message) async {
     switch (message.verb) {
@@ -172,17 +172,19 @@ void worker(SendPort port) {
         await sink.close();
         return;
       case WorkerVerb.checkPage:
-        var destination = message.data as Destination;
-        var results = await checkPage(destination, client, options);
+        final destination = message.data as Destination;
+        final fetchResults = await checkPage(destination, client, options);
         if (alive) {
-          sink.add(WorkerTask(verb: WorkerVerb.checkPageDone, data: results));
+          sink.add(
+              WorkerTask(verb: WorkerVerb.checkPageDone, data: fetchResults));
         }
         return;
       case WorkerVerb.checkServer:
-        String host = message.data as String;
-        ServerInfoUpdate results = await checkServer(host, client, options);
+        final host = message.data as String;
+        final serverUpdateResults = await checkServer(host, client, options);
         if (alive) {
-          sink.add(WorkerTask(verb: WorkerVerb.checkServerDone, data: results));
+          sink.add(WorkerTask(
+              verb: WorkerVerb.checkServerDone, data: serverUpdateResults));
         }
         return;
       case WorkerVerb.addHostGlob:
@@ -201,9 +203,8 @@ final fetchTimeout = connectionTimeout + responseTimeout;
 
 /// Fetches the given [uri] by HTTP GET and returns a [HttpClientResponse].
 Future<HttpClientResponse> _fetch(HttpClient client, Uri uri) async {
-  HttpClientRequest request =
-      await client.getUrl(uri).timeout(connectionTimeout);
-  var response = await request.close().timeout(responseTimeout);
+  final request = await client.getUrl(uri).timeout(connectionTimeout);
+  final response = await request.close().timeout(responseTimeout);
   return response;
 }
 
@@ -212,8 +213,8 @@ Future<HttpClientResponse> _fetch(HttpClient client, Uri uri) async {
 /// Some servers don't support this request, in which case they return HTTP
 /// status code 405. If that's the case, this function returns `null`.
 Future<HttpClientResponse?> _fetchHead(HttpClient client, Uri uri) async {
-  var request = await client.headUrl(uri).timeout(connectionTimeout);
-  var response = await request.close().timeout(responseTimeout);
+  final request = await client.headUrl(uri).timeout(connectionTimeout);
+  final response = await request.close().timeout(responseTimeout);
 
   if (response.statusCode == 405) {
     return null;
@@ -224,7 +225,7 @@ Future<HttpClientResponse?> _fetchHead(HttpClient client, Uri uri) async {
 /// Spawns a worker isolate and returns a [StreamChannel] for communicating with
 /// it.
 Future<StreamChannel<WorkerTask>> _spawnWorker() async {
-  var port = ReceivePort();
+  final port = ReceivePort();
   await Isolate.spawn(worker, port.sendPort);
   return IsolateChannel<WorkerTask>.connectReceive(port);
 }
@@ -260,7 +261,7 @@ class Worker {
   Future<void> kill() async {
     if (!_spawned) return;
     _isKilled = true;
-    var sinkToClose = sink;
+    final sinkToClose = sink;
     sinkToClose.add(dieMessage);
     await sinkToClose.close();
   }

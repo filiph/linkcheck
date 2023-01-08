@@ -10,7 +10,7 @@ void main() async {
   //
   // But you can also use linkcheck in your own Dart projects.
 
-  var results = await crawl(
+  final results = await crawl(
     // A list of the seed URLs.
     [Uri.parse('http://localhost:8080')],
     // Glob of links to check. In this case, we want to crawl the whole site.

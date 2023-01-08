@@ -14,7 +14,7 @@ class FetchOptions {
   FetchOptions(this._sink);
 
   void addHostGlobs(List<String> values) {
-    for (String value in values) {
+    for (final value in values) {
       _compiledHostGlobs.add(UriGlob(value));
     }
   }

@@ -5,7 +5,7 @@ import 'package:meta/meta.dart';
 import 'parsers/html.dart';
 
 /// RegExp for detecting URI scheme, such as `http:`, `mailto:`, etc.
-final _scheme = RegExp(r"$(\w[\w\-]*\w):");
+final _scheme = RegExp(r'$(\w[\w\-]*\w):');
 
 /// Takes a trimmed URL and returns [bool] indicating whether
 /// we support the URL's scheme or not. When there is no scheme in the URL,
@@ -14,7 +14,7 @@ final _scheme = RegExp(r"$(\w[\w\-]*\w):");
 /// [source] must be a fully resolved [Uri] with a non-empty [Uri.scheme]
 /// component.
 bool checkSchemeSupported(String url, Uri source) {
-  var match = _scheme.firstMatch(url);
+  final match = _scheme.firstMatch(url);
   String? scheme;
   if (match == null) {
     // No scheme provided, so the source's scheme is used.
@@ -37,7 +37,7 @@ class BasicRedirectInfo {
 }
 
 class Destination {
-  static const List<String> supportedSchemes = ["http", "https", "file"];
+  static const List<String> supportedSchemes = ['http', 'https', 'file'];
 
   /// This is the naked URL (no fragment).
   final String url;
@@ -97,7 +97,7 @@ class Destination {
         _uri = uri.removeFragment();
 
   Destination.fromString(String url)
-      : url = url.contains("#") ? url.split("#").first : url;
+      : url = url.contains('#') ? url.split('#').first : url;
 
   Destination.invalid(this.url) : isInvalid = true;
 
@@ -124,7 +124,7 @@ class Destination {
       statusCode != 200 && !wasDeniedByRobotsTxt && !isUnsupportedScheme;
 
   bool get isCssMimeType =>
-      contentType?.primaryType == "text" && contentType?.subType == "css";
+      contentType?.primaryType == 'text' && contentType?.subType == 'css';
 
   bool get isHtmlMimeType =>
       // Assume the server is just poorly implemented.
@@ -141,9 +141,9 @@ class Destination {
 
   /// True if the destination URI isn't one of the [supportedSchemes].
   bool get isUnsupportedScheme {
-    var specifiedUnsupported = _isUnsupportedScheme;
+    final specifiedUnsupported = _isUnsupportedScheme;
     if (specifiedUnsupported != null) return specifiedUnsupported;
-    bool result = true;
+    var result = true;
     try {
       // This can throw a FormatException when the URI cannot be parsed.
       result = !supportedSchemes.contains(finalUri.scheme);
@@ -154,29 +154,30 @@ class Destination {
   }
 
   String get statusDescription {
-    if (isUnsupportedScheme) return "scheme unsupported";
-    if (isInvalid) return "invalid URL";
-    if (didNotConnect) return "connection failed";
-    if (wasDeniedByRobotsTxt) return "denied by robots.txt";
-    if (hasNoMimeType) return "server reported no mime type";
+    if (isUnsupportedScheme) return 'scheme unsupported';
+    if (isInvalid) return 'invalid URL';
+    if (didNotConnect) return 'connection failed';
+    if (wasDeniedByRobotsTxt) return 'denied by robots.txt';
+    if (hasNoMimeType) return 'server reported no mime type';
     if (!wasTried) return "wasn't tried";
-    if (statusCode == 200) return "HTTP 200";
+    if (statusCode == 200) return 'HTTP 200';
     if (isRedirected) {
-      var path = redirects.map((redirect) => redirect.statusCode).join(" -> ");
-      return "HTTP $path => $statusCode";
+      final path =
+          redirects.map((redirect) => redirect.statusCode).join(' -> ');
+      return 'HTTP $path => $statusCode';
     }
-    return "HTTP $statusCode";
+    return 'HTTP $statusCode';
   }
 
   Uri get uri {
-    var specifiedUri = _uri;
+    final specifiedUri = _uri;
     if (specifiedUri != null) return specifiedUri;
     try {
       return _uri = Uri.parse(url);
     } on FormatException catch (e, s) {
-      print("Stack trace: $s");
+      print('Stack trace: $s');
       throw StateError("Tried parsing '$url' as URI:\n"
-          "$e");
+          '$e');
     }
   }
 
@@ -201,8 +202,8 @@ class Destination {
     assert(url == result.url);
     finalUrl = result.finalUrl;
     statusCode = result.statusCode;
-    var primaryType = result.primaryType;
-    var subType = result.subType;
+    final primaryType = result.primaryType;
+    final subType = result.subType;
     contentType = primaryType == null || subType == null
         ? null
         : ContentType(primaryType, subType);
@@ -256,7 +257,7 @@ class DestinationResult {
                   current.resolve(redirect.url))
           .toString();
     }
-    var contentType = response.headers.contentType;
+    final contentType = response.headers.contentType;
     if (contentType != null) {
       primaryType = contentType.primaryType;
       subType = contentType.subType;

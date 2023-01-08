@@ -5,29 +5,29 @@ import 'dart:async';
 import 'package:linkcheck/src/worker/fetch_options.dart';
 
 void main() {
-  test("parses simple example", () {
-    var sink = StreamController<WorkerTask>();
-    var options = FetchOptions(sink);
-    Uri uri = Uri.parse("http://localhost:4000/");
-    options.addHostGlobs(["$uri**"]);
+  test('parses simple example', () {
+    final sink = StreamController<WorkerTask>();
+    final options = FetchOptions(sink);
+    final uri = Uri.parse('http://localhost:4000/');
+    options.addHostGlobs(['$uri**']);
     expect(options.matchesAsInternal(uri), isTrue);
     sink.close();
   });
 
-  test("parses localhost:4000/guides", () {
-    var sink = StreamController<WorkerTask>();
-    var options = FetchOptions(sink);
-    Uri uri = Uri.parse("http://localhost:4000/guides");
-    options.addHostGlobs(["$uri**"]);
+  test('parses localhost:4000/guides', () {
+    final sink = StreamController<WorkerTask>();
+    final options = FetchOptions(sink);
+    final uri = Uri.parse('http://localhost:4000/guides');
+    options.addHostGlobs(['$uri**']);
     expect(options.matchesAsInternal(uri), isTrue);
     sink.close();
   });
 
-  test("parses localhost:4000/guides/", () {
-    var sink = StreamController<WorkerTask>();
-    var options = FetchOptions(sink);
-    Uri uri = Uri.parse("http://localhost:4000/guides/");
-    options.addHostGlobs(["http://localhost:4000/guides**"]);
+  test('parses localhost:4000/guides/', () {
+    final sink = StreamController<WorkerTask>();
+    final options = FetchOptions(sink);
+    final uri = Uri.parse('http://localhost:4000/guides/');
+    options.addHostGlobs(['http://localhost:4000/guides**']);
     expect(options.matchesAsInternal(uri), isTrue);
     sink.close();
   });

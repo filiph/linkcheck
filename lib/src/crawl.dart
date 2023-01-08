@@ -44,53 +44,53 @@ Future<CrawlResult> crawl(
   }
 
   if (verbose) {
-    print("Crawl will start on the following URLs: $seeds");
-    print("Crawl will check pages only on URLs satisfying: $hostGlobs");
-    print("Crawl will skip links that match patterns: $skipper");
+    print('Crawl will start on the following URLs: $seeds');
+    print('Crawl will check pages only on URLs satisfying: $hostGlobs');
+    print('Crawl will skip links that match patterns: $skipper');
   }
 
-  List<UriGlob> uriGlobs = hostGlobs.map((glob) => UriGlob(glob)).toList();
+  final uriGlobs = hostGlobs.map((glob) => UriGlob(glob)).toList();
 
   // Maps from URLs (without fragment) to where their corresponding destination
   // lives.
-  Map<String, Bin> bin = <String, Bin>{};
+  final bin = <String, Bin>{};
 
   // The queue of destinations that haven't been tried yet. Destinations in
   // the front of the queue take precedence.
-  Queue<Destination> open = Queue<Destination>.from(seeds
+  final open = Queue<Destination>.from(seeds
       .map((uri) => Destination(uri)
         ..isSeed = true
         ..isSource = true
         ..isExternal = false)
       .toSet());
-  for (var destination in open) {
+  for (final destination in open) {
     bin[destination.url] = Bin.open;
   }
 
   // Queue for the external destinations.
-  Queue<Destination> openExternal = Queue<Destination>();
+  final openExternal = Queue<Destination>();
 
-  Set<Destination> inProgress = <Destination>{};
+  final inProgress = <Destination>{};
 
   // The set of destinations that have been tried.
-  Set<Destination> closed = <Destination>{};
+  final closed = <Destination>{};
 
   // Servers we are connecting to.
-  Map<String, ServerInfo> servers = <String, ServerInfo>{};
-  Queue<String> unknownServers = Queue<String>();
-  Set<String> serversInProgress = <String>{};
+  final servers = <String, ServerInfo>{};
+  final unknownServers = Queue<String>();
+  final serversInProgress = <String>{};
   seeds.map((uri) => uri.authority).toSet().forEach((String host) {
     servers[host] = ServerInfo(host);
     unknownServers.add(host);
   });
 
   if (verbose) {
-    print("Crawl will check the following servers (and their robots.txt) "
-        "first: $unknownServers");
+    print('Crawl will check the following servers (and their robots.txt) '
+        'first: $unknownServers');
   }
 
   // Crate the links Set.
-  Set<Link> links = <Link>{};
+  final links = <Link>{};
 
   int threads;
   if (shouldCheckExternal ||
@@ -100,38 +100,38 @@ Future<CrawlResult> crawl(
   } else {
     threads = localhostOnlyThreads;
   }
-  if (verbose) print("Using $threads threads.");
+  if (verbose) print('Using $threads threads.');
 
-  Pool pool = Pool(threads, hostGlobs);
+  final pool = Pool(threads, hostGlobs);
   await pool.spawn();
 
-  int count = 0;
+  var count = 0;
   if (!verbose) {
     if (cursor != null) {
-      cursor.write("Crawling: $count");
+      cursor.write('Crawling: $count');
     } else {
-      print("Crawling...");
+      print('Crawling...');
     }
   }
 
   // TODO:
   // - --cache for creating a .linkcheck.cache file
 
-  var allDone = Completer<void>();
+  final allDone = Completer<void>();
 
   // Respond to Ctrl-C
   late final StreamSubscription<void> stopSignalSubscription;
   stopSignalSubscription = stopSignal.listen((dynamic _) async {
     if (pen != null) {
       pen
-          .text("\n")
+          .text('\n')
           .red()
-          .text("Ctrl-C")
+          .text('Ctrl-C')
           .normal()
-          .text(" Terminating crawl.")
+          .text(' Terminating crawl.')
           .print();
     } else {
-      print("\nSIGINT: Terminating crawl");
+      print('\nSIGINT: Terminating crawl');
     }
     await pool.close();
     allDone.complete();
@@ -141,55 +141,55 @@ Future<CrawlResult> crawl(
   /// Creates new jobs and sends them to the Pool of Workers, if able.
   void sendNewJobs() {
     while (unknownServers.isNotEmpty && pool.anyIdle) {
-      var host = unknownServers.removeFirst();
+      final host = unknownServers.removeFirst();
       pool.checkServer(host);
       serversInProgress.add(host);
       if (verbose) {
-        print("Checking robots.txt and availability of server: $host");
+        print('Checking robots.txt and availability of server: $host');
       }
     }
 
     bool serverIsKnown(Destination destination) =>
         servers.keys.contains(destination.uri.authority);
 
-    Iterable<Destination> availableDestinations =
+    final availableDestinations =
         _zip(open.where(serverIsKnown), openExternal.where(serverIsKnown));
 
     // In order not to touch the underlying iterables, we keep track
     // of the destinations we want to remove.
-    List<Destination> destinationsToRemove = <Destination>[];
+    final destinationsToRemove = <Destination>[];
 
-    for (var destination in availableDestinations) {
+    for (final destination in availableDestinations) {
       if (pool.allBusy) break;
 
       destinationsToRemove.add(destination);
 
-      String host = destination.uri.authority;
-      ServerInfo? server = servers[host];
+      final host = destination.uri.authority;
+      final server = servers[host];
       if (server == null || server.hasNotConnected) {
         destination.didNotConnect = true;
         closed.add(destination);
         bin[destination.url] = Bin.closed;
         if (verbose) {
-          print("Automatically failing $destination because server $host has "
-              "failed before.");
+          print('Automatically failing $destination because server $host has '
+              'failed before.');
         }
         continue;
       }
 
-      var serverBouncer = server.bouncer;
+      final serverBouncer = server.bouncer;
       if (serverBouncer != null &&
           !serverBouncer.allows(destination.uri.path)) {
         destination.wasDeniedByRobotsTxt = true;
         closed.add(destination);
         bin[destination.url] = Bin.closed;
         if (verbose) {
-          print("Skipping $destination because of robots.txt at $host.");
+          print('Skipping $destination because of robots.txt at $host.');
         }
         continue;
       }
 
-      var delay = server.getThrottlingDuration();
+      final delay = server.getThrottlingDuration();
       if (delay > ServerInfo.minimumDelay) {
         // Some other worker is already waiting with a checkPage request.
         // Let's try and see if we have more interesting options down the
@@ -198,17 +198,17 @@ Future<CrawlResult> crawl(
         continue;
       }
 
-      var worker = pool.checkPage(destination, delay);
+      final worker = pool.checkPage(destination, delay);
       server.markRequestStart(delay);
       if (verbose) {
-        print("Added: $destination to $worker with "
-            "${delay.inMilliseconds}ms delay");
+        print('Added: $destination to $worker with '
+            '${delay.inMilliseconds}ms delay');
       }
       inProgress.add(destination);
       bin[destination.url] = Bin.inProgress;
     }
 
-    for (var destination in destinationsToRemove) {
+    for (final destination in destinationsToRemove) {
       open.remove(destination);
       openExternal.remove(destination);
     }
@@ -229,12 +229,12 @@ Future<CrawlResult> crawl(
         .putIfAbsent(result.host, () => ServerInfo(result.host))
         .updateFromServerCheck(result);
     if (verbose) {
-      print("Server check of ${result.host} complete.");
+      print('Server check of ${result.host} complete.');
     }
 
     if (verbose) {
       count += 1;
-      print("Server check for ${result.host} complete: "
+      print('Server check for ${result.host} complete: '
           "${result.didNotConnect ? 'didn\'t connect' : 'connected'}, "
           "${result.robotsTxtContents.isEmpty ? 'no robots.txt' : 'robots.txt found'}.");
     } else {
@@ -255,43 +255,43 @@ Future<CrawlResult> crawl(
     assert(bin[result.checked.url] == Bin.inProgress);
 
     // Find the destination this result is referring to.
-    var destinations = inProgress
+    final destinations = inProgress
         .where((dest) => dest.url == result.checked.url)
         .toList(growable: false);
     if (destinations.isEmpty) {
       if (verbose) {
         print("WARNING: Received result for a destination that isn't in "
-            "the inProgress set: $result");
-        var isInOpen =
+            'the inProgress set: $result');
+        final isInOpen =
             open.where((dest) => dest.url == result.checked.url).isNotEmpty;
-        var isInOpenExternal = openExternal
+        final isInOpenExternal = openExternal
             .where((dest) => dest.url == result.checked.url)
             .isNotEmpty;
-        var isInClosed =
+        final isInClosed =
             closed.where((dest) => dest.url == result.checked.url).isNotEmpty;
-        print("- the url is in open: $isInOpen; "
-            "in open external: $isInOpenExternal, in closed: $isInClosed");
+        print('- the url is in open: $isInOpen; '
+            'in open external: $isInOpenExternal, in closed: $isInClosed');
       }
       return;
     } else if (destinations.length > 1) {
       if (verbose) {
-        print("WARNING: Received result for a url (${result.checked.url} "
-            "that matches several objects in the inProgress set: "
-            "$destinations");
+        print('WARNING: Received result for a url (${result.checked.url} '
+            'that matches several objects in the inProgress set: '
+            '$destinations');
       }
       return;
     }
-    var checked = destinations.single;
+    final checked = destinations.single;
 
     inProgress.remove(checked);
     checked.updateFromResult(result.checked);
 
     if (verbose) {
       count += 1;
-      print("Done checking: $checked (${checked.statusDescription}) "
-          "=> ${result.links.length} links");
+      print('Done checking: $checked (${checked.statusDescription}) '
+          '=> ${result.links.length} links');
       if (checked.isBroken) {
-        print("- BROKEN");
+        print('- BROKEN');
       }
     } else {
       if (cursor != null) {
@@ -306,17 +306,17 @@ Future<CrawlResult> crawl(
     closed.add(checked);
     bin[checked.url] = Bin.closed;
 
-    var newDestinations = <Destination>{};
+    final newDestinations = <Destination>{};
 
     // Add links' destinations to [newDestinations] if they haven't been
     // seen before.
-    for (var link in result.links) {
+    for (final link in result.links) {
       // Mark links as skipped first.
       if (skipper.skips(link.destinationUrlWithFragment)) {
         link.wasSkipped = true;
         if (verbose) {
-          print("- will not be checking: ${link.destination} - "
-              "${skipper.explain(link.destinationUrlWithFragment)}");
+          print('- will not be checking: ${link.destination} - '
+              '${skipper.explain(link.destinationUrlWithFragment)}');
         }
         continue;
       }
@@ -329,17 +329,17 @@ Future<CrawlResult> crawl(
         assert(inProgress.where((d) => d.url == link.destination.url).isEmpty);
         assert(closed.where((d) => d.url == link.destination.url).isEmpty);
 
-        var alreadyOnCurrent = newDestinations.lookup(link.destination);
+        final alreadyOnCurrent = newDestinations.lookup(link.destination);
         if (alreadyOnCurrent != null) {
           if (verbose) {
-            print("- destination: ${link.destination} already "
-                "seen on this page");
+            print('- destination: ${link.destination} already '
+                'seen on this page');
           }
           continue;
         }
 
         if (verbose) {
-          print("- completely new destination: ${link.destination}");
+          print('- completely new destination: ${link.destination}');
         }
 
         newDestinations.add(link.destination);
@@ -348,10 +348,10 @@ Future<CrawlResult> crawl(
 
     links.addAll(result.links);
 
-    for (var destination in newDestinations) {
+    for (final destination in newDestinations) {
       if (destination.isInvalid) {
         if (verbose) {
-          print("Will not be checking: $destination - invalid url");
+          print('Will not be checking: $destination - invalid url');
         }
         continue;
       }
@@ -367,7 +367,7 @@ Future<CrawlResult> crawl(
         closed.add(destination);
         bin[destination.url] = Bin.closed;
         if (verbose) {
-          print("Will not be checking: $destination - unsupported scheme");
+          print('Will not be checking: $destination - unsupported scheme');
         }
         continue;
       }
@@ -384,7 +384,7 @@ Future<CrawlResult> crawl(
           closed.add(destination);
           bin[destination.url] = Bin.closed;
           if (verbose) {
-            print("Will not be checking: $destination - external");
+            print('Will not be checking: $destination - external');
           }
           continue;
         }
@@ -400,7 +400,7 @@ Future<CrawlResult> crawl(
     }
 
     // Do any destinations have different hosts? Add them to unknownServers.
-    Iterable<String> newHosts = newDestinations
+    final newHosts = newDestinations
         .where((destination) => !destination.isInvalid)
         .where((destination) => !destination.isUnsupportedScheme)
         .where((destination) => shouldCheckExternal || !destination.isExternal)
@@ -428,19 +428,21 @@ Future<CrawlResult> crawl(
   await allDone.future;
 
   if (verbose) {
-    print("All jobs are done or user pressed Ctrl-C");
+    print('All jobs are done or user pressed Ctrl-C');
   }
 
   await stopSignalSubscription.cancel();
 
   if (verbose) {
-    print("Deduping destinations");
+    print('Deduping destinations');
   }
 
   // Fix links (dedupe destinations).
-  var urlMap = {for (final destination in closed) destination.url: destination};
-  for (var link in links) {
-    var canonical = urlMap[link.destination.url];
+  final urlMap = {
+    for (final destination in closed) destination.url: destination
+  };
+  for (final link in links) {
+    final canonical = urlMap[link.destination.url];
     // Note: If it wasn't for the possibility to SIGINT the process, we could
     // assert there is exactly one Destination per URL. There might not be,
     // though.
@@ -450,7 +452,7 @@ Future<CrawlResult> crawl(
   }
 
   if (verbose) {
-    print("Closing the isolate pool");
+    print('Closing the isolate pool');
   }
 
   if (!pool.isShuttingDown) {
@@ -466,7 +468,7 @@ Future<CrawlResult> crawl(
       destination.wasDeniedByRobotsTxt));
 
   if (verbose) {
-    print("Broken links");
+    print('Broken links');
     links.where((link) => link.destination.isBroken).forEach(print);
   }
 
@@ -487,12 +489,12 @@ class CrawlResult {
 /// the second iterable's remaining values will be yielded.
 Iterable<Destination> _zip(
     Iterable<Destination> a, Iterable<Destination> b) sync* {
-  var aIterator = a.iterator;
-  var bIterator = b.iterator;
+  final aIterator = a.iterator;
+  final bIterator = b.iterator;
 
   while (true) {
-    bool aExists = aIterator.moveNext();
-    bool bExists = bIterator.moveNext();
+    final aExists = aIterator.moveNext();
+    final bExists = bIterator.moveNext();
     if (!aExists && !bExists) break;
 
     if (aExists) yield aIterator.current;
