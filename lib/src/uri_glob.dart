@@ -13,14 +13,14 @@ class UriGlob {
   final Glob _glob;
 
   factory UriGlob(String glob) {
-    var uri = Uri.parse(glob);
+    final uri = Uri.parse(glob);
     var authority = uri.authority;
     if (authority.endsWith('**')) {
       authority = authority.substring(0, authority.length - 2);
     }
 
     var path = uri.path;
-    if (path.isEmpty) path = "/**";
+    if (path.isEmpty) path = '/**';
 
     return UriGlob._(
         authority, Glob(path, context: _urlContext, caseSensitive: true));
@@ -32,7 +32,7 @@ class UriGlob {
     if (uri.authority != authority) return false;
     var path = uri.path;
     // Fix http://example.com into http://example.com/.
-    if (path.isEmpty) path = "/";
+    if (path.isEmpty) path = '/';
     return _glob.matches(path);
   }
 }

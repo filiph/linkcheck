@@ -1,6 +1,6 @@
-const _commentStart = "#";
+const _commentStart = '#';
 
-const _commentStartEscape = r"\#";
+const _commentStartEscape = r'\#';
 
 /// Parses and keeps record of the URL patterns to skip.
 class UrlSkipper {
@@ -20,19 +20,19 @@ class UrlSkipper {
 
   @override
   String toString() {
-    var patterns = _records.map((rec) => rec.pattern.pattern).join(", ");
-    return "UrlSkipper<$patterns>";
+    final patterns = _records.map((rec) => rec.pattern.pattern).join(', ');
+    return 'UrlSkipper<$patterns>';
   }
 
   String explain(String url) {
-    var records = _records.where((record) => record.skips(url));
+    final records = _records.where((record) => record.skips(url));
     if (records.isEmpty) {
-      throw ArgumentError("Url $url was passed to explain() but there "
-          "is no record that skips it.");
+      throw ArgumentError('Url $url was passed to explain() but there '
+          'is no record that skips it.');
     }
-    var list = records
-        .map((rec) => "${rec.pattern.pattern} (line ${rec.line})")
-        .join(", ");
+    final list = records
+        .map((rec) => '${rec.pattern.pattern} (line ${rec.line})')
+        .join(', ');
     return "URL '$url' skipped because it was matched by the following "
         "regular expressions of skip file '$path': $list";
   }

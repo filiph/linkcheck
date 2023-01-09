@@ -61,7 +61,7 @@ class Pool {
   /// Asks a worker to check the given [destination]. Waits [delay] before
   /// doing so.
   Worker checkPage(Destination destination, Duration delay) {
-    var worker = pickWorker();
+    final worker = pickWorker();
     _lastJobPosted[worker] = DateTime.now();
     worker.destinationToCheck = destination;
     Timer(delay, () {
@@ -74,7 +74,7 @@ class Pool {
 
   /// Starts a job to send request for /robots.txt on the server.
   Worker checkServer(String host) {
-    var worker = pickWorker();
+    final worker = pickWorker();
     worker.sink.add(WorkerTask(verb: WorkerVerb.checkServer, data: host));
     worker.serverToCheck = host;
     _lastJobPosted[worker] = DateTime.now();
@@ -93,34 +93,34 @@ class Pool {
 
   /// Finds the worker with the least amount of jobs.
   Worker pickWorker() {
-    for (var worker in _workers) {
+    for (final worker in _workers) {
       if (worker.spawned && worker.idle) return worker;
     }
-    throw StateError("Attempt to use Pool when all workers are busy. "
-        "Please make sure to wait until Pool.allWorking is false.");
+    throw StateError('Attempt to use Pool when all workers are busy. '
+        'Please make sure to wait until Pool.allWorking is false.');
   }
 
   Future<void> spawn() async {
     await Future.wait(_workers.map((worker) => worker.spawn()));
-    for (var worker in _workers) {
+    for (final worker in _workers) {
       worker.stream.listen((WorkerTask message) {
         switch (message.verb) {
           case WorkerVerb.checkPageDone:
-            var result = message.data as FetchResults;
-            _fetchResultsSink.add(result);
+            final fetchResults = message.data as FetchResults;
+            _fetchResultsSink.add(fetchResults);
             worker.destinationToCheck = null;
             break;
           case WorkerVerb.checkServerDone:
-            var result = message.data as ServerInfoUpdate;
-            _serverCheckSink.add(result);
+            final serverUpdateResult = message.data as ServerInfoUpdate;
+            _serverCheckSink.add(serverUpdateResult);
             worker.serverToCheck = null;
             break;
           case WorkerVerb.infoFromWorker:
             _messagesSink.add(message.data as String);
             break;
           default:
-            throw StateError("Unrecognized verb from Worker: "
-                "${message.verb}");
+            throw StateError('Unrecognized verb from Worker: '
+                '${message.verb}');
         }
       });
     }
@@ -128,34 +128,34 @@ class Pool {
 
     _healthCheckTimer = Timer.periodic(healthCheckFrequency, (_) async {
       if (_isShuttingDown) return;
-      var now = DateTime.now();
-      for (int i = 0; i < _workers.length; i++) {
-        var worker = _workers[i];
-        var lastJobPostedWorker = _lastJobPosted[worker];
+      final now = DateTime.now();
+      for (var i = 0; i < _workers.length; i++) {
+        final worker = _workers[i];
+        final lastJobPostedWorker = _lastJobPosted[worker];
         if (!worker.idle &&
             !worker.isKilled &&
             lastJobPostedWorker != null &&
             now.difference(lastJobPostedWorker) > workerTimeout) {
-          _messagesSink.add("Killing unresponsive $worker");
-          var destination = worker.destinationToCheck;
-          var server = worker.serverToCheck;
+          _messagesSink.add('Killing unresponsive $worker');
+          final destination = worker.destinationToCheck;
+          final server = worker.serverToCheck;
 
           _lastJobPosted.remove(worker);
-          var newWorker = Worker('$i');
+          final newWorker = Worker('$i');
           _workers[i] = newWorker;
 
           if (destination != null) {
             // Only notify about the failed destination when the old
             // worker is gone. Otherwise, crawl could fail to wrap up, thinking
             // that one Worker is still working.
-            var checked = DestinationResult.fromDestination(destination,
+            final checked = DestinationResult.fromDestination(destination,
                 didNotConnect: true);
-            var result = FetchResults(checked);
+            final result = FetchResults(checked);
             _fetchResultsSink.add(result);
           }
 
           if (server != null) {
-            var result = ServerInfoUpdate.didNotConnect(server);
+            final result = ServerInfoUpdate.didNotConnect(server);
             _serverCheckSink.add(result);
           }
 
@@ -173,7 +173,7 @@ class Pool {
 
   /// Sends host globs (e.g. http://example.com/**) to all the workers.
   void _addHostGlobs() {
-    for (var worker in _workers) {
+    for (final worker in _workers) {
       worker.sink.add(WorkerTask(
           verb: WorkerVerb.addHostGlob,
           data: _hostGlobs.toList(growable: false)));

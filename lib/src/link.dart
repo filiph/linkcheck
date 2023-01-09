@@ -37,7 +37,7 @@ class Link {
   /// there is [destinationUrlWithFragment].
   String get destinationUrlWithFragment {
     if (fragment == null) return destination.url;
-    return "${destination.url}#$fragment";
+    return '${destination.url}#$fragment';
   }
 
   bool get hasError => destination.isBroken; // TODO: add wasSkipped?
@@ -48,7 +48,7 @@ class Link {
       (shouldCheckAnchors && breaksAnchor) || destination.hasNoMimeType;
 
   @override
-  String toString() => "$origin => $destination"
+  String toString() => '$origin => $destination'
       "${fragment == null ? '' : '#$fragment'} "
-      "(${destination.statusDescription})";
+      '(${destination.statusDescription})';
 }

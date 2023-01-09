@@ -2,7 +2,7 @@ import 'package:meta/meta.dart';
 
 import 'parsers/robots_txt.dart';
 
-const robotName = "linkcheck";
+const robotName = 'linkcheck';
 
 class ServerInfo {
   /// Minimum delay between requests sent to a single server.
@@ -57,10 +57,10 @@ class ServerInfo {
   /// Creates the minimum duration to wait before the server should be bothered
   /// again.
   Duration getThrottlingDuration() {
-    var lastRequest = _lastRequest;
+    final lastRequest = _lastRequest;
     if (lastRequest == null) return immediate;
     if (isLocalhost) return immediate;
-    var sinceLastRequest = DateTime.now().difference(lastRequest);
+    final sinceLastRequest = DateTime.now().difference(lastRequest);
     if (sinceLastRequest.isNegative) {
       // There's a request scheduled in the future.
       return -sinceLastRequest + minimumDelay;
@@ -80,7 +80,7 @@ class ServerInfo {
       didNotConnectCount += 1;
       return;
     }
-    bouncer = RobotsBouncer(result.robotsTxtContents.split("\n"),
+    bouncer = RobotsBouncer(result.robotsTxtContents.split('\n'),
         forRobot: robotName);
   }
 

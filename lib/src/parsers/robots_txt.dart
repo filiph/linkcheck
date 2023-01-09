@@ -11,11 +11,11 @@ class RobotsBouncer {
 
   RobotsBouncer(Iterable<String> lines, {String forRobot = _asterisk})
       : robotName = forRobot {
-    const userAgentString = "User-agent:";
-    const disallowString = "Disallow:";
+    const userAgentString = 'User-agent:';
+    const disallowString = 'Disallow:';
 
-    Set<String> currentUserAgents = {};
-    Set<String> currentPaths = {};
+    var currentUserAgents = <String>{};
+    var currentPaths = <String>{};
     for (var line in lines) {
       line = line.trim();
       if (line.startsWith('#')) continue;
@@ -54,7 +54,7 @@ class RobotsBouncer {
       return true;
     }
 
-    for (var rule in _rules) {
+    for (final rule in _rules) {
       if (rule.fitsRobotName(robotName) && rule.appliesToPath(path)) {
         return false;
       }
@@ -88,7 +88,7 @@ class _Rule {
   }
 
   @override
-  String toString() => "Rule<userAgents=$userAgents, paths=$paths>";
+  String toString() => 'Rule<userAgents=$userAgents, paths=$paths>';
 }
 
-const _asterisk = "*";
+const _asterisk = '*';

@@ -9,9 +9,9 @@ import 'package:test/test.dart';
 
 // Get the directory of the script being run.
 void main() {
-  group("linkcheck e2e", () {
+  group('linkcheck e2e', () {
     late _MockStdout out;
-    int port = 4321;
+    final port = 4321;
 
     setUp(() {
       out = _MockStdout();
@@ -21,174 +21,174 @@ void main() {
       out.close();
     });
 
-    test("reports no errors or warnings for a site without issues", () async {
-      var server = await Dhttpd.start(path: getServingPath(0), port: port);
+    test('reports no errors or warnings for a site without issues', () async {
+      final server = await Dhttpd.start(path: getServingPath(0), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 0);
-        expect(out.output, contains("0 warnings"));
-        expect(out.output, contains("0 errors"));
+        expect(out.output, contains('0 warnings'));
+        expect(out.output, contains('0 errors'));
       } finally {
         await server.destroy();
       }
     });
 
-    test("reports no errors or warnings for a site with correct <base>",
+    test('reports no errors or warnings for a site with correct <base>',
         () async {
-      var server = await Dhttpd.start(path: getServingPath(4), port: port);
+      final server = await Dhttpd.start(path: getServingPath(4), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 0);
-        expect(out.output, contains("0 warnings"));
-        expect(out.output, contains("0 errors"));
+        expect(out.output, contains('0 warnings'));
+        expect(out.output, contains('0 errors'));
       } finally {
         await server.destroy();
       }
     });
 
-    test("reports info when link is behind robots.txt rule", () async {
-      var server = await Dhttpd.start(path: getServingPath(5), port: port);
+    test('reports info when link is behind robots.txt rule', () async {
+      final server = await Dhttpd.start(path: getServingPath(5), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 0);
-        expect(out.output, contains("subdirectory/other.html"));
-        expect(out.output, contains("0 warnings"));
-        expect(out.output, contains("0 errors"));
+        expect(out.output, contains('subdirectory/other.html'));
+        expect(out.output, contains('0 warnings'));
+        expect(out.output, contains('0 errors'));
       } finally {
         await server.destroy();
       }
     });
 
     test(
-        "reports bad link in file that is disallowed in robots.txt "
-        "but allowed for linkcheck", () async {
-      var server = await Dhttpd.start(path: getServingPath(11), port: port);
+        'reports bad link in file that is disallowed in robots.txt '
+        'but allowed for linkcheck', () async {
+      final server = await Dhttpd.start(path: getServingPath(11), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 2);
-        expect(out.output, contains("non-existent.html"));
-        expect(out.output, contains("1 error"));
+        expect(out.output, contains('non-existent.html'));
+        expect(out.output, contains('1 error'));
       } finally {
         await server.destroy();
       }
     });
 
-    group("reports exit code 2 for a site with errors", () {
-      test("in CSS", () async {
-        var server = await Dhttpd.start(path: getServingPath(1), port: port);
+    group('reports exit code 2 for a site with errors', () {
+      test('in CSS', () async {
+        final server = await Dhttpd.start(path: getServingPath(1), port: port);
         try {
-          int result = await run([":$port"], out);
+          final result = await run([':$port'], out);
           expect(result, 2);
-          expect(out.output, contains("main.css"));
-          expect(out.output, contains("1 error"));
+          expect(out.output, contains('main.css'));
+          expect(out.output, contains('1 error'));
         } finally {
           await server.destroy();
         }
       });
 
-      test("in <link> import", () async {
-        var server = await Dhttpd.start(path: getServingPath(2), port: port);
+      test('in <link> import', () async {
+        final server = await Dhttpd.start(path: getServingPath(2), port: port);
         try {
-          int result = await run([":$port"], out);
+          final result = await run([':$port'], out);
           expect(result, 2);
-          expect(out.output, contains("nonexistent.css"));
-          expect(out.output, contains("1 error"));
+          expect(out.output, contains('nonexistent.css'));
+          expect(out.output, contains('1 error'));
         } finally {
           await server.destroy();
         }
       });
 
-      test("in <a> to non-existent internal page", () async {
-        var server = await Dhttpd.start(path: getServingPath(3), port: port);
+      test('in <a> to non-existent internal page', () async {
+        final server = await Dhttpd.start(path: getServingPath(3), port: port);
         try {
-          int result = await run([":$port"], out);
+          final result = await run([':$port'], out);
           expect(result, 2);
-          expect(out.output, contains("other.html"));
-          expect(out.output, contains("nonexistent.html"));
-          expect(out.output, contains("1 error"));
+          expect(out.output, contains('other.html'));
+          expect(out.output, contains('nonexistent.html'));
+          expect(out.output, contains('1 error'));
         } finally {
           await server.destroy();
         }
       });
     });
 
-    test("reports all missing @font-face sources", () async {
-      var server = await Dhttpd.start(path: getServingPath(6), port: port);
+    test('reports all missing @font-face sources', () async {
+      final server = await Dhttpd.start(path: getServingPath(6), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 2);
-        expect(out.output, contains("asset1.eot"));
-        expect(out.output, contains("asset2.ttf"));
-        expect(out.output, contains("asset3.woff"));
-        expect(out.output, contains("asset4.svg"));
+        expect(out.output, contains('asset1.eot'));
+        expect(out.output, contains('asset2.ttf'));
+        expect(out.output, contains('asset3.woff'));
+        expect(out.output, contains('asset4.svg'));
       } finally {
         await server.destroy();
       }
     });
 
-    test("allows non-Base64-encoded SVG inline", () async {
-      var server = await Dhttpd.start(path: getServingPath(7), port: port);
+    test('allows non-Base64-encoded SVG inline', () async {
+      final server = await Dhttpd.start(path: getServingPath(7), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 0);
-        expect(out.output, contains("0 warnings"));
-        expect(out.output, contains("0 errors"));
+        expect(out.output, contains('0 warnings'));
+        expect(out.output, contains('0 errors'));
       } finally {
         await server.destroy();
       }
     });
 
-    test("skips URLs according to their resolved URL with fragment", () async {
-      var server = await Dhttpd.start(path: getServingPath(8), port: port);
+    test('skips URLs according to their resolved URL with fragment', () async {
+      final server = await Dhttpd.start(path: getServingPath(8), port: port);
       try {
-        int result = await run(
-            [":$port", "--skip-file", "test/case8/skip-file.txt"], out);
+        final result = await run(
+            [':$port', '--skip-file', 'test/case8/skip-file.txt'], out);
         expect(result, 0);
-        expect(out.output, contains("0 warnings"));
-        expect(out.output, contains("0 errors"));
+        expect(out.output, contains('0 warnings'));
+        expect(out.output, contains('0 errors'));
       } finally {
         await server.destroy();
       }
     });
 
-    test("skips external URLs according to their resolved URL with fragment",
+    test('skips external URLs according to their resolved URL with fragment',
         () async {
-      var server = await Dhttpd.start(path: getServingPath(12), port: port);
+      final server = await Dhttpd.start(path: getServingPath(12), port: port);
       try {
-        int result = await run(
-            [":$port", "-e", "--skip-file", "test/case12/skip-file.txt"], out);
+        final result = await run(
+            [':$port', '-e', '--skip-file', 'test/case12/skip-file.txt'], out);
         expect(result, 0);
-        expect(out.output, contains("0 warnings"));
-        expect(out.output, contains("0 errors"));
+        expect(out.output, contains('0 warnings'));
+        expect(out.output, contains('0 errors'));
       } finally {
         await server.destroy();
       }
     });
 
-    test("works with unicode in title", () async {
-      var server = await Dhttpd.start(path: getServingPath(9), port: port);
+    test('works with unicode in title', () async {
+      final server = await Dhttpd.start(path: getServingPath(9), port: port);
       try {
-        int result = await run([":$port"], out);
-        expect(result, 0);
-      } finally {
-        await server.destroy();
-      }
-    });
-
-    test("anchors are normalized", () async {
-      var server = await Dhttpd.start(path: getServingPath(10), port: port);
-      try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 0);
       } finally {
         await server.destroy();
       }
     });
 
-    test("fragment checking works with non-percent-encoded anchors", () async {
-      var server = await Dhttpd.start(path: getServingPath(13), port: port);
+    test('anchors are normalized', () async {
+      final server = await Dhttpd.start(path: getServingPath(10), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
+        expect(result, 0);
+      } finally {
+        await server.destroy();
+      }
+    });
+
+    test('fragment checking works with non-percent-encoded anchors', () async {
+      final server = await Dhttpd.start(path: getServingPath(13), port: port);
+      try {
+        final result = await run([':$port'], out);
         expect(result, 0);
       } finally {
         await server.destroy();
@@ -196,15 +196,15 @@ void main() {
     });
 
     test("destinations with wrong mime-types aren't checked", () async {
-      var server = await Dhttpd.start(path: getServingPath(14), port: port);
+      final server = await Dhttpd.start(path: getServingPath(14), port: port);
       try {
-        int result = await run([":$port"], out);
+        final result = await run([':$port'], out);
         expect(result, 0);
       } finally {
         await server.destroy();
       }
     });
-  }, tags: ["integration"]);
+  }, tags: ['integration']);
 }
 
 String directory = path.absolute(path.dirname(scriptPath));
@@ -213,7 +213,7 @@ String scriptPath = scriptUri.toFilePath();
 Uri scriptUri = Platform.script;
 
 String getServingPath(int caseNumber) =>
-    path.join(directory, "case$caseNumber");
+    path.join(directory, 'case$caseNumber');
 
 class _MockStdout implements Stdout {
 //  StreamController<List<int>> _controller = new StreamController();
@@ -285,13 +285,13 @@ class _MockStdout implements Stdout {
 
   @override
   void write(Object? object) {
-    String string = '$object';
+    final string = '$object';
     buf.write(string);
   }
 
   @override
-  void writeAll(Iterable<dynamic> objects, [String sep = ""]) {
-    var iterator = objects.iterator;
+  void writeAll(Iterable<dynamic> objects, [String sep = '']) {
+    final iterator = objects.iterator;
     if (!iterator.moveNext()) return;
     if (sep.isEmpty) {
       do {
@@ -315,6 +315,6 @@ class _MockStdout implements Stdout {
   void writeln([Object? object]) {
     object ??= '';
     write(object);
-    write("\n");
+    write('\n');
   }
 }

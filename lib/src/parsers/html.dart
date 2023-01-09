@@ -19,24 +19,24 @@ import '../worker/fetch_results.dart';
 Link extractLink(Uri originUri, Uri baseUri, Element element,
     final List<String> attributes, final List<Destination> destinations,
     {bool parseable = false}) {
-  var sourceSpan = element.sourceSpan;
-  var localName = element.localName;
+  final sourceSpan = element.sourceSpan;
+  final localName = element.localName;
 
   if (sourceSpan == null || localName == null) {
     throw StateError(
         'Element $element is missing a ${#sourceSpan} or ${#localName}.');
   }
 
-  var origin =
+  final origin =
       Origin(originUri, sourceSpan, localName, element.text, element.outerHtml);
   String? reference;
-  for (var attributeName in attributes) {
+  for (final attributeName in attributes) {
     reference = element.attributes[attributeName];
     if (reference != null) break;
   }
   if (reference == null) {
-    throw StateError("Element $element does not have any of the attributes "
-        "$attributes");
+    throw StateError('Element $element does not have any of the attributes '
+        '$attributes');
   }
 
   // Valid URLs can be surrounded by spaces.
@@ -44,7 +44,7 @@ Link extractLink(Uri originUri, Uri baseUri, Element element,
 
   // Deal with unsupported schemes such as `telnet:` or `mailto:`.
   if (!checkSchemeSupported(reference, baseUri)) {
-    Destination destination = Destination.unsupported(reference);
+    final destination = Destination.unsupported(reference);
     return Link(origin, destination, null);
   }
 
@@ -52,18 +52,18 @@ Link extractLink(Uri originUri, Uri baseUri, Element element,
   try {
     destinationUri = baseUri.resolve(reference);
   } on FormatException {
-    Destination destination = Destination.invalid(reference);
+    final destination = Destination.invalid(reference);
     return Link(origin, destination, null);
   }
-  var destinationUrlNaked = destinationUri.removeFragment().toString();
+  final destinationUrlNaked = destinationUri.removeFragment().toString();
 
-  for (var existing in destinations) {
+  for (final existing in destinations) {
     if (destinationUrlNaked == existing.url) {
       return Link(origin, existing, destinationUri.fragment);
     }
   }
 
-  Destination destination = Destination(destinationUri);
+  final destination = Destination(destinationUri);
   destination.isSource = parseable;
   destinations.add(destination);
   return Link(origin, destination, destinationUri.fragment);
@@ -90,16 +90,16 @@ String normalizeAnchor(String anchor) {
 
 FetchResults parseHtml(String content, Uri uri, Destination current,
     DestinationResult checked, bool ignoreLinks) {
-  var doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
+  final doc = parse(content, generateSpans: true, sourceUrl: uri.toString());
 
   // Find parseable destinations
   // TODO: add the following: meta refreshes, forms, metadata
   //   `<meta http-equiv="refresh" content="5; url=redirect.html">`
   // TODO: get <meta> robot directives - https://github.com/stevenvachon/broken-link-checker/blob/master/lib/internal/scrapeHtml.js#L164
 
-  var anchors = doc
-      .querySelectorAll("body [id], body [name]")
-      .map((element) => element.attributes["id"] ?? element.attributes["name"])
+  final anchors = doc
+      .querySelectorAll('body [id], body [name]')
+      .map((element) => element.attributes['id'] ?? element.attributes['name'])
       .whereType<String>()
       .map(normalizeAnchor)
       .toList(growable: false);
@@ -110,10 +110,10 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
     return FetchResults(checked);
   }
 
-  Uri baseUri = current.finalUri;
-  var baseElements = doc.querySelectorAll("base[href]");
+  var baseUri = current.finalUri;
+  final baseElements = doc.querySelectorAll('base[href]');
   if (baseElements.isNotEmpty) {
-    var firstBaseHref = baseElements.first.attributes["href"];
+    final firstBaseHref = baseElements.first.attributes['href'];
 
     if (firstBaseHref != null) {
       // More than one base element per page is not according to HTML specs.
@@ -122,24 +122,27 @@ FetchResults parseHtml(String content, Uri uri, Destination current,
     }
   }
 
-  var linkElements = doc.querySelectorAll(
+  final linkElements = doc.querySelectorAll(
       "a[href], area[href], iframe[src], link[rel='stylesheet']");
 
-  List<Destination> currentDestinations = <Destination>[];
+  final currentDestinations = <Destination>[];
 
   /// TODO: add destinations to queue, but NOT as a side effect inside extractLink
-  List<Link> links = linkElements
+  final links = linkElements
       .map((element) => extractLink(current.finalUri, baseUri, element,
-          const ["href", "src"], currentDestinations,
+          const ['href', 'src'], currentDestinations,
           parseable: true))
       .toList();
 
   // Find resources
-  var resourceElements =
-      doc.querySelectorAll("link[href], [src], object[data]");
-  Iterable<Link> currentResourceLinks = resourceElements.map((element) =>
-      extractLink(current.finalUri, baseUri, element,
-          const ["src", "href", "data"], currentDestinations));
+  final resourceElements =
+      doc.querySelectorAll('link[href], [src], object[data]');
+  final currentResourceLinks = resourceElements.map((element) => extractLink(
+      current.finalUri,
+      baseUri,
+      element,
+      const ['src', 'href', 'data'],
+      currentDestinations));
 
   links.addAll(currentResourceLinks);
 
