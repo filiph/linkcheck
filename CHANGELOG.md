@@ -1,4 +1,4 @@
-## 3.0.0-dev
+## 3.0.0
 
 - Require Dart 2.18 and support Dart 3
 - Rename library to `linkcheck` instead of `linkcheck.run`
