@@ -191,7 +191,7 @@ All bellow usage are valid running on container too.
 #### Usage (github action)
 
 ```
-uses: filiph/linkcheck@v2.0.23
+uses: filiph/linkcheck@2.0.23
   with:
     arguments: <URL>
 ```
