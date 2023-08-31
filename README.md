@@ -186,7 +186,7 @@ docker build --platform linux/arm64 -t filiph/linkcheck .
 docker run filiph/linkcheck <URL>
 ```
 
-All bellow usage are valid running on container too.
+All below usage are valid running on container too.
 
 #### Usage (github action)
 
@@ -196,7 +196,7 @@ uses: filiph/linkcheck@2.0.23
     arguments: <URL>
 ```
 
-All bellow usage guidelines are valid running as a GitHub action too.
+All below usage guidelines are valid running as a GitHub action too.
 
 ## Usage
 
