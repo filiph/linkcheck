@@ -186,7 +186,7 @@ docker build --platform linux/arm64 -t filiph/linkcheck .
 docker run filiph/linkcheck <URL>
 ```
 
-All below usage are valid running on container too.
+All below usage guidelines are valid running on container too.
 
 #### Usage (github action)
 
