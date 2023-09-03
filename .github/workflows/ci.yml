@@ -1,6 +1,7 @@
 name: CI
 on:
-  push: {branches: [master]}
+  push: 
+    branches: [master]
   pull_request:
 
 jobs:
@@ -13,5 +14,5 @@ jobs:
       - run: dart pub get
       - run: dart analyze --fatal-warnings .
       - run: dart format --set-exit-if-changed .
-      - run: dart run test -x integration
-      - run: dart test/e2e_test.dart
+      - run: dart test -x integration
+      - run: dart run test/e2e_test.dart
