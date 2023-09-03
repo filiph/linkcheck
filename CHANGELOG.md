@@ -1,6 +1,6 @@
 ## 3.1.0
 
-- Require Dart 3 or later
+- Require Dart 3.0 or later
 - Update to latest dependencies supporting Dart 3 and 3.1
 
 ## 3.0.0

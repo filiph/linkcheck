@@ -1,3 +1,5 @@
+// ignore_for_file: unreachable_from_main
+
 import 'package:cli_pkg/cli_pkg.dart' as pkg;
 import 'package:grinder/grinder.dart';
 

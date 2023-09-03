@@ -9,13 +9,25 @@ analyzer:
 linter:
   rules:
     - always_declare_return_types
+    - combinators_ordering
     - comment_references
+    - dangling_library_doc_comments
+    - deprecated_member_use_from_same_package
+    - implicit_call_tearoffs
+    - implicit_reopen
+    - library_annotations
+    - matching_super_parameters
+    - no_literal_bool_comparisons
     - omit_local_variable_types
     - prefer_final_fields
     - prefer_final_in_for_each
     - prefer_final_locals
     - prefer_single_quotes
     - type_annotate_public_apis
+    - type_literal_in_constant_pattern
     - unawaited_futures
+    - unnecessary_library_directive
+    - unreachable_from_main
     - use_enums
+    - use_string_in_part_of_directives
     - use_super_parameters
