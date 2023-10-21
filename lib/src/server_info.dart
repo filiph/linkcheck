@@ -96,10 +96,8 @@ class ServerInfo {
       case 401:
       case 403:
         unauthorizedCount += 1;
-        break;
       case 503:
         serviceUnavailableCount += 1;
-        break;
       default:
         otherErrorCount += 1;
         break;

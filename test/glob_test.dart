@@ -11,7 +11,7 @@ void main() {
     final uri = Uri.parse('http://localhost:4000/');
     options.addHostGlobs(['$uri**']);
     expect(options.matchesAsInternal(uri), isTrue);
-    sink.close();
+    unawaited(sink.close());
   });
 
   test('parses localhost:4000/guides', () {
@@ -20,7 +20,7 @@ void main() {
     final uri = Uri.parse('http://localhost:4000/guides');
     options.addHostGlobs(['$uri**']);
     expect(options.matchesAsInternal(uri), isTrue);
-    sink.close();
+    unawaited(sink.close());
   });
 
   test('parses localhost:4000/guides/', () {
@@ -29,6 +29,6 @@ void main() {
     final uri = Uri.parse('http://localhost:4000/guides/');
     options.addHostGlobs(['http://localhost:4000/guides**']);
     expect(options.matchesAsInternal(uri), isTrue);
-    sink.close();
+    unawaited(sink.close());
   });
 }

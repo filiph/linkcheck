@@ -18,7 +18,7 @@ void main() {
     });
 
     tearDown(() {
-      out.close();
+      unawaited(out.close());
     });
 
     test('reports no errors or warnings for a site without issues', () async {

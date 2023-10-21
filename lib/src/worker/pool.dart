@@ -109,15 +109,12 @@ class Pool {
             final fetchResults = message.data as FetchResults;
             _fetchResultsSink.add(fetchResults);
             worker.destinationToCheck = null;
-            break;
           case WorkerVerb.checkServerDone:
             final serverUpdateResult = message.data as ServerInfoUpdate;
             _serverCheckSink.add(serverUpdateResult);
             worker.serverToCheck = null;
-            break;
           case WorkerVerb.infoFromWorker:
             _messagesSink.add(message.data as String);
-            break;
           default:
             throw StateError('Unrecognized verb from Worker: '
                 '${message.verb}');
