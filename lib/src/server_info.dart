@@ -100,7 +100,6 @@ class ServerInfo {
         serviceUnavailableCount += 1;
       default:
         otherErrorCount += 1;
-        break;
     }
   }
 }

@@ -240,6 +240,12 @@ class _MockStdout implements Stdout {
   bool get hasTerminal => false;
 
   @override
+  String get lineTerminator => '\n';
+
+  @override
+  set lineTerminator(String lineTerminator) => throw UnimplementedError();
+
+  @override
   IOSink get nonBlocking {
     throw UnimplementedError();
   }
@@ -315,6 +321,6 @@ class _MockStdout implements Stdout {
   void writeln([Object? object]) {
     object ??= '';
     write(object);
-    write('\n');
+    write(lineTerminator);
   }
 }
