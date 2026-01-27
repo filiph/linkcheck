@@ -1,4 +1,5 @@
 name: "Check links with linkcheck"
+author: filiph
 description: >
   Blazing fast localhost crawling via the linkcheck tool.
 branding:
@@ -11,7 +12,80 @@ inputs:
 outputs:
   exit_code:
     description: "The exit code of the linkcheck tool"
+    value: ${{ steps.check-links.outputs.exit-code }}
 
 runs:
-  using: "docker"
-  image: "GithubActionDockerfile"
+  using: "composite"
+  steps:
+  - name: set up linkcheck
+    id: setup
+    shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+    run: |
+      : Install linkcheck
+      os_name=$(uname|tr A-Z a-z)
+      case "$os_name" in
+        darwin)
+          os_name=macos;;
+        mingw64*)
+          os_name=windows;;
+      esac
+      os_arch=$(uname -m)
+      case "$os_arch" in
+        aarch64)
+          os_arch=arm64;;
+        amd64|x86_64)
+          os_arch=x64;;
+      esac
+      (
+        cd $(mktemp -d)
+        platform_filter="*-$os_name-$os_arch*"
+        gh release download -R filiph/linkcheck -p "$platform_filter"
+        archive=$(ls)
+        case "$archive" in
+          *.zip)
+            executable=$(unzip -Z -1 "$archive" |grep -v src|tail -1)
+            unzip -qq "$archive"
+            ;;
+          *.tar.gz)
+            executable=$(tar tzf "$archive" |grep -v src|tail -1)
+            tar xf "$archive"
+            ;;
+          *)
+            echo ::error "::Unrecognized archive format for $archive (from $platform_filter)"
+            exit 1
+          ;;
+        esac
+        if [ -z "$executable" ]; then
+          echo ::error "::Could not determine executable from $archive (from $platform_filter)"
+          exit 2
+        fi
+        echo "linkcheck=$(pwd)/$executable" >> "$GITHUB_OUTPUT"
+      )
+  - name: check links
+    id: check-links
+    shell: bash
+    env:
+      linkcheck: ${{ steps.setup.outputs.linkcheck }}
+      arguments: ${{ inputs.arguments }}
+    run: |
+      : Link Checker
+      (
+        echo "# Link Checker"
+        echo "$arguments"
+        echo
+        (
+          echo 0 > exit-code
+          "$linkcheck" $arguments ||
+          echo $? > exit-code
+        ) |
+        tee log |
+        perl -pe '
+          s/^([A-Z]\w+)\W+?(\s*)$/## $1$2/;
+          s!^(https?://)!### $1!;
+          s/\s{3,}/- /;
+        '
+      ) >> "$GITHUB_STEP_SUMMARY"
+      cat log
+      echo "exit-code=$(cat exit-code)" >> "$GITHUB_OUTPUT"
