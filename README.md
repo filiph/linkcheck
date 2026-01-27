@@ -20,7 +20,7 @@ but none of them seems to be striving for the following set of goals.
   [blc](https://www.npmjs.com/package/broken-link-checker) and all other link
   checkers that go to at least comparable depth. It is 40 times faster than the
   only tool that goes to the same depth 
-  ([linkchecker](https://github.com/wummel/linkchecker)).
+  ([linkchecker](https://github.com/linkchecker/linkchecker)).
 
 ### Finds all relevant problems
 
@@ -34,7 +34,7 @@ but none of them seems to be striving for the following set of goals.
 * `linkcheck` finds more than [linklint](http://www.linklint.org/) and 
   [blc](https://www.npmjs.com/package/broken-link-checker). It finds the
   same amount or more problems than the best alternative, 
-  [linkchecker](https://github.com/wummel/linkchecker).
+  [linkchecker](https://github.com/linkchecker/linkchecker).
 
 #### Leaves out irrelevant problems
 
