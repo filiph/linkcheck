@@ -188,15 +188,15 @@ docker run filiph/linkcheck <URL>
 
 All below usage guidelines are valid running on container too.
 
-#### Usage (github action)
+#### Usage (GitHub Actions)
 
-```
-uses: filiph/linkcheck@2.0.23
+```yaml
+uses: filiph/linkcheck@3.0.0
   with:
     arguments: <URL>
 ```
 
-All below usage guidelines are valid running as a GitHub action too.
+All below usage guidelines are valid running as a GitHub Actions too.
 
 ## Usage
 
